@@ -10,3 +10,15 @@ C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\Hea
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\refint\HealthSync.Domain.dll
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\HealthSync.Domain.pdb
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\ref\HealthSync.Domain.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\bin\Debug\net9.0\HealthSync.Domain.deps.json
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\bin\Debug\net9.0\HealthSync.Domain.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\bin\Debug\net9.0\HealthSync.Domain.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\HealthSync.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\HealthSync.Domain.AssemblyInfoInputs.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\HealthSync.Domain.AssemblyInfo.cs
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\HealthSync.Domain.csproj.CoreCompileInputs.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\HealthSync.Domain.sourcelink.json
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\HealthSync.Domain.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\refint\HealthSync.Domain.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\HealthSync.Domain.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Domain\obj\Debug\net9.0\ref\HealthSync.Domain.dll

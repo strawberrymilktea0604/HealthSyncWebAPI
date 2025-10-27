@@ -14,3 +14,19 @@ C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\refint\HealthSync.Application.dll
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.pdb
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\ref\HealthSync.Application.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\bin\Debug\net9.0\HealthSync.Application.deps.json
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\bin\Debug\net9.0\HealthSync.Application.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\bin\Debug\net9.0\HealthSync.Application.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\bin\Debug\net9.0\HealthSync.Domain.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\bin\Debug\net9.0\HealthSync.Domain.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.csproj.AssemblyReference.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.AssemblyInfoInputs.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.AssemblyInfo.cs
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.csproj.CoreCompileInputs.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.sourcelink.json
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSy.C380AB2D.Up2Date
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\refint\HealthSync.Application.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\HealthSync.Application.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Application\obj\Debug\net9.0\ref\HealthSync.Application.dll

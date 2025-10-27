@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Infrastructure\\HealthSync.Infrastructure.csproj": {}
+    "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Infrastructure\\HealthSync.Infrastructure.csproj": {}
   },
   "projects": {
-    "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj": {
+    "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj",
+        "projectUniqueName": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj",
         "projectName": "HealthSync.Application",
-        "projectPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj",
-        "packagesPath": "C:\\Users\\minhk\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Application\\obj\\",
+        "projectPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj",
+        "packagesPath": "C:\\Users\\PHAM HONG THAI\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\minhk\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\PHAM HONG THAI\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -32,8 +32,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj": {
-                "projectPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj"
+              "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj": {
+                "projectPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj"
               }
             }
           }
@@ -69,24 +69,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj": {
+    "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj",
         "projectName": "HealthSync.Domain",
-        "projectPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj",
-        "packagesPath": "C:\\Users\\minhk\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Domain\\obj\\",
+        "projectPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj",
+        "packagesPath": "C:\\Users\\PHAM HONG THAI\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\minhk\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\PHAM HONG THAI\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -134,24 +134,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Infrastructure\\HealthSync.Infrastructure.csproj": {
+    "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Infrastructure\\HealthSync.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Infrastructure\\HealthSync.Infrastructure.csproj",
+        "projectUniqueName": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Infrastructure\\HealthSync.Infrastructure.csproj",
         "projectName": "HealthSync.Infrastructure",
-        "projectPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Infrastructure\\HealthSync.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\minhk\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Infrastructure\\obj\\",
+        "projectPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Infrastructure\\HealthSync.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\PHAM HONG THAI\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\minhk\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\PHAM HONG THAI\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -166,11 +166,11 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj": {
-                "projectPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj"
+              "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj": {
+                "projectPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Application\\HealthSync.Application.csproj"
               },
-              "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj": {
-                "projectPath": "C:\\Users\\minhk\\Downloads\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj"
+              "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj": {
+                "projectPath": "C:\\Users\\PHAM HONG THAI\\HealthSyncWebAPI\\HealthSync.Domain\\HealthSync.Domain.csproj"
               }
             }
           }
@@ -222,7 +222,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

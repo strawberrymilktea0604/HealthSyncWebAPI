@@ -18,3 +18,23 @@ C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\ne
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.pdb
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.genruntimeconfig.cache
 C:\Users\minhk\Downloads\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\ref\HealthSync.Infrastructure.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\bin\Debug\net9.0\HealthSync.Infrastructure.deps.json
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\bin\Debug\net9.0\HealthSync.Infrastructure.runtimeconfig.json
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\bin\Debug\net9.0\HealthSync.Infrastructure.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\bin\Debug\net9.0\HealthSync.Infrastructure.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\bin\Debug\net9.0\HealthSync.Application.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\bin\Debug\net9.0\HealthSync.Domain.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\bin\Debug\net9.0\HealthSync.Domain.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\bin\Debug\net9.0\HealthSync.Application.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.AssemblyInfo.cs
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.sourcelink.json
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSy.AEF4978B.Up2Date
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\refint\HealthSync.Infrastructure.dll
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.pdb
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\HealthSync.Infrastructure.genruntimeconfig.cache
+C:\Users\PHAM HONG THAI\HealthSyncWebAPI\HealthSync.Infrastructure\obj\Debug\net9.0\ref\HealthSync.Infrastructure.dll
