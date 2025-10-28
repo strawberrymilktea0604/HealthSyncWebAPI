@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace HealthSync.Domain.Entities;
 
 public class CommunityChallenge
 {
+    [Key]
     public int CommunityChallengeId { get; set; }
 
     // Challenge details

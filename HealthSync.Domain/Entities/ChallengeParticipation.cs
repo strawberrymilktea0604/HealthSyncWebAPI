@@ -1,9 +1,11 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace HealthSync.Domain.Entities;
 
 public class ChallengeParticipation
 {
+    [Key]
     public int ParticipationId { get; set; }
 
     // Challenge reference

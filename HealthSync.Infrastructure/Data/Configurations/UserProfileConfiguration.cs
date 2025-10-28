@@ -23,6 +23,18 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
         builder.Property(up => up.AvatarUrl)
             .HasMaxLength(500);
 
+        builder.Property(u => u.InitialHeightCm)
+            .HasPrecision(18, 2);
+
+        builder.Property(u => u.InitialWeightKg)
+            .HasPrecision(18, 2);
+
+        builder.Property(u => u.CurrentHeightCm)
+            .HasPrecision(18, 2);
+
+        builder.Property(u => u.CurrentWeightKg)
+            .HasPrecision(18, 2);
+
         // 1-to-1 relationship with ApplicationUser
         builder.HasOne(up => up.User)
             .WithOne(u => u.UserProfile)

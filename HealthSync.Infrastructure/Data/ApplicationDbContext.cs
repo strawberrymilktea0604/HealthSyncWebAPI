@@ -33,5 +33,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
         // Configure entities
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        // Fix cascade delete cycles
+        builder.Entity<UserChallengeSubmission>()
+            .HasOne(ucs => ucs.ReviewedByUser)
+            .WithMany()
+            .HasForeignKey(ucs => ucs.ReviewedByUserId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Entity<CommunityChallenge>()
+            .HasOne(cc => cc.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(cc => cc.CreatedByUserId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
