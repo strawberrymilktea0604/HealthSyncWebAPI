@@ -24,6 +24,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<FoodEntry> FoodEntries { get; set; }
     public DbSet<Challenge> Challenges { get; set; }
     public DbSet<ChallengeParticipation> ChallengeParticipations { get; set; }
+    public DbSet<CommunityChallenge> CommunityChallenges { get; set; }
+    public DbSet<UserChallengeSubmission> UserChallengeSubmissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
