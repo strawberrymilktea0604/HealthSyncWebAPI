@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
 
 namespace HealthSync.Domain.Entities;
 
-public class ApplicationUser
+public class ApplicationUser : IdentityUser<int>
 {
-    public int UserId { get; set; }
-
-    // Authentication
-    public string Email { get; set; } = null!;
-    public string PasswordHash { get; set; } = null!;
+    // Additional properties
     public string Role { get; set; } = null!; // Customer, Admin
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
