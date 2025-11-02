@@ -14,6 +14,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
     // DbSets for domain entities
     public DbSet<UserProfile> UserProfiles { get; set; }
+    public DbSet<Leaderboard> Leaderboards { get; set; }
     public DbSet<Goal> Goals { get; set; }
     public DbSet<ProgressRecord> ProgressRecords { get; set; }
     public DbSet<Exercise> Exercises { get; set; }

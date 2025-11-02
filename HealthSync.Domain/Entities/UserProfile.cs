@@ -20,4 +20,5 @@ public class UserProfile
     public decimal? CurrentWeightKg { get; set; } // Current weight
     public string? ActivityLevel { get; set; } // Sedentary, Light, Moderate, Active, Very Active
     public string? AvatarUrl { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

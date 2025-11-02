@@ -13,6 +13,7 @@ public class ApplicationUser : IdentityUser<int>
 
     // Navigation properties
     public UserProfile? UserProfile { get; set; }
+    public Leaderboard? Leaderboard { get; set; }
     public ICollection<Goal> Goals { get; set; } = new List<Goal>();
     public ICollection<WorkoutLog> WorkoutLogs { get; set; } = new List<WorkoutLog>();
     public ICollection<NutritionLog> NutritionLogs { get; set; } = new List<NutritionLog>();
