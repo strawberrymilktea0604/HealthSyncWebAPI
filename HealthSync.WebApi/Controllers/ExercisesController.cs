@@ -95,6 +95,76 @@ public class ExercisesController : ControllerBase
         return Ok(new { success = true, data = exercise });
     }
 
+    // GET: api/exercises
+    // Optionally filtered by muscleGroup and/or difficulty, with pagination
+    [HttpGet]
+    public async Task<IActionResult> GetExercises(
+        [FromQuery] string? muscleGroup,
+        [FromQuery] string? difficulty,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        // Validate pagination parameters
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1 || pageSize > 50) pageSize = 10;
+
+        // Start with base query
+        var query = _db.Exercises.AsQueryable();
+
+        // Apply filters if provided
+        if (!string.IsNullOrWhiteSpace(muscleGroup))
+            query = query.Where(e => e.MuscleGroup.ToLower() == muscleGroup.ToLower());
+        if (!string.IsNullOrWhiteSpace(difficulty))
+            query = query.Where(e => e.Difficulty.ToLower() == difficulty.ToLower());
+
+        // Get total count for pagination metadata
+        var totalItems = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+        // Apply pagination and execute query
+        var exercises = await query
+            .OrderBy(e => e.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        // Return paginated result with metadata
+        return Ok(new
+        {
+            success = true,
+            data = exercises,
+            pagination = new
+            {
+                currentPage = pageNumber,
+                pageSize,
+                totalItems,
+                totalPages,
+                hasNext = pageNumber < totalPages,
+                hasPrevious = pageNumber > 1
+            }
+        });
+    }
+
+    // DELETE: api/exercises/5
+    // Admin-only: delete an exercise
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteExercise(int id)
+    {
+        var exercise = await _db.Exercises.FindAsync(id);
+        if (exercise is null) return NotFound(new { success = false, message = "Exercise not found" });
+
+        // Check if exercise is used in any workout sessions before deleting
+        var hasWorkouts = await _db.ExerciseSessions.AnyAsync(es => es.ExerciseId == id);
+        if (hasWorkouts)
+            return BadRequest(new { success = false, message = "Cannot delete exercise: it is used in workout logs" });
+
+        _db.Exercises.Remove(exercise);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Exercise deleted successfully" });
+    }
+
     // DTOs
     public record CreateExerciseRequest(string Name, string MuscleGroup, string Difficulty, string? Equipment, string? Description, string? ImageUrl);
     public record UpdateExerciseRequest(string? Name, string? MuscleGroup, string? Difficulty, string? Equipment, string? Description, string? ImageUrl);
