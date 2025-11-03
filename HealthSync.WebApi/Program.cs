@@ -12,6 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Users.UpdateUserProfileValidator>();
+
 
 // Add Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>()

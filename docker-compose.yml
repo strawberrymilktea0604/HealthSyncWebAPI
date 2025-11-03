@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: healthsync-db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd123
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - healthsync-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthsync-api
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=HealthSyncDb;User Id=sa;Password=YourStrong!Passw0rd123;TrustServerCertificate=True;
+    networks:
+      - healthsync-network
+
+volumes:
+  sqlserver_data:
+
+networks:
+  healthsync-network:
+    driver: bridge
