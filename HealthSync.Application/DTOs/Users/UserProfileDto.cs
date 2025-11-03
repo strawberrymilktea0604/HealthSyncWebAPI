@@ -8,11 +8,11 @@ public record UserProfileDto(
     string FullName,
     string? Gender,
     DateTime? DateOfBirth,
-    decimal? InitialHeightCm,
-    decimal? InitialWeightKg,
-    decimal? CurrentHeightCm,
+    decimal? HeightCm,
     decimal? CurrentWeightKg,
     string? ActivityLevel,
     string? AvatarUrl,
-    DateTime CreatedAt
+    int ContributionPoints,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt
 );

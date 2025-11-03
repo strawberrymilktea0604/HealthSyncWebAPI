@@ -12,13 +12,13 @@ public class UserProfile
 
     // Personal info
     public string FullName { get; set; } = null!;
-    public string? Gender { get; set; }
+    public Gender? Gender { get; set; }
     public DateTime? DateOfBirth { get; set; }
-    public decimal? InitialHeightCm { get; set; } // Initial height in cm
-    public decimal? InitialWeightKg { get; set; } // Initial weight in kg
-    public decimal? CurrentHeightCm { get; set; } // Current height if changed
+    public decimal? HeightCm { get; set; } // Current height in cm
     public decimal? CurrentWeightKg { get; set; } // Current weight
-    public string? ActivityLevel { get; set; } // Sedentary, Light, Moderate, Active, Very Active
+    public ActivityLevel? ActivityLevel { get; set; } // Sedentary, LightlyActive, ModeratelyActive, VeryActive, ExtraActive
     public string? AvatarUrl { get; set; }
+    public int ContributionPoints { get; set; } = 0; // Points for forum + challenges
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

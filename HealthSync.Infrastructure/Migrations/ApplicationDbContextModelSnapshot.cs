@@ -17,7 +17,7 @@ namespace HealthSync.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "8.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -50,6 +50,9 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -63,6 +66,12 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("OauthProvider")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OauthProviderId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -108,25 +117,70 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChallengeId"));
 
+                    b.Property<string>("ChallengeType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int>("CreatedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Criteria")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("MaxParticipants")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RewardDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.HasKey("ChallengeId");
+
+                    b.HasIndex("CreatedByAdminId");
+
+                    b.HasIndex("EndDate");
+
+                    b.HasIndex("StartDate");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("Challenges");
                 });
@@ -139,8 +193,19 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParticipationId"));
 
+                    b.Property<int?>("ApplicationUserId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ChallengeId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<DateTime>("JoinedDate")
                         .HasColumnType("datetime2");
@@ -148,104 +213,48 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<DateTime?>("ReviewDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("ReviewedBy")
+                    b.Property<string>("ReviewNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("ReviewedByAdminId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("SubmissionText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("SubmissionUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("ParticipationId");
 
+                    b.HasIndex("ApplicationUserId");
+
                     b.HasIndex("ChallengeId");
+
+                    b.HasIndex("ReviewedByAdminId");
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("ChallengeId", "UserId")
+                        .IsUnique();
+
                     b.ToTable("ChallengeParticipations");
-                });
-
-            modelBuilder.Entity("HealthSync.Domain.Entities.CommunityChallenge", b =>
-                {
-                    b.Property<int>("CommunityChallengeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CommunityChallengeId"));
-
-                    b.Property<string>("ChallengeType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CompletionCount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreatedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsPublic")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MaxParticipants")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ParticipantCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RewardDescription")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("RewardPoints")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Rules")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TargetMetric")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("TargetValue")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("CommunityChallengeId");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.ToTable("CommunityChallenges");
                 });
 
             modelBuilder.Entity("HealthSync.Domain.Entities.Exercise", b =>
@@ -256,10 +265,21 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExerciseId"));
 
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal?>("CaloriesPerMinute")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
 
-                    b.Property<string>("Difficulty")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DifficultyLevel")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -267,17 +287,36 @@ namespace HealthSync.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("MuscleGroup")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VideoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasKey("ExerciseId");
+
+                    b.HasIndex("CreatedByAdminId");
+
+                    b.HasIndex("MuscleGroup");
+
+                    b.HasIndex("Name");
 
                     b.ToTable("Exercises");
                 });
@@ -290,7 +329,17 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExerciseSessionId"));
 
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("int");
+
                     b.Property<int>("ExerciseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("OrderIndex")
                         .HasColumnType("int");
 
                     b.Property<int>("Reps")
@@ -306,8 +355,8 @@ namespace HealthSync.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("WeightKg")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
                     b.Property<int>("WorkoutLogId")
                         .HasColumnType("int");
@@ -317,6 +366,8 @@ namespace HealthSync.Infrastructure.Migrations
                     b.HasIndex("ExerciseId");
 
                     b.HasIndex("WorkoutLogId");
+
+                    b.HasIndex("WorkoutLogId", "OrderIndex");
 
                     b.ToTable("ExerciseSessions");
                 });
@@ -329,41 +380,50 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FoodEntryId"));
 
-                    b.Property<decimal>("CaloriesKcal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<decimal>("Calories")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
 
-                    b.Property<decimal>("CarbsGrams")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<decimal>("CarbsG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
-                    b.Property<decimal>("FatGrams")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("FatG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
                     b.Property<int>("FoodItemId")
                         .HasColumnType("int");
 
                     b.Property<string>("MealType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("NutritionLogId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("ProteinGrams")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<decimal>("ProteinG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
                     b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
                     b.HasKey("FoodEntryId");
 
                     b.HasIndex("FoodItemId");
 
                     b.HasIndex("NutritionLogId");
+
+                    b.HasIndex("NutritionLogId", "MealType");
 
                     b.ToTable("FoodEntries");
                 });
@@ -376,36 +436,115 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FoodItemId"));
 
-                    b.Property<decimal>("CaloriesKcal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<decimal>("CaloriesPerServing")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
 
-                    b.Property<decimal>("CarbsGrams")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<decimal>("CarbsG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
-                    b.Property<decimal>("FatGrams")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal>("FatG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal?>("FiberG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
-                    b.Property<decimal>("ProteinGrams")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<decimal>("ProteinG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
                     b.Property<decimal>("ServingSize")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
 
                     b.Property<string>("ServingUnit")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal?>("SugarG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("FoodItemId");
 
+                    b.HasIndex("Category");
+
+                    b.HasIndex("CreatedByAdminId");
+
+                    b.HasIndex("Name");
+
                     b.ToTable("FoodItems");
+                });
+
+            modelBuilder.Entity("HealthSync.Domain.Entities.ForumCategory", b =>
+                {
+                    b.Property<int>("CategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("CategoryId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("ForumCategories");
                 });
 
             modelBuilder.Entity("HealthSync.Domain.Entities.Goal", b =>
@@ -415,6 +554,9 @@ namespace HealthSync.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GoalId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
@@ -433,6 +575,10 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<decimal>("TargetValue")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -480,21 +626,104 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NutritionLogId"));
 
+                    b.Property<int?>("ApplicationUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("LogDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<decimal>("TotalCalories")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<decimal>("TotalCarbsG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("TotalFatG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("TotalProteinG")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("NutritionLogId");
 
+                    b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("LogDate");
+
                     b.HasIndex("UserId");
 
+                    b.HasIndex("UserId", "LogDate")
+                        .IsUnique();
+
                     b.ToTable("NutritionLogs");
+                });
+
+            modelBuilder.Entity("HealthSync.Domain.Entities.Post", b =>
+                {
+                    b.Property<int>("PostId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PostId"));
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<bool>("IsLocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsPinned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PostId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("CategoryId", "IsPinned", "CreatedAt");
+
+                    b.ToTable("Posts");
                 });
 
             modelBuilder.Entity("HealthSync.Domain.Entities.ProgressRecord", b =>
@@ -505,13 +734,27 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProgressRecordId"));
 
+                    b.Property<decimal?>("ChestCm")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("GoalId")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("HipCm")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("RecordDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("RecordValue")
+                    b.Property<decimal>("RecordedValue")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -519,7 +762,7 @@ namespace HealthSync.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal?>("Weight")
+                    b.Property<decimal?>("WeightKg")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -530,97 +773,43 @@ namespace HealthSync.Infrastructure.Migrations
                     b.ToTable("ProgressRecords");
                 });
 
-            modelBuilder.Entity("HealthSync.Domain.Entities.UserChallengeSubmission", b =>
+            modelBuilder.Entity("HealthSync.Domain.Entities.Reply", b =>
                 {
-                    b.Property<int>("SubmissionId")
+                    b.Property<int>("ReplyId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SubmissionId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReplyId"));
 
-                    b.Property<string>("AdditionalData")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CommunityChallengeId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("CurrentProgress")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("EarnedPoints")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("EvidenceImageUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EvidenceVideoUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("JoinedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("ProgressPercentage")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("RankPosition")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("RequiresReview")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ReviewNotes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ReviewStatus")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("ReviewedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
+                    b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("SubmissionDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<string>("SubmissionText")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsHidden")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
-                    b.Property<decimal?>("TargetProgress")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.HasKey("SubmissionId");
+                    b.HasKey("ReplyId");
 
-                    b.HasIndex("CommunityChallengeId");
-
-                    b.HasIndex("ReviewedByUserId");
+                    b.HasIndex("PostId");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserChallengeSubmissions");
+                    b.HasIndex("PostId", "CreatedAt");
+
+                    b.ToTable("Replies");
                 });
 
             modelBuilder.Entity("HealthSync.Domain.Entities.UserProfile", b =>
@@ -631,20 +820,21 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserProfileId"));
 
-                    b.Property<string>("ActivityLevel")
+                    b.Property<int?>("ActivityLevel")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("int");
 
                     b.Property<string>("AvatarUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int>("ContributionPoints")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("CurrentHeightCm")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("CurrentWeightKg")
                         .HasPrecision(18, 2)
@@ -658,17 +848,16 @@ namespace HealthSync.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Gender")
+                    b.Property<int?>("Gender")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("int");
 
-                    b.Property<decimal?>("InitialHeightCm")
+                    b.Property<decimal?>("HeightCm")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal?>("InitialWeightKg")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -689,11 +878,22 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WorkoutLogId"));
 
-                    b.Property<int>("DurationMinutes")
+                    b.Property<int?>("ApplicationUserId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("EstimatedCaloriesBurned")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("decimal(8,2)");
+
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("TotalDurationMinutes")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -703,7 +903,13 @@ namespace HealthSync.Infrastructure.Migrations
 
                     b.HasKey("WorkoutLogId");
 
+                    b.HasIndex("ApplicationUserId");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("WorkoutDate");
+
+                    b.HasIndex("UserId", "WorkoutDate");
 
                     b.ToTable("WorkoutLogs");
                 });
@@ -841,34 +1047,56 @@ namespace HealthSync.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("HealthSync.Domain.Entities.Challenge", b =>
+                {
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "CreatedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("CreatedByAdminId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByAdmin");
+                });
+
             modelBuilder.Entity("HealthSync.Domain.Entities.ChallengeParticipation", b =>
                 {
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", null)
+                        .WithMany("ChallengeParticipations")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("HealthSync.Domain.Entities.Challenge", "Challenge")
                         .WithMany("Participations")
                         .HasForeignKey("ChallengeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "ReviewedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByAdminId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "User")
-                        .WithMany("ChallengeParticipations")
+                        .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Challenge");
 
+                    b.Navigation("ReviewedByAdmin");
+
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("HealthSync.Domain.Entities.CommunityChallenge", b =>
+            modelBuilder.Entity("HealthSync.Domain.Entities.Exercise", b =>
                 {
-                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "CreatedByUser")
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "CreatedByAdmin")
                         .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasForeignKey("CreatedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("CreatedByUser");
+                    b.Navigation("CreatedByAdmin");
                 });
 
             modelBuilder.Entity("HealthSync.Domain.Entities.ExerciseSession", b =>
@@ -876,7 +1104,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.HasOne("HealthSync.Domain.Entities.Exercise", "Exercise")
                         .WithMany("ExerciseSessions")
                         .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("HealthSync.Domain.Entities.WorkoutLog", "WorkoutLog")
@@ -895,7 +1123,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.HasOne("HealthSync.Domain.Entities.FoodItem", "FoodItem")
                         .WithMany("FoodEntries")
                         .HasForeignKey("FoodItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("HealthSync.Domain.Entities.NutritionLog", "NutritionLog")
@@ -907,6 +1135,17 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Navigation("FoodItem");
 
                     b.Navigation("NutritionLog");
+                });
+
+            modelBuilder.Entity("HealthSync.Domain.Entities.FoodItem", b =>
+                {
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "CreatedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("CreatedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByAdmin");
                 });
 
             modelBuilder.Entity("HealthSync.Domain.Entities.Goal", b =>
@@ -933,11 +1172,34 @@ namespace HealthSync.Infrastructure.Migrations
 
             modelBuilder.Entity("HealthSync.Domain.Entities.NutritionLog", b =>
                 {
-                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "User")
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", null)
                         .WithMany("NutritionLogs")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("HealthSync.Domain.Entities.Post", b =>
+                {
+                    b.HasOne("HealthSync.Domain.Entities.ForumCategory", "Category")
+                        .WithMany("Posts")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
 
                     b.Navigation("User");
                 });
@@ -953,18 +1215,13 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Navigation("Goal");
                 });
 
-            modelBuilder.Entity("HealthSync.Domain.Entities.UserChallengeSubmission", b =>
+            modelBuilder.Entity("HealthSync.Domain.Entities.Reply", b =>
                 {
-                    b.HasOne("HealthSync.Domain.Entities.CommunityChallenge", "CommunityChallenge")
-                        .WithMany("Submissions")
-                        .HasForeignKey("CommunityChallengeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("HealthSync.Domain.Entities.Post", "Post")
+                        .WithMany("Replies")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "ReviewedByUser")
-                        .WithMany()
-                        .HasForeignKey("ReviewedByUserId")
-                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "User")
                         .WithMany()
@@ -972,9 +1229,7 @@ namespace HealthSync.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("CommunityChallenge");
-
-                    b.Navigation("ReviewedByUser");
+                    b.Navigation("Post");
 
                     b.Navigation("User");
                 });
@@ -992,8 +1247,12 @@ namespace HealthSync.Infrastructure.Migrations
 
             modelBuilder.Entity("HealthSync.Domain.Entities.WorkoutLog", b =>
                 {
-                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "User")
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", null)
                         .WithMany("WorkoutLogs")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1072,11 +1331,6 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Navigation("Participations");
                 });
 
-            modelBuilder.Entity("HealthSync.Domain.Entities.CommunityChallenge", b =>
-                {
-                    b.Navigation("Submissions");
-                });
-
             modelBuilder.Entity("HealthSync.Domain.Entities.Exercise", b =>
                 {
                     b.Navigation("ExerciseSessions");
@@ -1087,6 +1341,11 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Navigation("FoodEntries");
                 });
 
+            modelBuilder.Entity("HealthSync.Domain.Entities.ForumCategory", b =>
+                {
+                    b.Navigation("Posts");
+                });
+
             modelBuilder.Entity("HealthSync.Domain.Entities.Goal", b =>
                 {
                     b.Navigation("ProgressRecords");
@@ -1095,6 +1354,11 @@ namespace HealthSync.Infrastructure.Migrations
             modelBuilder.Entity("HealthSync.Domain.Entities.NutritionLog", b =>
                 {
                     b.Navigation("FoodEntries");
+                });
+
+            modelBuilder.Entity("HealthSync.Domain.Entities.Post", b =>
+                {
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("HealthSync.Domain.Entities.WorkoutLog", b =>

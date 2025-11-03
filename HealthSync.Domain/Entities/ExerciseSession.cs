@@ -18,4 +18,7 @@ public class ExerciseSession
     public decimal? WeightKg { get; set; }
     public int? RestSeconds { get; set; }
     public int? Rpe { get; set; } // Rate of Perceived Exertion (1-10)
+    public int? DurationMinutes { get; set; } // For cardio exercises
+    public string? Notes { get; set; }
+    public int OrderIndex { get; set; } // Order in workout
 }

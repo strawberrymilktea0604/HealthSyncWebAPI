@@ -7,5 +7,8 @@ public class UpdateExerciseRequest
     public string? Difficulty { get; set; }
     public string? Equipment { get; set; }
     public string? Description { get; set; }
+    public string? Instructions { get; set; }
     public string? ImageUrl { get; set; }
+    public string? VideoUrl { get; set; }
+    public decimal? CaloriesPerMinute { get; set; }
 }

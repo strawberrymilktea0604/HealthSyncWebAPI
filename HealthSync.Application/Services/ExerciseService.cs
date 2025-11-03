@@ -2,16 +2,19 @@ using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.Exercises;
 using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace HealthSync.Application.Services;
 
 public class ExerciseService : IExerciseService
 {
     private readonly IExerciseRepository _exerciseRepository;
+    private readonly IFileStorageService _fileStorageService;
 
-    public ExerciseService(IExerciseRepository exerciseRepository)
+    public ExerciseService(IExerciseRepository exerciseRepository, IFileStorageService fileStorageService)
     {
         _exerciseRepository = exerciseRepository;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<IEnumerable<ExerciseDto>> GetAllExercisesAsync()
@@ -21,21 +24,26 @@ public class ExerciseService : IExerciseService
         {
             Id = e.ExerciseId,
             Name = e.Name,
-            MuscleGroup = e.MuscleGroup,
-            Difficulty = e.Difficulty,
-            Equipment = e.Equipment,
+            MuscleGroup = e.MuscleGroup.ToString(),
+            Difficulty = e.DifficultyLevel.ToString(),
+            Equipment = e.Equipment?.ToString(),
             Description = e.Description,
-            ImageUrl = e.ImageUrl
+            Instructions = e.Instructions,
+            ImageUrl = e.ImageUrl,
+            VideoUrl = e.VideoUrl,
+            CaloriesPerMinute = e.CaloriesPerMinute,
+            CreatedAt = e.CreatedAt,
+            UpdatedAt = e.UpdatedAt
         });
     }
 
-    public async Task<PaginatedResult<ExerciseDto>> GetExercisesAsync(string? muscleGroup, string? difficulty, int pageNumber, int pageSize)
+    public async Task<PaginatedResult<ExerciseDto>> GetExercisesAsync(string? muscleGroup, string? difficulty, string? equipment, int pageNumber, int pageSize)
     {
         // Validate pagination parameters
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1 || pageSize > 50) pageSize = 10;
 
-        var (exercises, totalItems) = await _exerciseRepository.GetFilteredAsync(muscleGroup, difficulty, pageNumber, pageSize);
+        var (exercises, totalItems) = await _exerciseRepository.GetFilteredAsync(muscleGroup, difficulty, equipment, pageNumber, pageSize);
 
         var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
@@ -43,11 +51,16 @@ public class ExerciseService : IExerciseService
         {
             Id = e.ExerciseId,
             Name = e.Name,
-            MuscleGroup = e.MuscleGroup,
-            Difficulty = e.Difficulty,
-            Equipment = e.Equipment,
+            MuscleGroup = e.MuscleGroup.ToString(),
+            Difficulty = e.DifficultyLevel.ToString(),
+            Equipment = e.Equipment?.ToString(),
             Description = e.Description,
-            ImageUrl = e.ImageUrl
+            Instructions = e.Instructions,
+            ImageUrl = e.ImageUrl,
+            VideoUrl = e.VideoUrl,
+            CaloriesPerMinute = e.CaloriesPerMinute,
+            CreatedAt = e.CreatedAt,
+            UpdatedAt = e.UpdatedAt
         });
 
         return new PaginatedResult<ExerciseDto>
@@ -69,15 +82,20 @@ public class ExerciseService : IExerciseService
         {
             Id = exercise.ExerciseId,
             Name = exercise.Name,
-            MuscleGroup = exercise.MuscleGroup,
-            Difficulty = exercise.Difficulty,
-            Equipment = exercise.Equipment,
+            MuscleGroup = exercise.MuscleGroup.ToString(),
+            Difficulty = exercise.DifficultyLevel.ToString(),
+            Equipment = exercise.Equipment?.ToString(),
             Description = exercise.Description,
-            ImageUrl = exercise.ImageUrl
+            Instructions = exercise.Instructions,
+            ImageUrl = exercise.ImageUrl,
+            VideoUrl = exercise.VideoUrl,
+            CaloriesPerMinute = exercise.CaloriesPerMinute,
+            CreatedAt = exercise.CreatedAt,
+            UpdatedAt = exercise.UpdatedAt
         };
     }
 
-    public async Task<ExerciseDto> CreateExerciseAsync(CreateExerciseRequest request)
+    public async Task<ExerciseDto> CreateExerciseAsync(CreateExerciseRequest request, int adminId)
     {
         if (await _exerciseRepository.ExistsByNameAsync(request.Name))
         {
@@ -87,11 +105,14 @@ public class ExerciseService : IExerciseService
         var exercise = new Exercise
         {
             Name = request.Name,
-            MuscleGroup = request.MuscleGroup,
-            Difficulty = request.Difficulty,
-            Equipment = request.Equipment,
+            MuscleGroup = Enum.Parse<MuscleGroup>(request.MuscleGroup),
+            DifficultyLevel = Enum.Parse<DifficultyLevel>(request.Difficulty),
+            Equipment = string.IsNullOrEmpty(request.Equipment) ? null : Enum.Parse<Equipment>(request.Equipment),
             Description = request.Description,
-            ImageUrl = request.ImageUrl
+            ImageUrl = request.ImageUrl,
+            CreatedByAdminId = adminId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         var createdExercise = await _exerciseRepository.AddAsync(exercise);
@@ -100,9 +121,9 @@ public class ExerciseService : IExerciseService
         {
             Id = createdExercise.ExerciseId,
             Name = createdExercise.Name,
-            MuscleGroup = createdExercise.MuscleGroup,
-            Difficulty = createdExercise.Difficulty,
-            Equipment = createdExercise.Equipment,
+            MuscleGroup = createdExercise.MuscleGroup.ToString(),
+            Difficulty = createdExercise.DifficultyLevel.ToString(),
+            Equipment = createdExercise.Equipment?.ToString(),
             Description = createdExercise.Description,
             ImageUrl = createdExercise.ImageUrl
         };
@@ -124,15 +145,16 @@ public class ExerciseService : IExerciseService
         if (!string.IsNullOrWhiteSpace(request.Name))
             exercise.Name = request.Name;
         if (!string.IsNullOrWhiteSpace(request.MuscleGroup))
-            exercise.MuscleGroup = request.MuscleGroup;
+            exercise.MuscleGroup = Enum.Parse<MuscleGroup>(request.MuscleGroup);
         if (!string.IsNullOrWhiteSpace(request.Difficulty))
-            exercise.Difficulty = request.Difficulty;
+            exercise.DifficultyLevel = Enum.Parse<DifficultyLevel>(request.Difficulty);
         if (request.Equipment != null)
-            exercise.Equipment = request.Equipment;
+            exercise.Equipment = string.IsNullOrEmpty(request.Equipment) ? null : Enum.Parse<Equipment>(request.Equipment);
         if (request.Description != null)
             exercise.Description = request.Description;
         if (request.ImageUrl != null)
             exercise.ImageUrl = request.ImageUrl;
+        exercise.UpdatedAt = DateTime.UtcNow;
 
         await _exerciseRepository.UpdateAsync(exercise);
 
@@ -140,15 +162,46 @@ public class ExerciseService : IExerciseService
         {
             Id = exercise.ExerciseId,
             Name = exercise.Name,
-            MuscleGroup = exercise.MuscleGroup,
-            Difficulty = exercise.Difficulty,
-            Equipment = exercise.Equipment,
+            MuscleGroup = exercise.MuscleGroup.ToString(),
+            Difficulty = exercise.DifficultyLevel.ToString(),
+            Equipment = exercise.Equipment?.ToString(),
             Description = exercise.Description,
             ImageUrl = exercise.ImageUrl
         };
     }
 
-    public async Task DeleteExerciseAsync(int id)
+    public async Task<ExerciseDto> UploadExerciseImageAsync(int id, IFormFile file)
+    {
+        var exercise = await _exerciseRepository.GetByIdAsync(id);
+        if (exercise == null)
+        {
+            throw new KeyNotFoundException($"Exercise with ID {id} not found");
+        }
+
+        // Upload file to storage
+        var imageUrl = await _fileStorageService.UploadFileAsync(file, "exercises", $"exercise_{id}_{Guid.NewGuid()}");
+        
+        exercise.ImageUrl = imageUrl;
+        exercise.UpdatedAt = DateTime.UtcNow;
+
+        await _exerciseRepository.UpdateAsync(exercise);
+
+        return new ExerciseDto
+        {
+            Id = exercise.ExerciseId,
+            Name = exercise.Name,
+            MuscleGroup = exercise.MuscleGroup.ToString(),
+            Difficulty = exercise.DifficultyLevel.ToString(),
+            Equipment = exercise.Equipment?.ToString(),
+            Description = exercise.Description,
+            Instructions = exercise.Instructions,
+            ImageUrl = exercise.ImageUrl,
+            VideoUrl = exercise.VideoUrl,
+            CaloriesPerMinute = exercise.CaloriesPerMinute,
+            CreatedAt = exercise.CreatedAt,
+            UpdatedAt = exercise.UpdatedAt
+        };
+    }    public async Task DeleteExerciseAsync(int id)
     {
         var exercise = await _exerciseRepository.GetByIdAsync(id);
         if (exercise == null)

@@ -27,3 +27,24 @@ Content-Type: application/json
 }
 
 ###
+
+# Get user profile
+GET {{HealthSync_WebApi_HostAddress}}/api/v1/users/profile
+Authorization: Bearer {{token}}
+
+###
+
+# Update user profile
+PUT {{HealthSync_WebApi_HostAddress}}/api/v1/users/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fullName": "Updated Test User",
+  "gender": "Male",
+  "dateOfBirth": "1990-01-01",
+  "heightCm": 175.5,
+  "currentWeightKg": 70.2,
+  "activityLevel": "ModeratelyActive",
+  "avatarUrl": "https://example.com/avatar.jpg"
+}

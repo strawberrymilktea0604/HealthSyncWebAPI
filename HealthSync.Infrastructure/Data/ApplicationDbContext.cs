@@ -25,8 +25,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<FoodEntry> FoodEntries { get; set; }
     public DbSet<Challenge> Challenges { get; set; }
     public DbSet<ChallengeParticipation> ChallengeParticipations { get; set; }
-    public DbSet<CommunityChallenge> CommunityChallenges { get; set; }
-    public DbSet<UserChallengeSubmission> UserChallengeSubmissions { get; set; }
+    public DbSet<ForumCategory> ForumCategories { get; set; }
+    public DbSet<Post> Posts { get; set; }
+    public DbSet<Reply> Replies { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -34,18 +35,5 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
         // Configure entities
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
-
-        // Fix cascade delete cycles
-        builder.Entity<UserChallengeSubmission>()
-            .HasOne(ucs => ucs.ReviewedByUser)
-            .WithMany()
-            .HasForeignKey(ucs => ucs.ReviewedByUserId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder.Entity<CommunityChallenge>()
-            .HasOne(cc => cc.CreatedByUser)
-            .WithMany()
-            .HasForeignKey(cc => cc.CreatedByUserId)
-            .OnDelete(DeleteBehavior.NoAction);
     }
 }

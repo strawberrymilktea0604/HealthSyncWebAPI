@@ -11,6 +11,7 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly IUserRepository _userRepository;
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
     private readonly IJwtService _jwtService;
@@ -18,12 +19,14 @@ public class AuthService : IAuthService
     public AuthService(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
+        IUserRepository userRepository,
         IUserProfileRepository userProfileRepository,
         ILeaderboardRepository leaderboardRepository,
         IJwtService jwtService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _userRepository = userRepository;
         _userProfileRepository = userProfileRepository;
         _leaderboardRepository = leaderboardRepository;
         _jwtService = jwtService;
@@ -74,7 +77,15 @@ public class AuthService : IAuthService
         var accessToken = _jwtService.GenerateAccessToken(user);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
-        return new AuthResponse(accessToken, refreshToken, user.Id.ToString(), user.Email!, user.Role);
+        return new AuthResponse(
+            accessToken,
+            refreshToken,
+            user.Id.ToString(),
+            user.Email!,
+            user.Role,
+            userProfile.FullName,
+            leaderboard.TotalPoints
+        );
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -95,6 +106,49 @@ public class AuthService : IAuthService
         var accessToken = _jwtService.GenerateAccessToken(user);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
-        return new AuthResponse(accessToken, refreshToken, user.Id.ToString(), user.Email!, user.Role);
+        // Get user profile and leaderboard for response
+        var userProfile = await _userProfileRepository.GetByUserIdAsync(user.Id);
+        var leaderboard = await _leaderboardRepository.GetByUserIdAsync(user.Id);
+
+        return new AuthResponse(
+            accessToken,
+            refreshToken,
+            user.Id.ToString(),
+            user.Email!,
+            user.Role,
+            userProfile?.FullName ?? "",
+            leaderboard?.TotalPoints ?? 0
+        );
+    }
+
+    public async Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request)
+    {
+        var user = await _userRepository.GetByRefreshTokenAsync(request.RefreshToken);
+        if (user == null)
+        {
+            throw new UnauthorizedAccessException("Invalid refresh token");
+        }
+
+        // Generate new tokens
+        var accessToken = _jwtService.GenerateAccessToken(user);
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        // Update refresh token in database
+        var expiry = DateTime.UtcNow.AddDays(7);
+        await _userRepository.SaveRefreshTokenAsync(user.Id, refreshToken, expiry);
+
+        // Get user profile and leaderboard for response
+        var userProfile = await _userProfileRepository.GetByUserIdAsync(user.Id);
+        var leaderboard = await _leaderboardRepository.GetByUserIdAsync(user.Id);
+
+        return new AuthResponse(
+            accessToken,
+            refreshToken,
+            user.Id.ToString(),
+            user.Email!,
+            user.Role,
+            userProfile?.FullName ?? "",
+            leaderboard?.TotalPoints ?? 0
+        );
     }
 }

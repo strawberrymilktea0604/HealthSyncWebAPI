@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.Exercises;
 using HealthSync.Application.Interfaces;
+using System.Security.Claims;
 
 namespace HealthSync.WebApi.Controllers.Admin;
 
 [ApiController]
-[Route("api/admin/[controller]")]
+[Route("api/v1/admin/[controller]")]
 [Authorize(Roles = "Admin")]
 public class ExercisesController : ControllerBase
 {
@@ -20,21 +22,34 @@ public class ExercisesController : ControllerBase
     }
 
     /// <summary>
-    /// Get all exercises (Admin only)
+    /// Get exercises with filters and pagination (Admin only)
     /// </summary>
-    /// <returns>List of all exercises</returns>
+    /// <param name="muscleGroup">Filter by muscle group</param>
+    /// <param name="difficulty">Filter by difficulty level</param>
+    /// <param name="equipment">Filter by equipment</param>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 20, max: 100)</param>
+    /// <returns>Paginated list of exercises</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<ExerciseDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<ExerciseDto>>> GetAllExercises()
+    [ProducesResponseType(typeof(PaginatedResult<ExerciseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedResult<ExerciseDto>>> GetExercises(
+        [FromQuery] string? muscleGroup,
+        [FromQuery] string? difficulty,
+        [FromQuery] string? equipment,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20)
     {
         try
         {
-            var exercises = await _exerciseService.GetAllExercisesAsync();
-            return Ok(exercises);
+            if (pageSize > 100) pageSize = 100;
+            if (pageNumber < 1) pageNumber = 1;
+
+            var result = await _exerciseService.GetExercisesAsync(muscleGroup, difficulty, equipment, pageNumber, pageSize);
+            return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving exercises");
+            _logger.LogError(ex, "Error retrieving exercises with filters");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -82,7 +97,8 @@ public class ExercisesController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var exercise = await _exerciseService.CreateExerciseAsync(request);
+            var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var exercise = await _exerciseService.CreateExerciseAsync(request, adminId);
             return CreatedAtAction(nameof(GetExerciseById), new { id = exercise.Id }, exercise);
         }
         catch (InvalidOperationException ex)
@@ -129,6 +145,52 @@ public class ExercisesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating exercise with ID {ExerciseId}", id);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    /// <summary>
+    /// Upload image for exercise (Admin only)
+    /// </summary>
+    /// <param name="id">Exercise ID</param>
+    /// <param name="file">Image file</param>
+    /// <returns>Updated exercise with image URL</returns>
+    [HttpPost("{id}/image")]
+    [ProducesResponseType(typeof(ExerciseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ExerciseDto>> UploadExerciseImage(int id, IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded");
+            }
+
+            // Validate file type and size
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            var fileExtension = Path.GetExtension(file.FileName).ToLower();
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return BadRequest("Only JPG and PNG files are allowed");
+            }
+
+            if (file.Length > 5 * 1024 * 1024) // 5MB
+            {
+                return BadRequest("File size must be less than 5MB");
+            }
+
+            var exercise = await _exerciseService.UploadExerciseImageAsync(id, file);
+            return Ok(exercise);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading image for exercise with ID {ExerciseId}", id);
             return StatusCode(500, "Internal server error");
         }
     }

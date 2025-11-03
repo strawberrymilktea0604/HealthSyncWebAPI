@@ -8,13 +8,19 @@ public class ProgressRecordConfiguration : IEntityTypeConfiguration<ProgressReco
 {
     public void Configure(EntityTypeBuilder<ProgressRecord> builder)
     {
-        builder.Property(p => p.RecordValue)
+        builder.Property(p => p.RecordedValue)
             .HasPrecision(18, 2);
 
-        builder.Property(p => p.Weight)
+        builder.Property(p => p.WeightKg)
             .HasPrecision(18, 2);
 
         builder.Property(p => p.WaistCm)
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.ChestCm)
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.HipCm)
             .HasPrecision(18, 2);
     }
 }

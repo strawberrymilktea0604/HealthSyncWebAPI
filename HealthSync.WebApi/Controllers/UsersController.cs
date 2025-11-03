@@ -7,13 +7,13 @@ using HealthSync.Application.DTOs.Users;
 namespace HealthSync.WebApi.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-[Authorize]
-public class ProfileController : ControllerBase
+[Route("api/v1/[controller]")]
+[Authorize(Roles = "Customer")]
+public class UsersController : ControllerBase
 {
     private readonly IUserProfileService _profileService;
 
-    public ProfileController(IUserProfileService profileService)
+    public UsersController(IUserProfileService profileService)
     {
         _profileService = profileService;
     }
@@ -25,7 +25,7 @@ public class ProfileController : ControllerBase
     /// <response code="200">Returns the user profile</response>
     /// <response code="401">If the JWT token is missing or invalid</response>
     /// <response code="404">If the user profile was not found</response>
-    [HttpGet("me")]
+    [HttpGet("profile")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -54,7 +54,7 @@ public class ProfileController : ControllerBase
     /// <response code="200">Returns the updated profile</response>
     /// <response code="400">If the request model is invalid</response>
     /// <response code="401">If the JWT token is missing or invalid</response>
-    [HttpPut("me")]
+    [HttpPut("profile")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -69,7 +69,7 @@ public class ProfileController : ControllerBase
             return Unauthorized(new { success = false, message = "User ID not found in token" });
         }
 
-        var updatedProfile = await _profileService.UpdateUserProfileAsync(id, request);
+        var updatedProfile = await _profileService.UpdateUserProfileAsync(request, id);
         return Ok(new { success = true, data = updatedProfile });
     }
 

@@ -17,12 +17,16 @@ public class FoodEntry
     // Quantity consumed (in units of the FoodItem.ServingSize)
     public decimal Quantity { get; set; }
 
-    // Meal type: Breakfast, Lunch, Dinner, Snack
-    public string MealType { get; set; } = null!;
+    // Meal type
+    public MealType MealType { get; set; }
 
     // Snapshot of nutrition at the time of logging (per quantity)
-    public decimal CaloriesKcal { get; set; }
-    public decimal ProteinGrams { get; set; }
-    public decimal CarbsGrams { get; set; }
-    public decimal FatGrams { get; set; }
+    public decimal Calories { get; set; }
+    public decimal ProteinG { get; set; }
+    public decimal CarbsG { get; set; }
+    public decimal FatG { get; set; }
+
+    // Optional details
+    public DateTime? ConsumedAt { get; set; }
+    public string? Notes { get; set; }
 }

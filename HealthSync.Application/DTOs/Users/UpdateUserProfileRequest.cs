@@ -4,7 +4,8 @@ public record UpdateUserProfileRequest(
     string FullName,
     string? Gender,
     DateTime? DateOfBirth,
-    decimal? CurrentHeightCm,
+    decimal? HeightCm,
     decimal? CurrentWeightKg,
+    string? ActivityLevel,
     string? AvatarUrl
 );

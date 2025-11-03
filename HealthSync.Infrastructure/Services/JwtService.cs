@@ -48,18 +48,4 @@ public class JwtService : IJwtService
         rng.GetBytes(randomNumber);
         return Convert.ToBase64String(randomNumber);
     }
-
-    public Task<int?> ValidateRefreshTokenAsync(string refreshToken)
-    {
-        // For simplicity, we'll assume refresh tokens are stored in a database
-        // In a real implementation, you'd check against a stored token
-        // For now, return null (not implemented)
-        return Task.FromResult<int?>(null);
-    }
-
-    public Task RevokeRefreshTokenAsync(string refreshToken)
-    {
-        // Implement token revocation logic
-        return Task.CompletedTask;
-    }
 }

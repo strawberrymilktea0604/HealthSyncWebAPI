@@ -8,5 +8,6 @@ public interface IUserRepository
     Task<ApplicationUser?> GetByIdAsync(int id);
     Task AddAsync(ApplicationUser user);
     Task UpdateAsync(ApplicationUser user);
-    Task<bool> EmailExistsAsync(string email);
+    Task<ApplicationUser?> GetByRefreshTokenAsync(string refreshToken);
+    Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiry);
 }

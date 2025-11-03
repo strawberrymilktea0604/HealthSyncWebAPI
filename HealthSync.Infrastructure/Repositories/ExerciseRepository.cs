@@ -24,15 +24,17 @@ public class ExerciseRepository : IExerciseRepository
         return await _context.Exercises.OrderBy(e => e.Name).ToListAsync();
     }
 
-    public async Task<(IEnumerable<Exercise>, int)> GetFilteredAsync(string? muscleGroup, string? difficulty, int pageNumber, int pageSize)
+    public async Task<(IEnumerable<Exercise>, int)> GetFilteredAsync(string? muscleGroup, string? difficulty, string? equipment, int pageNumber, int pageSize)
     {
         var query = _context.Exercises.AsQueryable();
 
         // Apply filters if provided
         if (!string.IsNullOrWhiteSpace(muscleGroup))
-            query = query.Where(e => e.MuscleGroup.ToLower() == muscleGroup.ToLower());
+            query = query.Where(e => e.MuscleGroup.ToString().ToLower() == muscleGroup.ToLower());
         if (!string.IsNullOrWhiteSpace(difficulty))
-            query = query.Where(e => e.Difficulty.ToLower() == difficulty.ToLower());
+            query = query.Where(e => e.DifficultyLevel.ToString().ToLower() == difficulty.ToLower());
+        if (!string.IsNullOrWhiteSpace(equipment))
+            query = query.Where(e => e.Equipment.ToString().ToLower() == equipment.ToLower());
 
         // Get total count
         var totalItems = await query.CountAsync();

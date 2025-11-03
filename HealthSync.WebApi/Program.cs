@@ -6,6 +6,8 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using HealthSync.Domain.Entities;
 using HealthSync.Infrastructure.Data;
+using FluentValidation.AspNetCore;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,12 +16,23 @@ builder.Services.AddControllers();
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Users.UpdateUserProfileValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Exercises.CreateExerciseRequestValidator>();
 
 
 // Add Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+// Configure password policy
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+});
 
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -58,6 +71,7 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardReposit
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IJwtService, HealthSync.Infrastructure.Services.JwtService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IFileStorageService, HealthSync.Infrastructure.Services.FileStorageService>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>

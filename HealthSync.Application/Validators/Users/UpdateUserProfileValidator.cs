@@ -19,8 +19,8 @@ public class UpdateUserProfileValidator : AbstractValidator<UpdateUserProfileReq
             .Must(x => x == null || x <= DateTime.UtcNow.AddYears(-13))
             .WithMessage("User must be at least 13 years old");
 
-        RuleFor(x => x.CurrentHeightCm)
-            .GreaterThanOrEqualTo(0).When(x => x.CurrentHeightCm.HasValue)
+        RuleFor(x => x.HeightCm)
+            .GreaterThanOrEqualTo(0).When(x => x.HeightCm.HasValue)
             .Must(x => x == null || x is >= 30 and <= 300)
             .WithMessage("Height must be between 30cm and 300cm");
 

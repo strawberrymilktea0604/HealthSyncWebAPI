@@ -7,9 +7,13 @@ namespace HealthSync.Domain.Entities;
 public class ApplicationUser : IdentityUser<int>
 {
     // Additional properties
-    public string Role { get; set; } = null!; // Customer, Admin
+    public string Role { get; set; } = null!; // Customer, Admin, TopContributor
     public bool IsActive { get; set; } = true;
+    public string? OauthProvider { get; set; } // null | Google | Facebook
+    public string? OauthProviderId { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiry { get; set; }
 
     // Navigation properties
     public UserProfile? UserProfile { get; set; }

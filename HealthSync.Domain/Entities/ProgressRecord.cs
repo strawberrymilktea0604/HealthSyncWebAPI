@@ -12,7 +12,11 @@ public class ProgressRecord
 
     // Progress data
     public DateTime RecordDate { get; set; }
-    public decimal RecordValue { get; set; }
-    public decimal? Weight { get; set; } // kg
+    public decimal RecordedValue { get; set; }
+    public decimal? WeightKg { get; set; } // kg
     public decimal? WaistCm { get; set; }
+    public decimal? ChestCm { get; set; }
+    public decimal? HipCm { get; set; }
+    public string? Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

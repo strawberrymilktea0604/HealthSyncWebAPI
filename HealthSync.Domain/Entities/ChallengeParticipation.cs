@@ -18,8 +18,22 @@ public class ChallengeParticipation
 
     // Participation details
     public DateTime JoinedDate { get; set; }
-    public string Status { get; set; } = null!; // Joined, Pending, Completed, Failed
+    public ParticipationStatus Status { get; set; }
+
+    // Submission
+    public string? SubmissionText { get; set; }
     public string? SubmissionUrl { get; set; }
-    public int? ReviewedBy { get; set; }
+    public DateTime? SubmittedAt { get; set; }
+
+    // Review
+    public int? ReviewedByAdminId { get; set; }
+    public ApplicationUser? ReviewedByAdmin { get; set; }
     public DateTime? ReviewDate { get; set; }
+    public string? ReviewNotes { get; set; }
+
+    // Completion
+    public DateTime? CompletedAt { get; set; }
+
+    // Timestamps
+    public DateTime CreatedAt { get; set; }
 }
