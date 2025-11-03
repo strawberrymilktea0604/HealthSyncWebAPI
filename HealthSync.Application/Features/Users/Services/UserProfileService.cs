@@ -17,20 +17,40 @@ public class UserProfileService : IUserProfileService
         var profile = await _userProfileRepository.GetByUserIdAsync(userId);
         if (profile == null) return null;
 
-        return new UserProfileDto
-        {
-            UserProfileId = profile.UserProfileId,
-            UserId = profile.UserId,
-            FullName = profile.FullName,
-            Gender = profile.Gender,
-            DateOfBirth = profile.DateOfBirth,
-            HeightCm = profile.CurrentHeightCm ?? profile.InitialHeightCm,
-            WeightKg = profile.CurrentWeightKg ?? profile.InitialWeightKg,
-            ActivityLevel = profile.ActivityLevel,
-            AvatarUrl = profile.AvatarUrl,
-            CreatedAt = profile.CreatedAt,
-            UpdatedAt = null // Entity doesn't have UpdatedAt
-        };
+        return new UserProfileDto(
+            profile.UserProfileId,
+            profile.UserId,
+            profile.FullName,
+            profile.Gender,
+            profile.DateOfBirth,
+            profile.InitialHeightCm,
+            profile.InitialWeightKg,
+            profile.CurrentHeightCm,
+            profile.CurrentWeightKg,
+            profile.ActivityLevel,
+            profile.AvatarUrl,
+            profile.CreatedAt
+        );
+    }
+
+    public async Task<UserProfileResponse?> GetUserProfileResponseAsync(int userId)
+    {
+        var profile = await _userProfileRepository.GetByUserIdAsync(userId);
+        if (profile == null) return null;
+
+        return new UserProfileResponse(
+            profile.UserProfileId,
+            profile.FullName,
+            profile.Gender,
+            profile.DateOfBirth,
+            profile.InitialHeightCm,
+            profile.InitialWeightKg,
+            profile.CurrentHeightCm,
+            profile.CurrentWeightKg,
+            profile.ActivityLevel,
+            profile.AvatarUrl,
+            profile.CreatedAt
+        );
     }
 
     public async Task<UserProfileDto> CreateUserProfileAsync(CreateUserProfileRequest request, int userId)

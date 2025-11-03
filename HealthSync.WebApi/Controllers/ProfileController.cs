@@ -26,7 +26,7 @@ public class ProfileController : ControllerBase
     /// <response code="401">If the JWT token is missing or invalid</response>
     /// <response code="404">If the user profile was not found</response>
     [HttpGet("me")]
-    [ProducesResponseType(typeof(UserProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyProfile()
@@ -37,7 +37,7 @@ public class ProfileController : ControllerBase
             return Unauthorized(new { success = false, message = "User ID not found in token" });
         }
 
-        var profile = await _profileService.GetUserProfileAsync(id);
+        var profile = await _profileService.GetUserProfileResponseAsync(id);
         if (profile == null)
         {
             return NotFound(new { success = false, message = "Profile not found" });
