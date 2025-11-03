@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HealthSync.Domain.Entities;
 using HealthSync.Infrastructure.Data;
+using HealthSync.Application.DTOs.Exercises;
 
 namespace HealthSync.WebApi.Controllers;
 
@@ -164,8 +165,4 @@ public class ExercisesController : ControllerBase
 
         return Ok(new { success = true, message = "Exercise deleted successfully" });
     }
-
-    // DTOs
-    public record CreateExerciseRequest(string Name, string MuscleGroup, string Difficulty, string? Equipment, string? Description, string? ImageUrl);
-    public record UpdateExerciseRequest(string? Name, string? MuscleGroup, string? Difficulty, string? Equipment, string? Description, string? ImageUrl);
 }

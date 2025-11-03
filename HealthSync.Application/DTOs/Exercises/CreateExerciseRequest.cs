@@ -7,5 +7,5 @@ public class CreateExerciseRequest
     public string? Difficulty { get; set; }
     public string? Equipment { get; set; } 
     public string? Description { get; set; }
-    public byte[]? Image { get; set; }
+    public string? ImageUrl { get; set; }
 }
