@@ -476,7 +476,7 @@ When adding NuGet packages:
 - user_id (PK)
 - email (unique, indexed)
 - password_hash (bcrypt/PBKDF2)
-- role (Customer | Admin)
+- role (Customer | Admin | TopContributor)
 - is_active (bool, default: true)
 - email_confirmed (bool)
 - oauth_provider (null | Google | Facebook)
@@ -494,6 +494,7 @@ When adding NuGet packages:
 - current_weight_kg (decimal)
 - activity_level (Sedentary | LightlyActive | ModeratelyActive | VeryActive | ExtraActive)
 - avatar_url (nullable, MinIO path)
+- contribution_points (int, default: 0, tính điểm cho diễn đàn + thử thách)
 - created_at
 - updated_at
 ```
@@ -609,6 +610,37 @@ When adding NuGet packages:
 - notes (text, nullable)
 ```
 
+### Community & Forum Module (Nghiệp vụ mới)
+```csharp
+// ForumCategory: Chuyên mục diễn đàn (do Admin quản lý)
+- category_id (PK)
+- name (unique)
+- description (text)
+- display_order (int, thứ tự hiển thị)
+- created_at
+- updated_at
+
+// Post: Bài đăng trong diễn đàn
+- post_id (PK)
+- category_id (FK, indexed)
+- user_id (FK, indexed, tác giả)
+- title
+- content (text)
+- is_pinned (bool, default: false, bài ghim lên đầu)
+- is_locked (bool, default: false, khóa không cho reply)
+- created_at
+- updated_at
+
+// Reply: Trả lời/Bình luận cho bài đăng
+- reply_id (PK)
+- post_id (FK, indexed)
+- user_id (FK, indexed, tác giả)
+- content (text)
+- is_hidden (bool, default: false, bị ẩn do kiểm duyệt)
+- created_at
+- updated_at
+```
+
 ### Challenge Module (Nghiệp vụ có trạng thái)
 ```csharp
 // Challenge: Thử thách cộng đồng (do Admin tạo)
@@ -643,13 +675,27 @@ When adding NuGet packages:
 - created_at
 ```
 
+### Leaderboard & Gamification Module
+```csharp
+// Leaderboard: Bảng xếp hạng (tối ưu cho query top users)
+- leaderboard_id (PK)
+- user_id (FK unique, indexed)
+- total_points (int, default: 0, tổng điểm = workouts*5 + posts*2 + replies*1)
+- rank_title (varchar, nullable, ví dụ: "Top Contributor", "Rising Star")
+- rank_position (int, nullable, vị trí xếp hạng hiện tại)
+- updated_at
+```
+
 ### Relationships Summary (ERD)
 ```
 ApplicationUser 1---1 UserProfile
+ApplicationUser 1---1 Leaderboard
 ApplicationUser 1---N Goal
 ApplicationUser 1---N WorkoutLog
 ApplicationUser 1---N NutritionLog
 ApplicationUser 1---N ChallengeParticipation
+ApplicationUser 1---N Post
+ApplicationUser 1---N Reply
 
 Goal 1---N ProgressRecord
 
@@ -658,6 +704,9 @@ WorkoutLog 1---N ExerciseSession
 
 FoodItem 1---N FoodEntry
 NutritionLog 1---N FoodEntry
+
+ForumCategory 1---N Post
+Post 1---N Reply
 
 Challenge 1---N ChallengeParticipation
 ApplicationUser (Admin) 1---N Exercise (created_by)
@@ -677,7 +726,7 @@ Trạng thái Challenge:
 Trạng thái ChallengeParticipation:
 1. Joined: Customer vừa tham gia
 2. PendingApproval: Customer đã nộp kết quả, chờ Admin duyệt
-3. Completed: Admin duyệt thành công
+3. Completed: Admin duyệt thành công (cộng điểm leaderboard)
 4. Failed: Admin không duyệt hoặc không hoàn thành
 
 Workflow:
@@ -689,12 +738,14 @@ Workflow:
    - Reject → status = 'Failed', ghi review_notes
 5. System gửi notification cho Customer (Email/In-app)
 6. Admin đóng Challenge → status = 'Closed' (không cho join thêm)
+7. (Async) Nếu Completed → tăng contribution_points của user trong Leaderboard
 
 Business Rules:
 - Không thể join Challenge đã Closed
 - Không thể nộp kết quả nếu chưa join
 - Chỉ có thể nộp 1 lần (hoặc cho phép nộp lại nếu Failed)
 - Admin không thể tự join Challenge của mình (tùy chọn)
+- Completion status logic: (completed/total) * 100%
 ```
 
 ### 2. Quy trình Ghi nhật ký Luyện tập (Workout Logging)
@@ -711,12 +762,14 @@ Business Rules:
    - estimated_calories_burned = SUM(Exercise.calories_per_minute × duration) (nếu có)
 5. Customer có thể thêm notes cho WorkoutLog
 6. Lưu WorkoutLog với thông tin tổng hợp
+7. (Async) Kích hoạt background job: cộng 5 điểm cho user trong Leaderboard
 
 Business Rules:
 - Một WorkoutLog có thể chứa nhiều ExerciseSession (1 buổi tập nhiều bài)
 - Một Exercise có thể xuất hiện nhiều lần trong cùng WorkoutLog (ví dụ: superset)
 - Không cho phép workout_date trong tương lai (hoặc chỉ cảnh báo)
 - RPE (Rate of Perceived Exertion): scale 1-10
+- Points: 1 WorkoutLog = +5 contribution_points (tính qua background job)
 ```
 
 ### 3. Quy trình Ghi nhật ký Dinh dưỡng (Nutrition Logging với Auto-calculation)
@@ -777,7 +830,34 @@ Business Rules:
 - Khi tạo Goal mới, tự động tạo ProgressRecord đầu tiên với giá trị ban đầu từ UserProfile
 ```
 
-### 5. Dashboard Thống kê (Admin Analytics & Reporting)
+### 5. Quy trình Tính điểm và Cập nhật Bảng xếp hạng (Leaderboard Points Calculation - Background Job)
+```
+Công thức tính điểm (định kỳ, mỗi 1 giờ):
+- contribution_points = (count_workoutlogs * 5) + (count_posts * 2) + (count_replies * 1) + (count_completed_challenges * 10)
+
+Background Job Flow:
+1. Tác vụ được kích hoạt theo lịch (ví dụ: mỗi 1 giờ)
+2. Lấy danh sách tất cả ApplicationUser đang active
+3. Cho mỗi user:
+   a. Đếm số WorkoutLog trong tháng hiện tại
+   b. Đếm số Post đã tạo trong tháng hiện tại
+   c. Đếm số Reply đã tạo trong tháng hiện tại
+   d. Đếm số ChallengeParticipation có status = Completed trong tháng hiện tại
+   e. Tính: new_points = (wl_count * 5) + (post_count * 2) + (reply_count * 1) + (challenge_count * 10)
+   f. Cập nhật Leaderboard.total_points = new_points
+   g. Cập nhật Leaderboard.updated_at = now
+4. Sau khi tính xong tất cả users, sắp xếp lại rank_position
+5. Ghi log: tác vụ hoàn thành
+
+Business Rules:
+- Chỉ tính điểm cho user với is_active = true
+- Reset điểm mỗi tháng (hoặc keep accumulative tùy yêu cầu)
+- Rank title (ví dụ: "Top Contributor"): tự động gán cho user trong top 10, hoặc Admin gán thủ công
+- Xung đột tính toán: giữ record cũ nếu job đang chạy, chỉ cập nhật khi job hoàn tất
+- Dashboard query: chỉ select từ Leaderboard (đã pre-calculated), không calculate on-the-fly
+```
+
+### 6. Dashboard Thống kê (Admin Analytics & Reporting)
 ```sql
 -- Dashboard Queries:
 
@@ -796,25 +876,34 @@ SELECT COUNT(*) as WorkoutLogsToday
 FROM WorkoutLog
 WHERE CAST(workout_date AS DATE) = CAST(GETDATE() AS DATE);
 
--- 4. Top 5 bài tập được sử dụng nhiều nhất:
+-- 4. Top 5 bài tập được sử dụng nhiều nhất (tháng này):
 SELECT TOP 5 
     e.name, 
     e.muscle_group,
     COUNT(es.exercise_session_id) as UsageCount
 FROM Exercise e
 INNER JOIN ExerciseSession es ON e.exercise_id = es.exercise_id
+INNER JOIN WorkoutLog wl ON es.workout_log_id = wl.workout_log_id
+WHERE MONTH(wl.workout_date) = MONTH(GETDATE()) 
+  AND YEAR(wl.workout_date) = YEAR(GETDATE())
 GROUP BY e.exercise_id, e.name, e.muscle_group
 ORDER BY UsageCount DESC;
 
--- 5. Top 5 món ăn được ghi nhận nhiều nhất:
-SELECT TOP 5 
-    f.name, 
-    f.category,
-    COUNT(fe.food_entry_id) as UsageCount
-FROM FoodItem f
-INNER JOIN FoodEntry fe ON f.food_item_id = fe.food_item_id
-GROUP BY f.food_item_id, f.name, f.category
-ORDER BY UsageCount DESC;
+-- 5. Top 5 chuyên mục diễn đàn hoạt động sôi nổi nhất (tháng này):
+SELECT TOP 5
+    fc.name as CategoryName,
+    COUNT(DISTINCT p.post_id) as PostCount,
+    COUNT(DISTINCT r.reply_id) as ReplyCount,
+    COUNT(DISTINCT p.post_id) + COUNT(DISTINCT r.reply_id) as TotalActivity
+FROM ForumCategory fc
+LEFT JOIN Post p ON fc.category_id = p.category_id
+  AND MONTH(p.created_at) = MONTH(GETDATE()) 
+  AND YEAR(p.created_at) = YEAR(GETDATE())
+LEFT JOIN Reply r ON p.post_id = r.post_id
+  AND MONTH(r.created_at) = MONTH(GETDATE()) 
+  AND YEAR(r.created_at) = YEAR(GETDATE())
+GROUP BY fc.category_id, fc.name
+ORDER BY TotalActivity DESC;
 
 -- 6. Xu hướng người dùng mới theo tháng (6 tháng gần nhất):
 SELECT 
@@ -845,25 +934,80 @@ LEFT JOIN ChallengeParticipation cp ON c.challenge_id = cp.challenge_id
 GROUP BY c.challenge_id, c.title;
 ```
 
-### 6. Tác vụ tổng hợp định kỳ (Background Jobs)
+### 7. Tác vụ tổng hợp định kỳ (Background Jobs - Hangfire/Quartz.NET)
 ```
-Sử dụng Hangfire hoặc Quartz.NET:
-
 1. Daily Job (chạy lúc 00:05 mỗi ngày):
-   - Tổng hợp thống kê ngày hôm qua → lưu vào bảng DailyStats (tùy chọn)
+   - Tổng hợp thống kê ngày hôm qua → cache vào Redis/Memory
    - Kiểm tra Goal hết hạn → tự động đánh dấu status = Cancelled nếu chưa hoàn thành
    - Kiểm tra Challenge hết hạn → tự động đóng (status = Closed)
+   - Cleanup expired refresh tokens (delete từ DB)
 
-2. Hourly Job:
+2. Hourly Job (chạy mỗi 1 giờ):
+   - Tính toán lại contribution_points cho tất cả users (Leaderboard update)
    - Cache Dashboard stats vào Redis/Memory để giảm load database
 
-3. Weekly Job (chạy Chủ nhật):
+3. Weekly Job (chạy Chủ nhật lúc 00:00):
    - Gửi email báo cáo tiến độ cho Customer (tùy chọn)
    - Cleanup ảnh không sử dụng trên MinIO (orphan files)
+   - Generate weekly reports cho Admin
 
 4. On-demand Job:
    - Export data (CSV/Excel) cho Admin
    - Generate monthly reports
+   - Recalculate all leaderboard points (manual trigger)
+```
+
+### 8. Diễn đàn và Kiểm duyệt (Forum Moderation - Community Engagement)
+```
+Workflow Tạo bài đăng (Post):
+1. Customer POST `/api/v1/forum/posts` với (category_id, title, content)
+2. System validate: title not empty, content not empty, category tồn tại
+3. System tạo Post mới với is_pinned = false, is_locked = false
+4. (Async) Kích hoạt background job: cộng 2 điểm cho user (contribution_points + 2)
+
+Workflow Trả lời (Reply):
+1. Customer POST `/api/v1/forum/posts/{post_id}/replies` với content
+2. System check: Post.is_locked = false (nếu true, return 400)
+3. System validate: content not empty
+4. System tạo Reply mới với is_hidden = false
+5. (Async) Kích hoạt background job: cộng 1 điểm cho user (contribution_points + 1)
+
+Admin Kiểm duyệt:
+- Ghim bài (Pin): POST admin endpoint → Post.is_pinned = true (hiển thị ở đầu category)
+- Khóa bài (Lock): POST admin endpoint → Post.is_locked = true (ngăn reply thêm)
+- Xóa bài (Delete): DELETE admin endpoint → xóa Post + tất cả Reply
+- Ẩn reply (Hide): POST admin endpoint → Reply.is_hidden = true (don't display)
+- Xóa reply (Delete): DELETE admin endpoint → xóa Reply đó
+
+Business Rules:
+- Chỉ tác giả hoặc Admin mới được delete/edit bài
+- Locked bài: vẫn xem được nhưng không reply thêm
+- Pinned bài: tự động hiển thị ở vị trí đầu
+- Bài có nhiều reply không được delete (hoặc soft delete)
+- "Top Contributor" danh hiệu: cộng 10 điểm mỗi tháng (hoặc custom logic)
+```
+
+### 9. Điều kiện gán danh hiệu "Top Contributor"
+```
+Criteria (Admin gán thủ công hoặc tự động):
+- Option 1 (Manual): Admin chọn user và gán danh hiệu via PUT /api/v1/admin/users/{id}/rank-title
+  - Body: { "rank_title": "Top Contributor" }
+  
+- Option 2 (Automatic - Monthly):
+  - Background job chạy cuối tháng (ngày 28)
+  - Lấy top 10 users có contribution_points cao nhất trong tháng
+  - Cập nhật Leaderboard.rank_title = "Top Contributor" cho 10 users
+  - Các users khác set rank_title = null
+
+- Option 3 (Hybrid):
+  - Auto-suggest: query top 20 users mỗi tuần
+  - Admin review và gán danh hiệu cho those they approve
+  - Rank_title giữ lại cho cả tháng tiếp theo (hoặc reset)
+
+Display:
+- Leaderboard rank_title hiển thị cạnh username
+- Badge/icon trên profile của user có danh hiệu
+- Boost trong sắp xếp: top contributors hiển thị ở vị trí ưu tiên trong searches
 ```
 
 ## Use Cases (Functional Requirements)
@@ -881,10 +1025,11 @@ Sử dụng Hangfire hoặc Quartz.NET:
    - Password đủ mạnh (min 8 ký tự, có chữ hoa, số, ký tự đặc biệt)
 4. System hash password (bcrypt), tạo ApplicationUser (role = Customer, is_active = true)
 5. System tự động tạo UserProfile (1-1 relationship)
-6. System trả về success message
-7. User login tại `/api/v1/auth/login` với email + password
-8. System xác thực, generate JWT access token (15 min) + refresh token (7 days)
-9. System trả về tokens và user info (id, email, role, full_name)
+6. System tự động tạo Leaderboard record (total_points = 0)
+7. System trả về success message
+8. User login tại `/api/v1/auth/login` với email + password
+9. System xác thực, generate JWT access token (15 min) + refresh token (7 days)
+10. System trả về tokens và user info (id, email, role, full_name, contribution_points)
 
 **Alternative Flows**:
 - 3a. Email đã tồn tại → return 400 "Email already registered"
@@ -896,8 +1041,9 @@ Sử dụng Hangfire hoặc Quartz.NET:
   - System exchange code for user info (email, name, profile_picture)
   - System tìm hoặc tạo ApplicationUser với oauth_provider = 'Google'
   - System generate JWT tokens
+  - Tạo UserProfile + Leaderboard entry tự động
 
-**Postconditions**: User có access token để gọi protected APIs
+**Postconditions**: User có access token, UserProfile và Leaderboard entry được tạo
 
 #### UC-02: Quản lý Hồ sơ cá nhân
 **Actors**: Customer
@@ -1686,4 +1832,403 @@ public class WorkoutService : IWorkoutService
         // 5. Return DTO
     }
 }
+```
+
+## Key Implementation Details for HealthSync
+
+### 1. Feature Modules Organization
+Tổ chức dự án theo 6 module chức năng chính (theo sơ đồ phân rã):
+
+```
+Module 1: User Management & Authentication
+├── Features:
+│   ├── Register (UC-01)
+│   ├── Login (UC-01)
+│   ├── OAuth2 Social Login
+│   ├── Manage Profile (UC-02)
+│   └── Avatar Upload
+
+Module 2: Workout Management
+├── Features:
+│   ├── Create/Read Workout Logs (UC-03)
+│   ├── Add Exercise Sessions
+│   ├── Exercise Library Management (UC-A03)
+│   └── Search Exercises
+
+Module 3: Nutrition Management
+├── Features:
+│   ├── Create/Read Nutrition Logs (UC-04)
+│   ├── Add Food Entries (Auto-calculate macros)
+│   ├── Food Library Management (UC-A04)
+│   └── Search Foods
+
+Module 4: Goal & Progress Tracking
+├── Features:
+│   ├── Create/Manage Goals (UC-05)
+│   ├── Record Progress (UC-06)
+│   ├── Display Progress Chart (Biểu đồ)
+│   └── Calculate Progress %
+
+Module 5: Community & Forum
+├── Features:
+│   ├── Forum Categories (CRUD - Admin)
+│   ├── Create/Edit Posts (Customer)
+│   ├── Reply to Posts (Customer)
+│   ├── Moderation (Admin) - Pin, Lock, Delete
+│   ├── Search Posts
+│   └── Auto-calculate contribution points
+
+Module 6: Challenge & Gamification
+├── Features:
+│   ├── Create Challenges (UC-A05 - Admin)
+│   ├── Join/Submit Challenges (UC-07)
+│   ├── Review Submissions (UC-A05 - Admin)
+│   ├── Leaderboard Display (UC-09)
+│   ├── Background Job: Calculate Points
+│   └── Assign "Top Contributor" Badge
+```
+
+### 2. Business Logic Layer Implementation
+
+**HealthSync.Application Services** - phải implement các business logic sau:
+
+#### WorkoutService
+```csharp
+public interface IWorkoutService
+{
+    // Create workout log và exercise sessions
+    Task<WorkoutLogDto> CreateWorkoutAsync(CreateWorkoutRequest req, int userId);
+    
+    // Auto-calculate calories dựa trên exercise data
+    decimal CalculateCaloriesBurned(IEnumerable<ExerciseSession> sessions);
+    
+    // Get user's workout history with filters
+    Task<IEnumerable<WorkoutLogDto>> GetUserWorkoutsAsync(int userId, DateRange dateRange);
+}
+```
+
+#### NutritionService
+```csharp
+public interface INutritionService
+{
+    // Get or create nutrition log cho ngày
+    Task<NutritionLogDto> GetOrCreateDailyLogAsync(int userId, DateTime date);
+    
+    // Auto-calculate macros khi add food entry
+    Task<FoodEntryDto> AddFoodEntryAsync(int userId, DateTime date, FoodEntryRequest req);
+    
+    // Update nutrition log totals
+    Task<NutritionLogDto> UpdateNutritionTotalsAsync(int nutritionLogId);
+}
+```
+
+#### GoalService
+```csharp
+public interface IGoalService
+{
+    // Create goal và auto-create initial progress record
+    Task<GoalDto> CreateGoalAsync(CreateGoalRequest req, int userId);
+    
+    // Record progress with validation
+    Task<ProgressRecordDto> RecordProgressAsync(RecordProgressRequest req, int userId);
+    
+    // Calculate progress percentage
+    decimal CalculateProgressPercent(Goal goal, IEnumerable<ProgressRecord> records);
+    
+    // Get chart data cho frontend
+    Task<ChartDataDto> GetProgressChartAsync(int goalId);
+}
+```
+
+#### ChallengeService
+```csharp
+public interface IChallengeService
+{
+    // Admin: Create challenge
+    Task<ChallengeDto> CreateChallengeAsync(CreateChallengeRequest req, int adminId);
+    
+    // Customer: Join challenge
+    Task<ChallengeParticipationDto> JoinChallengeAsync(int challengeId, int userId);
+    
+    // Customer: Submit result
+    Task<ChallengeParticipationDto> SubmitChallengeResultAsync(int participationId, SubmitResultRequest req);
+    
+    // Admin: Review submission (approve/reject)
+    Task<ChallengeParticipationDto> ReviewSubmissionAsync(int participationId, ReviewRequest req, int adminId);
+    
+    // Auto-calculate points khi completed
+    Task AddContributionPointsAsync(int userId, int points);
+}
+```
+
+#### ForumService
+```csharp
+public interface IForumService
+{
+    // Create forum category (Admin)
+    Task<ForumCategoryDto> CreateCategoryAsync(CreateCategoryRequest req);
+    
+    // Create post (Customer)
+    Task<PostDto> CreatePostAsync(CreatePostRequest req, int userId);
+    
+    // Reply to post (Customer)
+    Task<ReplyDto> CreateReplyAsync(int postId, CreateReplyRequest req, int userId);
+    
+    // Admin: Pin, Lock, Delete posts
+    Task PinPostAsync(int postId);
+    Task LockPostAsync(int postId);
+    Task DeletePostAsync(int postId);
+    
+    // Search posts
+    Task<IEnumerable<PostDto>> SearchPostsAsync(string searchTerm, int categoryId);
+    
+    // Auto-calculate contribution points
+    Task AddPostContributionPointsAsync(int userId);
+    Task AddReplyContributionPointsAsync(int userId);
+}
+```
+
+#### LeaderboardService
+```csharp
+public interface ILeaderboardService
+{
+    // Get leaderboard (already calculated)
+    Task<IEnumerable<LeaderboardRowDto>> GetTopUsersAsync(int limit = 100);
+    
+    // Get user's rank
+    Task<UserRankDto> GetUserRankAsync(int userId);
+    
+    // Background job: recalculate points monthly
+    Task RecalculateAllPointsAsync();
+}
+```
+
+### 3. Data Access Layer Repositories
+
+Implement repositories cho tất cả entities, tuân thủ Generic Repository Pattern:
+
+```csharp
+public interface IRepository<T> where T : class
+{
+    Task<T?> GetByIdAsync(int id);
+    Task<IEnumerable<T>> GetAllAsync();
+    Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
+    Task<T> AddAsync(T entity);
+    Task UpdateAsync(T entity);
+    Task DeleteAsync(int id);
+    Task<int> SaveChangesAsync();
+}
+
+// Specific repositories with custom queries
+public interface IWorkoutRepository : IRepository<WorkoutLog>
+{
+    Task<IEnumerable<WorkoutLog>> GetUserWorkoutsByDateRangeAsync(int userId, DateTime start, DateTime end);
+    Task<decimal> GetTotalCaloriesBurnedAsync(int userId, DateTime date);
+}
+```
+
+### 4. Background Jobs (Hangfire/Quartz.NET)
+
+Implement 3 main jobs:
+
+```csharp
+public interface ILeaderboardCalculationJob
+{
+    // Run mỗi 1 giờ
+    Task ExecuteAsync();
+}
+
+public class LeaderboardCalculationJob : ILeaderboardCalculationJob
+{
+    // Logic:
+    // 1. Get all active users
+    // 2. For each user:
+    //    a. Count WorkoutLogs (current month)
+    //    b. Count Posts (current month)
+    //    c. Count Replies (current month)
+    //    d. Count Completed Challenges (current month)
+    // 3. Calculate: points = (logs*5) + (posts*2) + (replies*1) + (challenges*10)
+    // 4. Update Leaderboard table
+    // 5. Auto-assign rank_title to top 10 users
+}
+
+public interface IDailyMaintenanceJob
+{
+    // Run mỗi ngày lúc 00:05
+    Task ExecuteAsync();
+}
+
+public class DailyMaintenanceJob : IDailyMaintenanceJob
+{
+    // Logic:
+    // 1. Close expired Challenges (status = Closed)
+    // 2. Cancel expired Goals (status = Cancelled)
+    // 3. Clean up expired Refresh Tokens
+}
+```
+
+### 5. Key Validation Rules (Business Rules)
+
+Implement trong Application layer validators:
+
+```csharp
+// Goal validation
+- end_date > start_date
+- target_value không quá 30% so với current weight
+- start_date không được trong quá khứ
+
+// Workout validation
+- sets > 0, reps > 0
+- weight_kg >= 0
+- workout_date <= today
+
+// Nutrition validation
+- quantity > 0
+- log_date <= today
+
+// Challenge validation
+- end_date > start_date
+- Không thể join nếu đã join
+- Không thể join nếu Challenge closed
+- Chỉ có thể nộp 1 lần (hoặc nộp lại nếu failed)
+
+// Forum validation
+- title không empty
+- content không empty
+- Post.is_locked = false mới có thể reply
+```
+
+### 6. Async Operations Strategy
+
+Các operations phải async (DB I/O, file uploads, email notifications):
+
+```csharp
+// ✅ Synchronous (return immediately to user):
+- Create/Update/Delete entities
+- Basic validation
+- Calculate metrics
+
+// ❌ Synchronous to user, nhưng async background:
+- Calculate contribution_points → background job
+- Send email notifications → background service
+- Upload/delete files → background job
+- Close expired challenges → scheduled job
+
+// Pattern: Fire and forget with proper error handling
+public class WorkoutController : ControllerBase
+{
+    [HttpPost]
+    public async Task<IActionResult> CreateWorkout([FromBody] CreateWorkoutRequest req)
+    {
+        var workoutLog = await _workoutService.CreateWorkoutAsync(req, userId);
+        
+        // Fire background job (không chờ)
+        _ = _backgroundJobClient.Enqueue<ILeaderboardUpdateJob>(
+            j => j.AddWorkoutPointsAsync(userId, 5));
+        
+        return CreatedAtAction(nameof(GetWorkout), new { id = workoutLog.Id }, workoutLog);
+    }
+}
+```
+
+### 7. Important Precautions & Common Mistakes to Avoid
+
+❌ **KHÔNG làm:**
+- Tính contribution_points trực tiếp trong endpoint (sẽ slow down API) → dùng background job
+- Lưu passwords dạng plain text → luôn dùng bcrypt
+- Chia sẻ sensitive data trong logs → careful with logging
+- Dùng `.Result` hoặc `.Wait()` trên async operations → deadlock risk
+- Hard-code configuration values → dùng appsettings.json
+- Bypass validation (skip FluentValidation) → validate luôn luôn
+- Không handle null references → check nullable types
+- Reference Domain entities trực tiếp từ WebApi (không qua DTOs)
+
+✅ **NÊN làm:**
+- Dùng async/await cho tất cả I/O operations
+- Implement IValidation cho tất cả DTOs
+- Dùng dependency injection cho tất cả services
+- Implement Unit of Work pattern cho transactions
+- Log structured logs với correlation IDs
+- Implement pagination cho list endpoints
+- Dùng DTOs để transfer data (KHÔNG entities)
+- Implement idempotency cho repeat requests
+- Handle all exceptions với proper status codes
+- Test background jobs thoroughly
+
+### 8. Important Controllers Organization
+
+Tạo controllers theo modules:
+
+```
+Controllers/
+├── AuthController (UC-01)
+├── UsersController (UC-02, UC-A02)
+├── WorkoutsController (UC-03)
+├── NutritionController (UC-04)
+├── GoalsController (UC-05, UC-06)
+├── ChallengesController (UC-07, UC-A05)
+├── ForumController (UC-08, UC-A06)
+├── LeaderboardController (UC-09)
+├── Admin/
+│   ├── ExercisesController (UC-A03)
+│   ├── FoodsController (UC-A04)
+│   ├── DashboardController (UC-A01)
+│   ├── UsersController (UC-A02)
+│   ├── ChallengesController (UC-A05)
+│   └── ForumController (UC-A06)
+```
+
+### 9. Database Indexes (Performance Optimization)
+
+Tạo indexes trên columns hay dùng trong queries:
+
+```sql
+-- User Indexes
+CREATE INDEX IX_ApplicationUser_Email ON ApplicationUser(email);
+CREATE INDEX IX_ApplicationUser_IsActive ON ApplicationUser(is_active);
+
+-- Workout Indexes
+CREATE INDEX IX_WorkoutLog_UserId_Date ON WorkoutLog(user_id, workout_date DESC);
+CREATE INDEX IX_ExerciseSession_WorkoutId ON ExerciseSession(workout_log_id);
+
+-- Nutrition Indexes
+CREATE INDEX IX_NutritionLog_UserId_Date ON NutritionLog(user_id, log_date DESC);
+
+-- Goal Indexes
+CREATE INDEX IX_Goal_UserId ON Goal(user_id);
+CREATE INDEX IX_ProgressRecord_GoalId_Date ON ProgressRecord(goal_id, record_date);
+
+-- Forum Indexes
+CREATE INDEX IX_Post_CategoryId ON Post(category_id);
+CREATE INDEX IX_Post_UserId ON Post(user_id);
+CREATE INDEX IX_Reply_PostId ON Reply(post_id);
+
+-- Challenge Indexes
+CREATE INDEX IX_Challenge_Status ON Challenge(status);
+CREATE INDEX IX_ChallengeParticipation_UserId_ChallengeId ON ChallengeParticipation(user_id, challenge_id);
+CREATE INDEX IX_ChallengeParticipation_Status ON ChallengeParticipation(status);
+
+-- Leaderboard Indexes
+CREATE INDEX IX_Leaderboard_TotalPoints ON Leaderboard(total_points DESC);
+```
+
+### 10. Migration Strategy
+
+Database migrations phải tự động trong development, nhưng manual review cho production:
+
+```powershell
+# Development: auto-apply migrations khi startup
+# production: review migrations trước khi apply
+
+# Naming convention cho migrations:
+# - Add{Entity}Table
+# - Update{Entity}{Field}
+# - Add{Entity}{Relationship}
+# - DropColumn{Entity}{Field}
+
+# Example:
+# 20251103_AddWorkoutLogTable.cs
+# 20251103_AddExerciseSessionTable.cs
+# 20251103_CreateIndexes.cs
+# 20251105_AddForumCategoryTable.cs
 ```
