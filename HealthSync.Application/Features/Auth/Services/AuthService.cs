@@ -3,40 +3,40 @@ using HealthSync.Application.Features.Auth.Interfaces;
 using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using System.Linq;
 
 namespace HealthSync.Application.Features.Auth.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IUserRepository _userRepository;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
     private readonly IJwtService _jwtService;
-    private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
 
     public AuthService(
-        IUserRepository userRepository,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
         IUserProfileRepository userProfileRepository,
         ILeaderboardRepository leaderboardRepository,
-        IJwtService jwtService,
-        IPasswordHasher<ApplicationUser> passwordHasher)
+        IJwtService jwtService)
     {
-        _userRepository = userRepository;
+        _userManager = userManager;
+        _signInManager = signInManager;
         _userProfileRepository = userProfileRepository;
         _leaderboardRepository = leaderboardRepository;
         _jwtService = jwtService;
-        _passwordHasher = passwordHasher;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        // Check if email already exists
-        if (await _userRepository.EmailExistsAsync(request.Email))
+        var existingUser = await _userManager.FindByEmailAsync(request.Email);
+        if (existingUser != null)
         {
             throw new InvalidOperationException("Email already exists");
         }
 
-        // Create user
         var user = new ApplicationUser
         {
             Email = request.Email,
@@ -46,10 +46,11 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow
         };
 
-        // Hash password
-        user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
-
-        await _userRepository.AddAsync(user);
+        var result = await _userManager.CreateAsync(user, request.Password);
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException($"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        }
 
         // Create user profile
         var userProfile = new UserProfile
@@ -58,7 +59,6 @@ public class AuthService : IAuthService
             FullName = request.FullName,
             CreatedAt = DateTime.UtcNow
         };
-
         await _userProfileRepository.AddAsync(userProfile);
 
         // Create leaderboard entry
@@ -68,7 +68,6 @@ public class AuthService : IAuthService
             TotalPoints = 0,
             RankTitle = null
         };
-
         await _leaderboardRepository.AddAsync(leaderboard);
 
         // Generate tokens
@@ -80,15 +79,14 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email);
+        var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null || !user.IsActive)
         {
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
-        // Verify password
-        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash!, request.Password);
-        if (result != PasswordVerificationResult.Success)
+        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: false);
+        if (!result.Succeeded)
         {
             throw new UnauthorizedAccessException("Invalid credentials");
         }
