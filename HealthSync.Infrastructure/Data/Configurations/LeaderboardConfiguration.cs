@@ -16,6 +16,12 @@ public class LeaderboardConfiguration : IEntityTypeConfiguration<Leaderboard>
         builder.Property(l => l.RankTitle)
             .HasMaxLength(100);
 
+        builder.Property(l => l.RankPosition)
+            .IsRequired(false);
+
+        builder.Property(l => l.UpdatedAt)
+            .HasDefaultValueSql("GETUTCDATE()");
+
         builder.HasOne(l => l.User)
             .WithOne(u => u.Leaderboard)
             .HasForeignKey<Leaderboard>(l => l.UserId)

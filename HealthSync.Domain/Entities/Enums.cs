@@ -96,3 +96,20 @@ public enum Gender
     Female,
     Other
 }
+
+public enum GoalStatus
+{
+    InProgress,
+    Completed,
+    Cancelled
+}
+
+public enum ServingUnit
+{
+    Gram,      // g
+    Milliliter, // ml
+    Piece,
+    Cup,
+    Tablespoon, // tbsp
+    Teaspoon    // tsp
+}

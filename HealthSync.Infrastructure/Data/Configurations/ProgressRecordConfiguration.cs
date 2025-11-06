@@ -8,19 +8,34 @@ public class ProgressRecordConfiguration : IEntityTypeConfiguration<ProgressReco
 {
     public void Configure(EntityTypeBuilder<ProgressRecord> builder)
     {
-        builder.Property(p => p.RecordedValue)
+        builder.HasKey(pr => pr.ProgressRecordId);
+
+        builder.Property(pr => pr.RecordedValue)
             .HasPrecision(18, 2);
 
-        builder.Property(p => p.WeightKg)
+        builder.Property(pr => pr.WeightKg)
             .HasPrecision(18, 2);
 
-        builder.Property(p => p.WaistCm)
+        builder.Property(pr => pr.WaistCm)
             .HasPrecision(18, 2);
 
-        builder.Property(p => p.ChestCm)
+        builder.Property(pr => pr.ChestCm)
             .HasPrecision(18, 2);
 
-        builder.Property(p => p.HipCm)
+        builder.Property(pr => pr.HipCm)
             .HasPrecision(18, 2);
+
+        builder.Property(pr => pr.Notes)
+            .HasMaxLength(1000);
+
+        // Relationships
+        builder.HasOne(pr => pr.Goal)
+            .WithMany(g => g.ProgressRecords)
+            .HasForeignKey(pr => pr.GoalId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Indexes
+        builder.HasIndex(pr => pr.GoalId);
+        builder.HasIndex(pr => new { pr.GoalId, pr.RecordDate });
     }
 }

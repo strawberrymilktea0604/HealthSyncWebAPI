@@ -41,7 +41,7 @@ public class PostConfiguration : IEntityTypeConfiguration<Post>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(p => p.User)
-            .WithMany() // No navigation property in ApplicationUser
+            .WithMany(u => u.Posts)
             .HasForeignKey(p => p.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 

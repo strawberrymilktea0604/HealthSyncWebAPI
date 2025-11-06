@@ -19,6 +19,9 @@ public class ReplyConfiguration : IEntityTypeConfiguration<Reply>
         builder.Property(r => r.CreatedAt)
             .HasDefaultValueSql("GETUTCDATE()");
 
+        builder.Property(r => r.UpdatedAt)
+            .HasDefaultValueSql("GETUTCDATE()");
+
         // Indexes
         builder.HasIndex(r => r.PostId);
         builder.HasIndex(r => r.UserId);
@@ -31,7 +34,7 @@ public class ReplyConfiguration : IEntityTypeConfiguration<Reply>
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(r => r.User)
-            .WithMany() // No navigation property in ApplicationUser
+            .WithMany(u => u.Replies)
             .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }

@@ -14,7 +14,7 @@ public class FoodItem
 
     // Serving information (e.g. 100, and unit = "g")
     public decimal ServingSize { get; set; }
-    public string ServingUnit { get; set; } = null!;
+    public ServingUnit ServingUnit { get; set; }
 
     // Nutrition per serving
     public decimal CaloriesPerServing { get; set; }
