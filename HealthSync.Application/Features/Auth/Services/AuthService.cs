@@ -5,6 +5,7 @@ using HealthSync.Domain.Entities;
 using System.Linq;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Google.Apis.Auth;
 
 namespace HealthSync.Application.Features.Auth.Services;
 
@@ -150,6 +151,90 @@ public class AuthService : IAuthService
             userProfile?.FullName ?? "",
             leaderboard?.TotalPoints ?? 0
         );
+    }
+
+    public async Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request)
+    {
+        try
+        {
+            // Validate Google token
+            var payload = await GoogleJsonWebSignature.ValidateAsync(request.Token, new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") }
+            });
+
+            // Check if user exists
+            var existingUser = await _userRepository.GetByEmailAsync(payload.Email);
+            ApplicationUser user;
+
+            if (existingUser != null)
+            {
+                // Update existing user
+                user = existingUser;
+                user.LastLoginAt = DateTime.UtcNow;
+                await _userRepository.UpdateAsync(user);
+            }
+            else
+            {
+                // Create new user
+                user = new ApplicationUser
+                {
+                    Email = payload.Email,
+                    PasswordHash = null, // No password for OAuth users
+                    Role = "Customer",
+                    IsActive = true,
+                    OauthProvider = "Google",
+                    OauthProviderId = payload.Subject,
+                    CreatedAt = DateTime.UtcNow,
+                    LastLoginAt = DateTime.UtcNow
+                };
+
+                await _userRepository.AddAsync(user);
+
+                // Create user profile
+                var userProfile = new UserProfile
+                {
+                    UserId = user.UserId,
+                    FullName = payload.Name,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _userProfileRepository.AddAsync(userProfile);
+
+                // Create leaderboard
+                var leaderboard = new Leaderboard
+                {
+                    UserId = user.UserId,
+                    TotalPoints = 0,
+                    RankTitle = null,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _leaderboardRepository.AddAsync(leaderboard);
+            }
+
+            var accessToken = _jwtService.GenerateAccessToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+
+            var expiry = DateTime.UtcNow.AddDays(7);
+            await _userRepository.SaveRefreshTokenAsync(user.UserId, refreshToken, expiry);
+
+            var currentUserProfile = await _userProfileRepository.GetByUserIdAsync(user.UserId);
+            var currentLeaderboard = await _leaderboardRepository.GetByUserIdAsync(user.UserId);
+
+            return new AuthResponse(
+                accessToken,
+                refreshToken,
+                user.UserId.ToString(),
+                user.Email!,
+                user.Role,
+                currentUserProfile?.FullName ?? payload.Name,
+                currentLeaderboard?.TotalPoints ?? 0
+            );
+        }
+        catch (Exception ex)
+        {
+            throw new UnauthorizedAccessException("Invalid Google token");
+        }
     }
 
     private string HashPassword(string password)

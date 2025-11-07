@@ -48,3 +48,13 @@ Authorization: Bearer {{token}}
   "activityLevel": "ModeratelyActive",
   "avatarUrl": "https://example.com/avatar.jpg"
 }
+
+###
+
+# Google OAuth Login
+POST {{HealthSync_WebApi_HostAddress}}/api/v1/auth/google
+Content-Type: application/json
+
+{
+  "token": "your-google-id-token-here"
+}
