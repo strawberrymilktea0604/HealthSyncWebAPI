@@ -1,6 +1,7 @@
 using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
 using HealthSync.Infrastructure.Data;
+using HealthSync.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthSync.Infrastructure.Repositories;
@@ -57,5 +58,41 @@ public class UserRepository : IUserRepository
             user.RefreshTokenExpiry = expiry;
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<PaginatedResult<ApplicationUser>> GetUsersAsync(string? search, string? role, int page, int size)
+    {
+        var query = _context.ApplicationUsers
+            .Include(u => u.UserProfile)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(u => u.Email.Contains(search) || 
+                                   (u.UserProfile != null && u.UserProfile.FullName.Contains(search)));
+        }
+
+        if (!string.IsNullOrEmpty(role))
+        {
+            query = query.Where(u => u.Role == role);
+        }
+
+        var totalItems = await query.CountAsync();
+        var items = await query
+            .OrderBy(u => u.UserId)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .ToListAsync();
+
+        var totalPages = (int)Math.Ceiling(totalItems / (double)size);
+
+        return new PaginatedResult<ApplicationUser>
+        {
+            Items = items,
+            CurrentPage = page,
+            PageSize = size,
+            TotalItems = totalItems,
+            TotalPages = totalPages
+        };
     }
 }

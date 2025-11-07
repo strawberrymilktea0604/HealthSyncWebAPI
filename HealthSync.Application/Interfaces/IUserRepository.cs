@@ -1,4 +1,5 @@
 using HealthSync.Domain.Entities;
+using HealthSync.Application.DTOs;
 
 namespace HealthSync.Application.Interfaces;
 
@@ -10,4 +11,5 @@ public interface IUserRepository
     Task UpdateAsync(ApplicationUser user);
     Task<ApplicationUser?> GetByRefreshTokenAsync(string refreshToken);
     Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiry);
+    Task<PaginatedResult<ApplicationUser>> GetUsersAsync(string? search, string? role, int page, int size);
 }
