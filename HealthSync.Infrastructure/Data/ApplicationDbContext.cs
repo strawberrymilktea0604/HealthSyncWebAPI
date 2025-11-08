@@ -1,11 +1,9 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 using HealthSync.Domain.Entities;
 
 namespace HealthSync.Infrastructure.Data;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>
+public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -13,7 +11,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     }
 
     // DbSets for domain entities
+    public DbSet<ApplicationUser> ApplicationUsers { get; set; }
     public DbSet<UserProfile> UserProfiles { get; set; }
+    public DbSet<Leaderboard> Leaderboards { get; set; }
     public DbSet<Goal> Goals { get; set; }
     public DbSet<ProgressRecord> ProgressRecords { get; set; }
     public DbSet<Exercise> Exercises { get; set; }
@@ -24,8 +24,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<FoodEntry> FoodEntries { get; set; }
     public DbSet<Challenge> Challenges { get; set; }
     public DbSet<ChallengeParticipation> ChallengeParticipations { get; set; }
-    public DbSet<CommunityChallenge> CommunityChallenges { get; set; }
-    public DbSet<UserChallengeSubmission> UserChallengeSubmissions { get; set; }
+    public DbSet<ForumCategory> ForumCategories { get; set; }
+    public DbSet<Post> Posts { get; set; }
+    public DbSet<Reply> Replies { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -33,18 +34,5 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
         // Configure entities
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
-
-        // Fix cascade delete cycles
-        builder.Entity<UserChallengeSubmission>()
-            .HasOne(ucs => ucs.ReviewedByUser)
-            .WithMany()
-            .HasForeignKey(ucs => ucs.ReviewedByUserId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder.Entity<CommunityChallenge>()
-            .HasOne(cc => cc.CreatedByUser)
-            .WithMany()
-            .HasForeignKey(cc => cc.CreatedByUserId)
-            .OnDelete(DeleteBehavior.NoAction);
     }
 }

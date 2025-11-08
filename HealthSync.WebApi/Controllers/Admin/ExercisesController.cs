@@ -1,57 +1,55 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.Exercises;
-using HealthSync.Domain.Entities;
-using HealthSync.Infrastructure.Data;
+using HealthSync.Application.Interfaces;
+using System.Security.Claims;
 
 namespace HealthSync.WebApi.Controllers.Admin;
 
 [ApiController]
-[Route("api/admin/[controller]")]
+[Route("api/v1/admin/[controller]")]
 [Authorize(Roles = "Admin")]
 public class ExercisesController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IExerciseService _exerciseService;
     private readonly ILogger<ExercisesController> _logger;
 
-    public ExercisesController(ApplicationDbContext context, ILogger<ExercisesController> logger)
+    public ExercisesController(IExerciseService exerciseService, ILogger<ExercisesController> logger)
     {
-        _context = context;
+        _exerciseService = exerciseService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Get all exercises (Admin only)
+    /// Get exercises with filters and pagination (Admin only)
     /// </summary>
-    /// <returns>List of all exercises</returns>
+    /// <param name="muscleGroup">Filter by muscle group</param>
+    /// <param name="difficulty">Filter by difficulty level</param>
+    /// <param name="equipment">Filter by equipment</param>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 20, max: 100)</param>
+    /// <returns>Paginated list of exercises</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<ExerciseResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<ExerciseResponse>>> GetAllExercises()
+    [ProducesResponseType(typeof(PaginatedResult<ExerciseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedResult<ExerciseDto>>> GetExercises(
+        [FromQuery] string? muscleGroup,
+        [FromQuery] string? difficulty,
+        [FromQuery] string? equipment,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20)
     {
         try
         {
-            var exercises = await _context.Exercises
-                .OrderBy(e => e.Name)
-                .Select(e => new ExerciseResponse
-                {
-                    Id = e.ExerciseId,
-                    Name = e.Name,
-                    MuscleGroup = e.MuscleGroup,
-                    Difficulty = e.Difficulty,
-                    Equipment = e.Equipment,
-                    Description = e.Description,
-                    ImageUrl = e.ImageUrl,
-                    CreatedAt = DateTime.UtcNow, // TODO: Add CreatedAt to Exercise entity
-                    UpdatedAt = null // TODO: Add UpdatedAt to Exercise entity
-                })
-                .ToListAsync();
+            if (pageSize > 100) pageSize = 100;
+            if (pageNumber < 1) pageNumber = 1;
 
-            return Ok(exercises);
+            var result = await _exerciseService.GetExercisesAsync(muscleGroup, difficulty, equipment, pageNumber, pageSize);
+            return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving exercises");
+            _logger.LogError(ex, "Error retrieving exercises with filters");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -62,33 +60,18 @@ public class ExercisesController : ControllerBase
     /// <param name="id">Exercise ID</param>
     /// <returns>Exercise details</returns>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(ExerciseResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ExerciseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ExerciseResponse>> GetExerciseById(int id)
+    public async Task<ActionResult<ExerciseDto>> GetExerciseById(int id)
     {
         try
         {
-            var exercise = await _context.Exercises.FindAsync(id);
-
+            var exercise = await _exerciseService.GetExerciseByIdAsync(id);
             if (exercise == null)
             {
                 return NotFound($"Exercise with ID {id} not found");
             }
-
-            var response = new ExerciseResponse
-            {
-                Id = exercise.ExerciseId,
-                Name = exercise.Name,
-                MuscleGroup = exercise.MuscleGroup,
-                Difficulty = exercise.Difficulty,
-                Equipment = exercise.Equipment,
-                Description = exercise.Description,
-                ImageUrl = exercise.ImageUrl,
-                CreatedAt = DateTime.UtcNow, // TODO: Add CreatedAt to Exercise entity
-                UpdatedAt = null // TODO: Add UpdatedAt to Exercise entity
-            };
-
-            return Ok(response);
+            return Ok(exercise);
         }
         catch (Exception ex)
         {
@@ -103,9 +86,9 @@ public class ExercisesController : ControllerBase
     /// <param name="request">Exercise creation request</param>
     /// <returns>Created exercise</returns>
     [HttpPost]
-    [ProducesResponseType(typeof(ExerciseResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ExerciseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ExerciseResponse>> CreateExercise([FromBody] CreateExerciseRequest request)
+    public async Task<ActionResult<ExerciseDto>> CreateExercise([FromBody] CreateExerciseRequest request)
     {
         try
         {
@@ -114,45 +97,13 @@ public class ExercisesController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            // Check if exercise with same name already exists
-            var existingExercise = await _context.Exercises
-                .FirstOrDefaultAsync(e => e.Name.ToLower() == request.Name.ToLower());
-
-            if (existingExercise != null)
-            {
-                return BadRequest("Exercise with this name already exists");
-            }
-
-            var exercise = new Exercise
-            {
-                Name = request.Name,
-                MuscleGroup = request.MuscleGroup ?? "General",
-                Difficulty = request.Difficulty ?? "Beginner",
-                Equipment = request.Equipment,
-                Description = request.Description,
-                ImageUrl = null // TODO: Handle image upload if needed
-            };
-
-            _context.Exercises.Add(exercise);
-            await _context.SaveChangesAsync();
-
-            var response = new ExerciseResponse
-            {
-                Id = exercise.ExerciseId,
-                Name = exercise.Name,
-                MuscleGroup = exercise.MuscleGroup,
-                Difficulty = exercise.Difficulty,
-                Equipment = exercise.Equipment,
-                Description = exercise.Description,
-                ImageUrl = exercise.ImageUrl,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = null
-            };
-
-            return CreatedAtAction(
-                nameof(GetExerciseById),
-                new { id = exercise.ExerciseId },
-                response);
+            var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var exercise = await _exerciseService.CreateExerciseAsync(request, adminId);
+            return CreatedAtAction(nameof(GetExerciseById), new { id = exercise.Id }, exercise);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
@@ -168,10 +119,10 @@ public class ExercisesController : ControllerBase
     /// <param name="request">Exercise update request</param>
     /// <returns>Updated exercise</returns>
     [HttpPut("{id}")]
-    [ProducesResponseType(typeof(ExerciseResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ExerciseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ExerciseResponse>> UpdateExercise(int id, [FromBody] UpdateExerciseRequest request)
+    public async Task<ActionResult<ExerciseDto>> UpdateExercise(int id, [FromBody] UpdateExerciseRequest request)
     {
         try
         {
@@ -180,48 +131,66 @@ public class ExercisesController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var exercise = await _context.Exercises.FindAsync(id);
-            if (exercise == null)
-            {
-                return NotFound($"Exercise with ID {id} not found");
-            }
-
-            // Check if another exercise with same name exists (excluding current exercise)
-            var existingExercise = await _context.Exercises
-                .FirstOrDefaultAsync(e => e.Name.ToLower() == request.Name.ToLower() && e.ExerciseId != id);
-
-            if (existingExercise != null)
-            {
-                return BadRequest("Another exercise with this name already exists");
-            }
-
-            // Update properties
-            exercise.Name = request.Name;
-            exercise.MuscleGroup = request.MuscleGroup ?? exercise.MuscleGroup;
-            exercise.Difficulty = request.Difficulty ?? exercise.Difficulty;
-            exercise.Equipment = request.Equipment;
-            exercise.Description = request.Description;
-
-            await _context.SaveChangesAsync();
-
-            var response = new ExerciseResponse
-            {
-                Id = exercise.ExerciseId,
-                Name = exercise.Name,
-                MuscleGroup = exercise.MuscleGroup,
-                Difficulty = exercise.Difficulty,
-                Equipment = exercise.Equipment,
-                Description = exercise.Description,
-                ImageUrl = exercise.ImageUrl,
-                CreatedAt = DateTime.UtcNow, // TODO: Add CreatedAt to Exercise entity
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            return Ok(response);
+            var exercise = await _exerciseService.UpdateExerciseAsync(id, request);
+            return Ok(exercise);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating exercise with ID {ExerciseId}", id);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    /// <summary>
+    /// Upload image for exercise (Admin only)
+    /// </summary>
+    /// <param name="id">Exercise ID</param>
+    /// <param name="file">Image file</param>
+    /// <returns>Updated exercise with image URL</returns>
+    [HttpPost("{id}/image")]
+    [ProducesResponseType(typeof(ExerciseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ExerciseDto>> UploadExerciseImage(int id, IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded");
+            }
+
+            // Validate file type and size
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+            var fileExtension = Path.GetExtension(file.FileName).ToLower();
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return BadRequest("Only JPG and PNG files are allowed");
+            }
+
+            if (file.Length > 5 * 1024 * 1024) // 5MB
+            {
+                return BadRequest("File size must be less than 5MB");
+            }
+
+            var exercise = await _exerciseService.UploadExerciseImageAsync(id, file);
+            return Ok(exercise);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading image for exercise with ID {ExerciseId}", id);
             return StatusCode(500, "Internal server error");
         }
     }
@@ -239,79 +208,20 @@ public class ExercisesController : ControllerBase
     {
         try
         {
-            var exercise = await _context.Exercises
-                .Include(e => e.ExerciseSessions)
-                .FirstOrDefaultAsync(e => e.ExerciseId == id);
-
-            if (exercise == null)
-            {
-                return NotFound($"Exercise with ID {id} not found");
-            }
-
-            // Check if exercise is being used in any exercise sessions
-            if (exercise.ExerciseSessions.Any())
-            {
-                return Conflict("Cannot delete exercise that is referenced by exercise sessions");
-            }
-
-            _context.Exercises.Remove(exercise);
-            await _context.SaveChangesAsync();
-
+            await _exerciseService.DeleteExerciseAsync(id);
             return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting exercise with ID {ExerciseId}", id);
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
-    /// <summary>
-    /// Get exercise statistics (Admin only)
-    /// </summary>
-    /// <returns>Exercise usage statistics</returns>
-    [HttpGet("statistics")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetExerciseStatistics()
-    {
-        try
-        {
-            var totalExercises = await _context.Exercises.CountAsync();
-            var exercisesByMuscleGroup = await _context.Exercises
-                .GroupBy(e => e.MuscleGroup)
-                .Select(g => new { MuscleGroup = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Count)
-                .ToListAsync();
-
-            var exercisesByDifficulty = await _context.Exercises
-                .GroupBy(e => e.Difficulty)
-                .Select(g => new { Difficulty = g.Key, Count = g.Count() })
-                .ToListAsync();
-
-            var mostUsedExercises = await _context.ExerciseSessions
-                .GroupBy(es => es.ExerciseId)
-                .Select(g => new { 
-                    ExerciseId = g.Key, 
-                    UsageCount = g.Count(),
-                    ExerciseName = g.First().Exercise.Name
-                })
-                .OrderByDescending(x => x.UsageCount)
-                .Take(10)
-                .ToListAsync();
-
-            var statistics = new
-            {
-                TotalExercises = totalExercises,
-                ExercisesByMuscleGroup = exercisesByMuscleGroup,
-                ExercisesByDifficulty = exercisesByDifficulty,
-                MostUsedExercises = mostUsedExercises
-            };
-
-            return Ok(statistics);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving exercise statistics");
             return StatusCode(500, "Internal server error");
         }
     }

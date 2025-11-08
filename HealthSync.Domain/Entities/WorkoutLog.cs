@@ -13,8 +13,10 @@ public class WorkoutLog
 
     // Workout details
     public DateTime WorkoutDate { get; set; }
-    public int DurationMinutes { get; set; }
+    public int TotalDurationMinutes { get; set; }
+    public decimal EstimatedCaloriesBurned { get; set; }
     public string? Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     // Navigation properties
     public ICollection<ExerciseSession> ExerciseSessions { get; set; } = new List<ExerciseSession>();

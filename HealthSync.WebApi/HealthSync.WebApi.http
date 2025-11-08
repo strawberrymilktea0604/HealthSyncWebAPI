@@ -4,3 +4,57 @@ GET {{HealthSync_WebApi_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+# Register a new user
+POST {{HealthSync_WebApi_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Password123!",
+  "fullName": "Test User"
+}
+
+###
+
+# Login
+POST {{HealthSync_WebApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+###
+
+# Get user profile
+GET {{HealthSync_WebApi_HostAddress}}/api/v1/users/profile
+Authorization: Bearer {{token}}
+
+###
+
+# Update user profile
+PUT {{HealthSync_WebApi_HostAddress}}/api/v1/users/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fullName": "Updated Test User",
+  "gender": "Male",
+  "dateOfBirth": "1990-01-01",
+  "heightCm": 175.5,
+  "currentWeightKg": 70.2,
+  "activityLevel": "ModeratelyActive",
+  "avatarUrl": "https://example.com/avatar.jpg"
+}
+
+###
+
+# Google OAuth Login
+POST {{HealthSync_WebApi_HostAddress}}/api/v1/auth/google
+Content-Type: application/json
+
+{
+  "token": "your-google-id-token-here"
+}

@@ -8,16 +8,27 @@ public class FoodItem
 
     // Basic info
     public string Name { get; set; } = null!;
+    public FoodCategory Category { get; set; }
+    public string? Description { get; set; }
+    public string? ImageUrl { get; set; }
 
     // Serving information (e.g. 100, and unit = "g")
     public decimal ServingSize { get; set; }
-    public string? ServingUnit { get; set; }
+    public ServingUnit ServingUnit { get; set; }
 
     // Nutrition per serving
-    public decimal CaloriesKcal { get; set; }
-    public decimal ProteinGrams { get; set; }
-    public decimal CarbsGrams { get; set; }
-    public decimal FatGrams { get; set; }
+    public decimal CaloriesPerServing { get; set; }
+    public decimal ProteinG { get; set; }
+    public decimal CarbsG { get; set; }
+    public decimal FatG { get; set; }
+    public decimal? FiberG { get; set; }
+    public decimal? SugarG { get; set; }
+
+    // Admin tracking
+    public int CreatedByAdminId { get; set; }
+    public ApplicationUser CreatedByAdmin { get; set; } = null!;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     // Navigation
     public ICollection<FoodEntry> FoodEntries { get; set; } = new List<FoodEntry>();
