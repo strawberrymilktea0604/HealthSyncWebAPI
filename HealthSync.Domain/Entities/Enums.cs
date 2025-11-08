@@ -41,7 +41,8 @@ public enum FoodCategory
     Dairy,
     Beverages,
     Snacks,
-    Other
+    Other,
+    Grains
 }
 
 public enum MealType

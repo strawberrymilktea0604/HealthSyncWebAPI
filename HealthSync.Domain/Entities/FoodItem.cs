@@ -8,7 +8,7 @@ public class FoodItem
 
     // Basic info
     public string Name { get; set; } = null!;
-    public FoodCategory Category { get; set; }
+    public string Category { get; set; }
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
 

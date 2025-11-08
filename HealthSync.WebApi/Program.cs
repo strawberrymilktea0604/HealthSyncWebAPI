@@ -55,6 +55,7 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IJwtService, Health
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IFileStorageService, HealthSync.Infrastructure.Services.FileStorageService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IFoodItemRepository, HealthSync.Infrastructure.Repositories.FoodItemRepository>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>

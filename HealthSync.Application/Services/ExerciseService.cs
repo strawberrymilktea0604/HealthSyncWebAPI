@@ -47,30 +47,28 @@ public class ExerciseService : IExerciseService
 
         var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
-        var items = exercises.Select(e => new ExerciseDto
-        {
-            Id = e.ExerciseId,
-            Name = e.Name,
-            MuscleGroup = e.MuscleGroup.ToString(),
-            Difficulty = e.DifficultyLevel.ToString(),
-            Equipment = e.Equipment?.ToString(),
-            Description = e.Description,
-            Instructions = e.Instructions,
-            ImageUrl = e.ImageUrl,
-            VideoUrl = e.VideoUrl,
-            CaloriesPerMinute = e.CaloriesPerMinute,
-            CreatedAt = e.CreatedAt,
-            UpdatedAt = e.UpdatedAt
-        });
+        var items = exercises
+            .OrderBy(e => e.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => new ExerciseDto
+            {
+                Id = e.ExerciseId,
+                Name = e.Name,
+                MuscleGroup = e.MuscleGroup.ToString(),
+                Difficulty = e.DifficultyLevel.ToString(),
+                Equipment = e.Equipment?.ToString(),
+                Description = e.Description,
+                Instructions = e.Instructions,
+                ImageUrl = e.ImageUrl,
+                VideoUrl = e.VideoUrl,
+                CaloriesPerMinute = e.CaloriesPerMinute,
+                CreatedAt = e.CreatedAt,
+                UpdatedAt = e.UpdatedAt
+            })
+            .ToList();
 
-        return new PaginatedResult<ExerciseDto>
-        {
-            Items = items,
-            CurrentPage = pageNumber,
-            PageSize = pageSize,
-            TotalItems = totalItems,
-            TotalPages = totalPages
-        };
+        return new PaginatedResult<ExerciseDto>(items, totalItems, pageNumber, pageSize);
     }
 
     public async Task<ExerciseDto?> GetExerciseByIdAsync(int id)
