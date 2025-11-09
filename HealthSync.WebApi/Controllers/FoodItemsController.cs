@@ -149,11 +149,11 @@ public class FoodItemsController : ControllerBase
             var entity = new FoodItem
             {
                 Name = request.Name,
-                Category = request.Category.ToString(),
+                Category = request.Category?.ToString() ?? string.Empty,
                 Description = request.Description,
                 ImageUrl = request.ImageUrl,
                 ServingSize = request.ServingSize,
-                ServingUnit = request.ServingUnit,
+                ServingUnit = Enum.Parse<ServingUnit>(request.ServingUnit, ignoreCase: true),
                 CaloriesPerServing = request.CaloriesPerServing,
                 ProteinG = request.ProteinG,
                 CarbsG = request.CarbsG,
@@ -201,11 +201,11 @@ public class FoodItemsController : ControllerBase
 
             // apply updates
             efEntity.Name = request.Name;
-            efEntity.Category = request.Category.ToString();
+            efEntity.Category = request.Category?.ToString() ?? string.Empty;
             efEntity.Description = request.Description;
             efEntity.ImageUrl = request.ImageUrl;
             efEntity.ServingSize = request.ServingSize;
-            efEntity.ServingUnit = request.ServingUnit;
+            efEntity.ServingUnit = Enum.Parse<ServingUnit>(request.ServingUnit, ignoreCase: true);
             efEntity.CaloriesPerServing = request.CaloriesPerServing;
             efEntity.ProteinG = request.ProteinG;
             efEntity.CarbsG = request.CarbsG;
