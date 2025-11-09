@@ -18,7 +18,6 @@ builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Vali
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Exercises.CreateExerciseRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.FoodItems.CreateFoodItemRequestValidator>();
 
-
 // Add DbContext (without Identity)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -57,7 +56,9 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IJwtService, Health
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IFileStorageService, HealthSync.Infrastructure.Services.FileStorageService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IFoodItemService, HealthSync.Application.Services.FoodItemService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IFoodItemRepository, HealthSync.Infrastructure.Repositories.FoodItemRepository>();
+builder.Services.AddHttpContextAccessor(); // Add this line
 
 // Add Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>
