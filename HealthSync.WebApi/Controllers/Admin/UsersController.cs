@@ -31,8 +31,8 @@ public class UsersController : ControllerBase
         var items = new List<AdminUserDto>();
         foreach (var u in usersPaged.Items)
         {
-            var profile = await _userProfileRepository.GetByUserIdAsync(u.Id);
-            items.Add(new AdminUserDto(u.Id, u.Email ?? "", u.Role, u.IsActive, profile?.FullName ?? "", u.CreatedAt));
+            var profile = await _userProfileRepository.GetByUserIdAsync(u.UserId);
+            items.Add(new AdminUserDto(u.UserId, u.Email ?? "", u.Role, u.IsActive, profile?.FullName ?? "", u.CreatedAt));
         }
 
         var result = new PaginatedResult<AdminUserDto>
