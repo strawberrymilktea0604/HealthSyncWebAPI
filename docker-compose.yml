@@ -27,6 +27,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=HealthSyncDb;User Id=sa;Password=YourStrong!Passw0rd123;TrustServerCertificate=True;
+      # - Authentication__Google__ClientId=your-client-id.apps.googleusercontent.com
     networks:
       - healthsync-network
 

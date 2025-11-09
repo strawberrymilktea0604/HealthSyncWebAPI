@@ -4,6 +4,8 @@ using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using System.Linq;
+using Google.Apis.Auth;
+using Microsoft.Extensions.Configuration;
 
 namespace HealthSync.Application.Features.Auth.Services;
 
@@ -15,6 +17,7 @@ public class AuthService : IAuthService
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
     private readonly IJwtService _jwtService;
+    private readonly IConfiguration _configuration;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
@@ -22,7 +25,8 @@ public class AuthService : IAuthService
         IUserRepository userRepository,
         IUserProfileRepository userProfileRepository,
         ILeaderboardRepository leaderboardRepository,
-        IJwtService jwtService)
+        IJwtService jwtService,
+        IConfiguration configuration)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -30,6 +34,97 @@ public class AuthService : IAuthService
         _userProfileRepository = userProfileRepository;
         _leaderboardRepository = leaderboardRepository;
         _jwtService = jwtService;
+        _configuration = configuration;
+    }
+
+    public async Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request)
+    {
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            var settings = new GoogleJsonWebSignature.ValidationSettings()
+            {
+                Audience = new[] { _configuration["Authentication:Google:ClientId"] ?? _configuration["Google:ClientId"] }
+            };
+
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
+        }
+        catch (Exception)
+        {
+            throw new UnauthorizedAccessException("Invalid Google token");
+        }
+
+        var email = payload.Email!;
+        var name = payload.Name ?? payload.Email!;
+        var providerId = payload.Subject;
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            user = new ApplicationUser
+            {
+                Email = email,
+                UserName = email,
+                Role = "Customer",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                OauthProvider = "Google",
+                OauthProviderId = providerId
+            };
+
+            var createResult = await _userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
+                throw new InvalidOperationException($"Failed to create user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+
+            // Create user profile
+            var userProfile = new UserProfile
+            {
+                UserId = user.Id,
+                FullName = name,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _userProfileRepository.AddAsync(userProfile);
+
+            // Create leaderboard entry
+            var leaderboard = new Leaderboard
+            {
+                UserId = user.Id,
+                TotalPoints = 0,
+                RankTitle = null
+            };
+            await _leaderboardRepository.AddAsync(leaderboard);
+        }
+        else
+        {
+            // Update oauth fields if missing
+            if (string.IsNullOrEmpty(user.OauthProvider))
+            {
+                user.OauthProvider = "Google";
+                user.OauthProviderId = providerId;
+                await _userRepository.UpdateAsync(user);
+            }
+        }
+
+        // Generate tokens
+        var accessToken = _jwtService.GenerateAccessToken(user);
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        // Save refresh token
+        var expiry = DateTime.UtcNow.AddDays(7);
+        await _userRepository.SaveRefreshTokenAsync(user.Id, refreshToken, expiry);
+
+        var userProfileResp = await _userProfileRepository.GetByUserIdAsync(user.Id);
+        var leaderboardResp = await _leaderboardRepository.GetByUserIdAsync(user.Id);
+
+        return new AuthResponse(
+            accessToken,
+            refreshToken,
+            user.Id.ToString(),
+            user.Email!,
+            user.Role,
+            userProfileResp?.FullName ?? name,
+            leaderboardResp?.TotalPoints ?? 0
+        );
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
