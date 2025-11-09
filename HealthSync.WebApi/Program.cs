@@ -16,6 +16,8 @@ builder.Services.AddControllers();
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Users.UpdateUserProfileValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Exercises.CreateExerciseRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.FoodItems.CreateFoodItemRequestValidator>();
+
 
 // Add DbContext (without Identity)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
