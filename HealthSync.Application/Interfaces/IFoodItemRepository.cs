@@ -13,4 +13,12 @@ public interface IFoodItemRepository
         int pageSize = 20);
     
     Task<FoodItemDto?> GetByIdAsync(int id);
+    Task<FoodItem?> GetEntityByIdAsync(int id);
+    
+    // Admin operations
+    Task<FoodItem> AddAsync(FoodItem foodItem);
+    Task UpdateAsync(FoodItem foodItem);
+    Task DeleteAsync(int id);
+    Task<bool> ExistsByNameAsync(string name, int? excludeId = null);
+    Task<bool> IsUsedInFoodEntriesAsync(int id);
 }

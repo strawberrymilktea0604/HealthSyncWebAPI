@@ -92,4 +92,47 @@ public class FoodItemRepository : IFoodItemRepository
 
         return foodItem;
     }
+
+    public async Task<FoodItem?> GetEntityByIdAsync(int id)
+    {
+        return await _context.FoodItems.FindAsync(id);
+    }
+
+    public async Task<FoodItem> AddAsync(FoodItem foodItem)
+    {
+        foodItem.CreatedAt = DateTime.UtcNow;
+        foodItem.UpdatedAt = DateTime.UtcNow;
+        _context.FoodItems.Add(foodItem);
+        await _context.SaveChangesAsync();
+        return foodItem;
+    }
+
+    public async Task UpdateAsync(FoodItem foodItem)
+    {
+        foodItem.UpdatedAt = DateTime.UtcNow;
+        _context.FoodItems.Update(foodItem);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        var entity = await _context.FoodItems.FindAsync(id);
+        if (entity == null) return;
+        _context.FoodItems.Remove(entity);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
+    {
+        var q = _context.FoodItems.AsQueryable();
+        q = q.Where(f => f.Name == name);
+        if (excludeId.HasValue)
+            q = q.Where(f => f.FoodItemId != excludeId.Value);
+        return await q.AnyAsync();
+    }
+
+    public async Task<bool> IsUsedInFoodEntriesAsync(int id)
+    {
+        return await _context.FoodEntries.AnyAsync(fe => fe.FoodItemId == id);
+    }
 }
