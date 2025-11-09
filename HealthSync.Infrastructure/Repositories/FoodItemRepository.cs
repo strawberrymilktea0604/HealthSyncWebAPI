@@ -19,8 +19,8 @@ public class FoodItemRepository : IFoodItemRepository
     public async Task<PaginatedResult<FoodItemDto>> SearchAsync(
         string? searchTerm,
         string? category,
-        int page,
-        int pageSize)
+        int page = 1,
+        int pageSize = 20)
     {
         var query = _context.FoodItems.AsQueryable();
 
@@ -98,37 +98,72 @@ public class FoodItemRepository : IFoodItemRepository
         return await _context.FoodItems.FindAsync(id);
     }
 
-    public async Task<FoodItem> AddAsync(FoodItem foodItem)
+    public async Task<FoodItem> CreateAsync(FoodItem foodItem)
     {
-        foodItem.CreatedAt = DateTime.UtcNow;
-        foodItem.UpdatedAt = DateTime.UtcNow;
         _context.FoodItems.Add(foodItem);
         await _context.SaveChangesAsync();
         return foodItem;
     }
 
+    public async Task<FoodItem> AddAsync(FoodItem foodItem)
+    {
+        _context.FoodItems.Add(foodItem);
+        await _context.SaveChangesAsync();
+        return foodItem;
+    }
+
+    public async Task<FoodItem?> UpdateAsync(int id, FoodItem foodItem)
+    {
+        var existingItem = await _context.FoodItems.FindAsync(id);
+        if (existingItem == null)
+        {
+            return null;
+        }
+
+        existingItem.Name = foodItem.Name;
+        existingItem.Category = foodItem.Category;
+        existingItem.Description = foodItem.Description;
+        existingItem.ImageUrl = foodItem.ImageUrl;
+        existingItem.ServingSize = foodItem.ServingSize;
+        existingItem.ServingUnit = foodItem.ServingUnit;
+        existingItem.CaloriesPerServing = foodItem.CaloriesPerServing;
+        existingItem.ProteinG = foodItem.ProteinG;
+        existingItem.CarbsG = foodItem.CarbsG;
+        existingItem.FatG = foodItem.FatG;
+        existingItem.FiberG = foodItem.FiberG;
+        existingItem.SugarG = foodItem.SugarG;
+
+        await _context.SaveChangesAsync();
+        return existingItem;
+    }
+
     public async Task UpdateAsync(FoodItem foodItem)
     {
-        foodItem.UpdatedAt = DateTime.UtcNow;
         _context.FoodItems.Update(foodItem);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var entity = await _context.FoodItems.FindAsync(id);
-        if (entity == null) return;
-        _context.FoodItems.Remove(entity);
+        var foodItem = await _context.FoodItems.FindAsync(id);
+        if (foodItem == null)
+        {
+            return false;
+        }
+
+        _context.FoodItems.Remove(foodItem);
         await _context.SaveChangesAsync();
+        return true;
     }
 
-    public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
+    public async Task<bool> ExistsByNameAsync(string name)
     {
-        var q = _context.FoodItems.AsQueryable();
-        q = q.Where(f => f.Name == name);
-        if (excludeId.HasValue)
-            q = q.Where(f => f.FoodItemId != excludeId.Value);
-        return await q.AnyAsync();
+        return await _context.FoodItems.AnyAsync(f => f.Name.ToLower() == name.ToLower());
+    }
+
+    public async Task<bool> ExistsByNameAsync(string name, int excludeId)
+    {
+        return await _context.FoodItems.AnyAsync(f => f.Name.ToLower() == name.ToLower() && f.FoodItemId != excludeId);
     }
 
     public async Task<bool> IsUsedInFoodEntriesAsync(int id)

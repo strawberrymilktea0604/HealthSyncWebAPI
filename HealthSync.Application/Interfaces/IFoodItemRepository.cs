@@ -14,11 +14,12 @@ public interface IFoodItemRepository
     
     Task<FoodItemDto?> GetByIdAsync(int id);
     Task<FoodItem?> GetEntityByIdAsync(int id);
-    
-    // Admin operations
+    Task<FoodItem> CreateAsync(FoodItem foodItem);
     Task<FoodItem> AddAsync(FoodItem foodItem);
+    Task<FoodItem?> UpdateAsync(int id, FoodItem foodItem);
     Task UpdateAsync(FoodItem foodItem);
-    Task DeleteAsync(int id);
-    Task<bool> ExistsByNameAsync(string name, int? excludeId = null);
+    Task<bool> DeleteAsync(int id);
+    Task<bool> ExistsByNameAsync(string name);
+    Task<bool> ExistsByNameAsync(string name, int excludeId);
     Task<bool> IsUsedInFoodEntriesAsync(int id);
 }
