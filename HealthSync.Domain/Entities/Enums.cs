@@ -41,7 +41,8 @@ public enum FoodCategory
     Dairy,
     Beverages,
     Snacks,
-    Other
+    Other,
+    Grains
 }
 
 public enum MealType
@@ -95,4 +96,21 @@ public enum Gender
     Male,
     Female,
     Other
+}
+
+public enum GoalStatus
+{
+    InProgress,
+    Completed,
+    Cancelled
+}
+
+public enum ServingUnit
+{
+    Gram,      // g
+    Milliliter, // ml
+    Piece,
+    Cup,
+    Tablespoon, // tbsp
+    Teaspoon    // tsp
 }

@@ -2,7 +2,6 @@ using HealthSync.Application.DTOs.Auth;
 using HealthSync.Application.Features.Auth.Interfaces;
 using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
-using Microsoft.AspNetCore.Identity;
 using System.Linq;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
@@ -11,8 +10,6 @@ namespace HealthSync.Application.Features.Auth.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IUserRepository _userRepository;
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
@@ -20,16 +17,12 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
 
     public AuthService(
-        UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager,
         IUserRepository userRepository,
         IUserProfileRepository userProfileRepository,
         ILeaderboardRepository leaderboardRepository,
         IJwtService jwtService,
         IConfiguration configuration)
     {
-        _userManager = userManager;
-        _signInManager = signInManager;
         _userRepository = userRepository;
         _userProfileRepository = userProfileRepository;
         _leaderboardRepository = leaderboardRepository;
@@ -129,53 +122,53 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        var existingUser = await _userManager.FindByEmailAsync(request.Email);
+        var existingUser = await _userRepository.GetByEmailAsync(request.Email);
         if (existingUser != null)
         {
             throw new InvalidOperationException("Email already exists");
         }
 
+        var passwordHash = HashPassword(request.Password);
+
         var user = new ApplicationUser
         {
             Email = request.Email,
-            UserName = request.Email,
-            Role = "Customer", // Default role
+            PasswordHash = passwordHash,
+            Role = "Customer",
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
 
-        var result = await _userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
-        {
-            throw new InvalidOperationException($"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-        }
+        await _userRepository.AddAsync(user);
 
-        // Create user profile
         var userProfile = new UserProfile
         {
-            UserId = user.Id,
+            UserId = user.UserId,
             FullName = request.FullName,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
         await _userProfileRepository.AddAsync(userProfile);
 
-        // Create leaderboard entry
         var leaderboard = new Leaderboard
         {
-            UserId = user.Id,
+            UserId = user.UserId,
             TotalPoints = 0,
-            RankTitle = null
+            RankTitle = null,
+            UpdatedAt = DateTime.UtcNow
         };
         await _leaderboardRepository.AddAsync(leaderboard);
 
-        // Generate tokens
         var accessToken = _jwtService.GenerateAccessToken(user);
         var refreshToken = _jwtService.GenerateRefreshToken();
+
+        var expiry = DateTime.UtcNow.AddDays(7);
+        await _userRepository.SaveRefreshTokenAsync(user.UserId, refreshToken, expiry);
 
         return new AuthResponse(
             accessToken,
             refreshToken,
-            user.Id.ToString(),
+            user.UserId.ToString(),
             user.Email!,
             user.Role,
             userProfile.FullName,
@@ -185,30 +178,33 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var user = await _userRepository.GetByEmailAsync(request.Email);
         if (user == null || !user.IsActive)
         {
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
-        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: false);
-        if (!result.Succeeded)
+        if (!VerifyPassword(request.Password, user.PasswordHash))
         {
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
-        // Generate tokens
+        user.LastLoginAt = DateTime.UtcNow;
+        await _userRepository.UpdateAsync(user);
+
         var accessToken = _jwtService.GenerateAccessToken(user);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
-        // Get user profile and leaderboard for response
-        var userProfile = await _userProfileRepository.GetByUserIdAsync(user.Id);
-        var leaderboard = await _leaderboardRepository.GetByUserIdAsync(user.Id);
+        var expiry = DateTime.UtcNow.AddDays(7);
+        await _userRepository.SaveRefreshTokenAsync(user.UserId, refreshToken, expiry);
+
+        var userProfile = await _userProfileRepository.GetByUserIdAsync(user.UserId);
+        var leaderboard = await _leaderboardRepository.GetByUserIdAsync(user.UserId);
 
         return new AuthResponse(
             accessToken,
             refreshToken,
-            user.Id.ToString(),
+            user.UserId.ToString(),
             user.Email!,
             user.Role,
             userProfile?.FullName ?? "",
@@ -224,26 +220,156 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("Invalid refresh token");
         }
 
-        // Generate new tokens
+        if (user.RefreshTokenExpiry < DateTime.UtcNow)
+        {
+            throw new UnauthorizedAccessException("Refresh token expired");
+        }
+
         var accessToken = _jwtService.GenerateAccessToken(user);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
-        // Update refresh token in database
         var expiry = DateTime.UtcNow.AddDays(7);
-        await _userRepository.SaveRefreshTokenAsync(user.Id, refreshToken, expiry);
+        await _userRepository.SaveRefreshTokenAsync(user.UserId, refreshToken, expiry);
 
-        // Get user profile and leaderboard for response
-        var userProfile = await _userProfileRepository.GetByUserIdAsync(user.Id);
-        var leaderboard = await _leaderboardRepository.GetByUserIdAsync(user.Id);
+        var userProfile = await _userProfileRepository.GetByUserIdAsync(user.UserId);
+        var leaderboard = await _leaderboardRepository.GetByUserIdAsync(user.UserId);
 
         return new AuthResponse(
             accessToken,
             refreshToken,
-            user.Id.ToString(),
+            user.UserId.ToString(),
             user.Email!,
             user.Role,
             userProfile?.FullName ?? "",
             leaderboard?.TotalPoints ?? 0
         );
+    }
+
+    public async Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request)
+    {
+        try
+        {
+            // Validate Google token
+            var payload = await GoogleJsonWebSignature.ValidateAsync(request.Token, new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") }
+            });
+
+            // Check if user exists
+            var existingUser = await _userRepository.GetByEmailAsync(payload.Email);
+            ApplicationUser user;
+
+            if (existingUser != null)
+            {
+                // Update existing user
+                user = existingUser;
+                user.LastLoginAt = DateTime.UtcNow;
+                await _userRepository.UpdateAsync(user);
+            }
+            else
+            {
+                // Create new user
+                user = new ApplicationUser
+                {
+                    Email = payload.Email,
+                    PasswordHash = null, // No password for OAuth users
+                    Role = "Customer",
+                    IsActive = true,
+                    OauthProvider = "Google",
+                    OauthProviderId = payload.Subject,
+                    CreatedAt = DateTime.UtcNow,
+                    LastLoginAt = DateTime.UtcNow
+                };
+
+                await _userRepository.AddAsync(user);
+
+                // Create user profile
+                var userProfile = new UserProfile
+                {
+                    UserId = user.UserId,
+                    FullName = payload.Name,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _userProfileRepository.AddAsync(userProfile);
+
+                // Create leaderboard
+                var leaderboard = new Leaderboard
+                {
+                    UserId = user.UserId,
+                    TotalPoints = 0,
+                    RankTitle = null,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _leaderboardRepository.AddAsync(leaderboard);
+            }
+
+            var accessToken = _jwtService.GenerateAccessToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+
+            var expiry = DateTime.UtcNow.AddDays(7);
+            await _userRepository.SaveRefreshTokenAsync(user.UserId, refreshToken, expiry);
+
+            var currentUserProfile = await _userProfileRepository.GetByUserIdAsync(user.UserId);
+            var currentLeaderboard = await _leaderboardRepository.GetByUserIdAsync(user.UserId);
+
+            return new AuthResponse(
+                accessToken,
+                refreshToken,
+                user.UserId.ToString(),
+                user.Email!,
+                user.Role,
+                currentUserProfile?.FullName ?? payload.Name,
+                currentLeaderboard?.TotalPoints ?? 0
+            );
+        }
+        catch (Exception ex)
+        {
+            throw new UnauthorizedAccessException("Invalid Google token");
+        }
+    }
+
+    private string HashPassword(string password)
+    {
+        byte[] salt = new byte[128 / 8];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(salt);
+        }
+
+        string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+            password: password,
+            salt: salt,
+            prf: KeyDerivationPrf.HMACSHA256,
+            iterationCount: 10000,
+            numBytesRequested: 256 / 8));
+
+        return $"{Convert.ToBase64String(salt)}.{hashed}";
+    }
+
+    private bool VerifyPassword(string password, string passwordHash)
+    {
+        try
+        {
+            var parts = passwordHash.Split('.');
+            if (parts.Length != 2)
+                return false;
+
+            var salt = Convert.FromBase64String(parts[0]);
+            var hash = parts[1];
+
+            string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: password,
+                salt: salt,
+                prf: KeyDerivationPrf.HMACSHA256,
+                iterationCount: 10000,
+                numBytesRequested: 256 / 8));
+
+            return hash == hashed;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

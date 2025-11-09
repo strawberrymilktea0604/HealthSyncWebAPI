@@ -8,6 +8,7 @@ public class Reply
     public string Content { get; set; } = string.Empty;
     public bool IsHidden { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
     public Post Post { get; set; } = null!;

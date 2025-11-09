@@ -2,6 +2,7 @@ using HealthSync.Application.Interfaces;
 using HealthSync.Application.DTOs;
 using HealthSync.Domain.Entities;
 using HealthSync.Infrastructure.Data;
+using HealthSync.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthSync.Infrastructure.Repositories;
@@ -17,41 +18,41 @@ public class UserRepository : IUserRepository
 
     public async Task<ApplicationUser?> GetByEmailAsync(string email)
     {
-        return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        return await _context.ApplicationUsers.FirstOrDefaultAsync(u => u.Email == email);
     }
 
     public async Task<ApplicationUser?> GetByIdAsync(int id)
     {
-        return await _context.Users.FindAsync(id);
+        return await _context.ApplicationUsers.FindAsync(id);
     }
 
     public async Task AddAsync(ApplicationUser user)
     {
-        await _context.Users.AddAsync(user);
+        await _context.ApplicationUsers.AddAsync(user);
         await _context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(ApplicationUser user)
     {
-        _context.Users.Update(user);
+        _context.ApplicationUsers.Update(user);
         await _context.SaveChangesAsync();
     }
 
     public async Task<bool> EmailExistsAsync(string email)
     {
-        return await _context.Users.AnyAsync(u => u.Email == email);
+        return await _context.ApplicationUsers.AnyAsync(u => u.Email == email);
     }
 
     public async Task<ApplicationUser?> GetByRefreshTokenAsync(string refreshToken)
     {
-        return await _context.Users.FirstOrDefaultAsync(u =>
+        return await _context.ApplicationUsers.FirstOrDefaultAsync(u =>
             u.RefreshToken == refreshToken &&
             u.RefreshTokenExpiry > DateTime.UtcNow);
     }
 
     public async Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiry)
     {
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _context.ApplicationUsers.FindAsync(userId);
         if (user != null)
         {
             user.RefreshToken = refreshToken;
@@ -60,47 +61,39 @@ public class UserRepository : IUserRepository
         }
     }
 
-    public async Task<PaginatedResult<ApplicationUser>> GetUsersAsync(int page, int pageSize, string? search, string? role)
+    public async Task<PaginatedResult<ApplicationUser>> GetUsersAsync(string? search, string? role, int page, int size)
     {
-        var query = _context.Users.AsQueryable();
+        var query = _context.ApplicationUsers
+            .Include(u => u.UserProfile)
+            .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrEmpty(search))
         {
-            var s = search.Trim();
-            query = query.Where(u => (u.Email != null && u.Email.Contains(s)) || (u.UserName != null && u.UserName.Contains(s)));
+            query = query.Where(u => u.Email.Contains(search) || 
+                                   (u.UserProfile != null && u.UserProfile.FullName.Contains(search)));
         }
 
-        if (!string.IsNullOrWhiteSpace(role))
+        if (!string.IsNullOrEmpty(role))
         {
-            var r = role.Trim();
-            query = query.Where(u => u.Role == r);
+            query = query.Where(u => u.Role == role);
         }
 
-        var total = await query.CountAsync();
-        var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+        var totalItems = await query.CountAsync();
         var items = await query
-            .OrderByDescending(u => u.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .OrderBy(u => u.UserId)
+            .Skip((page - 1) * size)
+            .Take(size)
             .ToListAsync();
+
+        var totalPages = (int)Math.Ceiling(totalItems / (double)size);
 
         return new PaginatedResult<ApplicationUser>
         {
             Items = items,
             CurrentPage = page,
-            PageSize = pageSize,
-            TotalItems = total,
+            PageSize = size,
+            TotalItems = totalItems,
             TotalPages = totalPages
         };
-    }
-
-    public async Task SetActiveStatusAsync(int userId, bool isActive)
-    {
-        var user = await _context.Users.FindAsync(userId);
-        if (user != null)
-        {
-            user.IsActive = isActive;
-            await _context.SaveChangesAsync();
-        }
     }
 }

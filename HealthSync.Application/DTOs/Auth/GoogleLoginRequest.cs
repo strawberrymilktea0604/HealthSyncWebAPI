@@ -1,3 +1,6 @@
 namespace HealthSync.Application.DTOs.Auth;
 
-public record GoogleLoginRequest(string IdToken);
+public class GoogleLoginRequest
+{
+    public string Token { get; set; } = string.Empty;
+}

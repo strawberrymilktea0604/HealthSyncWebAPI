@@ -38,7 +38,7 @@ public class ChallengeParticipationConfiguration : IEntityTypeConfiguration<Chal
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(cp => cp.User)
-            .WithMany()
+            .WithMany(u => u.ChallengeParticipations)
             .HasForeignKey(cp => cp.UserId)
             .OnDelete(DeleteBehavior.NoAction);
 

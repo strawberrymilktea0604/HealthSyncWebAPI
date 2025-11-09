@@ -13,4 +13,5 @@ public interface IUserRepository
     Task SaveRefreshTokenAsync(int userId, string refreshToken, DateTime expiry);
     Task<PaginatedResult<ApplicationUser>> GetUsersAsync(int page, int pageSize, string? search, string? role);
     Task SetActiveStatusAsync(int userId, bool isActive);
+    Task<PaginatedResult<ApplicationUser>> GetUsersAsync(string? search, string? role, int page, int size);
 }

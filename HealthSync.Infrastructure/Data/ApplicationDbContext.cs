@@ -1,11 +1,9 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 using HealthSync.Domain.Entities;
 
 namespace HealthSync.Infrastructure.Data;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>
+public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -13,6 +11,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     }
 
     // DbSets for domain entities
+    public DbSet<ApplicationUser> ApplicationUsers { get; set; }
     public DbSet<UserProfile> UserProfiles { get; set; }
     public DbSet<Leaderboard> Leaderboards { get; set; }
     public DbSet<Goal> Goals { get; set; }

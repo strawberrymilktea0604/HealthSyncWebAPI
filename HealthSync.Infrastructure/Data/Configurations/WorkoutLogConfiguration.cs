@@ -27,7 +27,7 @@ public class WorkoutLogConfiguration : IEntityTypeConfiguration<WorkoutLog>
 
         // Foreign key relationship
         builder.HasOne(w => w.User)
-            .WithMany()
+            .WithMany(u => u.WorkoutLogs)
             .HasForeignKey(w => w.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 

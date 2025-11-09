@@ -33,7 +33,7 @@ public class NutritionLogConfiguration : IEntityTypeConfiguration<NutritionLog>
 
         // Foreign key relationship
         builder.HasOne(n => n.User)
-            .WithMany()
+            .WithMany(u => u.NutritionLogs)
             .HasForeignKey(n => n.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
