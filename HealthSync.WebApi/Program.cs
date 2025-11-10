@@ -14,9 +14,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Add FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Users.UpdateUserProfileValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Exercises.CreateExerciseRequestValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.FoodItems.CreateFoodItemRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.DTOs.Validators.ForumCategories.CreateForumCategoryRequestValidator>();
 
 // Add DbContext (without Identity)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
