@@ -1,6 +1,6 @@
 using System;
 
-namespace HealthSync.Application.DTOs.Forum;
+namespace HealthSync.Application.DTOs.ForumCategories;
 
 public class ForumCategoryDto
 {
