@@ -60,6 +60,7 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IFileStorageService, HealthSync.Infrastructure.Services.FileStorageService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IFoodItemService, HealthSync.Application.Services.FoodItemService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IFoodItemRepository, HealthSync.Infrastructure.Repositories.FoodItemRepository>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumCategoryService, HealthSync.Application.Services.ForumCategoryService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumCategoryRepository, HealthSync.Infrastructure.Repositories.ForumCategoryRepository>();
 builder.Services.AddHttpContextAccessor(); // Add this line
 
