@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using HealthSync.Infrastructure.Data;
 using HealthSync.Domain.Entities;
 using HealthSync.Application.DTOs.Goals;
+using HealthSync.Application.DTOs;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthSync.WebApi.Controllers
@@ -144,6 +147,63 @@ namespace HealthSync.WebApi.Controllers
                     CreatedAt = pr.CreatedAt
                 }).ToList()
             };
+        }
+
+        /// <summary>
+        /// Gets the list of goals for the currently authenticated user
+        /// </summary>
+        /// <returns>List of goals</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(PaginatedResult<GoalResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetMyGoals([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "User ID not found in token" });
+            }
+
+            if (page <= 0) page = 1;
+            if (pageSize <= 0 || pageSize > 200) pageSize = 20;
+
+            var query = _db.Goals
+                .Where(g => g.UserId == userId)
+                .Include(g => g.ProgressRecords)
+                .OrderByDescending(g => g.CreatedAt)
+                .AsQueryable();
+
+            var total = await query.CountAsync();
+            var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            var mapped = items.Select(g => new GoalResponse
+            {
+                Id = g.GoalId,
+                UserId = g.UserId,
+                GoalType = g.GoalType,
+                TargetValue = g.TargetValue,
+                Unit = g.Unit,
+                StartDate = g.StartDate,
+                EndDate = g.EndDate,
+                Status = g.Status,
+                CreatedAt = g.CreatedAt,
+                ProgressRecords = g.ProgressRecords.Select(pr => new ProgressRecordDto
+                {
+                    Id = pr.ProgressRecordId,
+                    GoalId = pr.GoalId,
+                    RecordDate = pr.RecordDate,
+                    RecordedValue = pr.RecordedValue,
+                    WeightKg = pr.WeightKg,
+                    WaistCm = pr.WaistCm,
+                    ChestCm = pr.ChestCm,
+                    HipCm = pr.HipCm,
+                    Notes = pr.Notes,
+                    CreatedAt = pr.CreatedAt
+                }).ToList()
+            }).ToList();
+
+            var paged = new PaginatedResult<GoalResponse>(mapped, total, page, pageSize);
+            return Ok(new { success = true, data = paged });
         }
 
         [HttpPost("{id}/progress")]
