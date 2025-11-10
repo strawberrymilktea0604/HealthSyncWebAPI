@@ -11,12 +11,12 @@ namespace HealthSync.WebApi.Controllers;
 [Route("api/food-items")]
 public class FoodItemsController : ControllerBase
 {
-    private readonly IFoodItemRepository _foodItemRepository;
+    private readonly IFoodItemService _foodItemService;
     private readonly ILogger<FoodItemsController> _logger;
 
-    public FoodItemsController(IFoodItemRepository foodItemRepository, ILogger<FoodItemsController> logger)
+    public FoodItemsController(IFoodItemService foodItemService, ILogger<FoodItemsController> logger)
     {
-        _foodItemRepository = foodItemRepository;
+        _foodItemService = foodItemService;
         _logger = logger;
     }
 
@@ -69,7 +69,7 @@ public class FoodItemsController : ControllerBase
                 }
             }
 
-            var result = await _foodItemRepository.SearchAsync(q, category, page, size);
+            var result = await _foodItemService.SearchAsync(q, category, page, size);
 
             return Ok(new
             {
@@ -97,7 +97,7 @@ public class FoodItemsController : ControllerBase
     {
         try
         {
-            var foodItem = await _foodItemRepository.GetByIdAsync(id);
+            var foodItem = await _foodItemService.GetByIdAsync(id);
             
             if (foodItem == null)
             {
@@ -138,32 +138,7 @@ public class FoodItemsController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Check duplicate name
-            if (await _foodItemRepository.ExistsByNameAsync(request.Name))
-            {
-                return BadRequest(new { success = false, message = "A food item with the same name already exists" });
-            }
-
-            var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-
-            var entity = new FoodItem
-            {
-                Name = request.Name,
-                Category = request.Category?.ToString() ?? string.Empty,
-                Description = request.Description,
-                ImageUrl = request.ImageUrl,
-                ServingSize = request.ServingSize,
-                ServingUnit = Enum.Parse<ServingUnit>(request.ServingUnit, ignoreCase: true),
-                CaloriesPerServing = request.CaloriesPerServing,
-                ProteinG = request.ProteinG,
-                CarbsG = request.CarbsG,
-                FatG = request.FatG,
-                FiberG = request.FiberG,
-                SugarG = request.SugarG,
-                CreatedByAdminId = adminId
-            };
-
-            var created = await _foodItemRepository.AddAsync(entity);
+            var created = await _foodItemService.CreateAsync(request);
 
             return CreatedAtAction(nameof(GetById), new { id = created.FoodItemId }, new { success = true, data = created, message = "Food item created" });
         }
@@ -186,36 +161,13 @@ public class FoodItemsController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var existingDto = await _foodItemRepository.GetByIdAsync(id);
-            if (existingDto == null)
-                return NotFound(new { success = false, message = "Food item not found" });
+            var updated = await _foodItemService.UpdateAsync(id, request);
 
-            if (await _foodItemRepository.ExistsByNameAsync(request.Name, id))
-            {
-                return BadRequest(new { success = false, message = "Another food item with the same name already exists" });
-            }
-
-            var efEntity = await _foodItemRepository.GetEntityByIdAsync(id);
-            if (efEntity == null)
-                return NotFound(new { success = false, message = "Food item not found" });
-
-            // apply updates
-            efEntity.Name = request.Name;
-            efEntity.Category = request.Category?.ToString() ?? string.Empty;
-            efEntity.Description = request.Description;
-            efEntity.ImageUrl = request.ImageUrl;
-            efEntity.ServingSize = request.ServingSize;
-            efEntity.ServingUnit = Enum.Parse<ServingUnit>(request.ServingUnit, ignoreCase: true);
-            efEntity.CaloriesPerServing = request.CaloriesPerServing;
-            efEntity.ProteinG = request.ProteinG;
-            efEntity.CarbsG = request.CarbsG;
-            efEntity.FatG = request.FatG;
-            efEntity.FiberG = request.FiberG;
-            efEntity.SugarG = request.SugarG;
-
-            await _foodItemRepository.UpdateAsync(efEntity);
-
-            return Ok(new { success = true, message = "Food item updated" });
+            return Ok(new { success = true, data = updated, message = "Food item updated" });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { success = false, message = "Food item not found" });
         }
         catch (Exception ex)
         {
@@ -233,16 +185,12 @@ public class FoodItemsController : ControllerBase
     {
         try
         {
-            var existing = await _foodItemRepository.GetByIdAsync(id);
-            if (existing == null)
-                return NotFound(new { success = false, message = "Food item not found" });
-
-            if (await _foodItemRepository.IsUsedInFoodEntriesAsync(id))
+            var result = await _foodItemService.DeleteAsync(id);
+            if (!result)
             {
-                return Conflict(new { success = false, message = "Food item is used in food entries and cannot be deleted" });
+                return NotFound(new { success = false, message = "Food item not found or cannot be deleted" });
             }
 
-            await _foodItemRepository.DeleteAsync(id);
             return NoContent();
         }
         catch (Exception ex)

@@ -6,16 +6,18 @@ using HealthSync.Application.DTOs.FoodItems;
 namespace HealthSync.WebApi.Controllers.Admin;
 
 [ApiController]
-[Route("api/admin/[controller]")]
+[Route("api/v1/admin/[controller]")]
 [Authorize(Roles = "Admin")]
 public class FoodController : ControllerBase
 {
     private readonly IFoodItemService _foodItemService;
+    private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<FoodController> _logger;
 
-    public FoodController(IFoodItemService foodItemService, ILogger<FoodController> logger)
+    public FoodController(IFoodItemService foodItemService, IFileStorageService fileStorageService, ILogger<FoodController> logger)
     {
         _foodItemService = foodItemService;
+        _fileStorageService = fileStorageService;
         _logger = logger;
     }
 
@@ -134,6 +136,74 @@ public class FoodController : ControllerBase
         {
             _logger.LogError(ex, "Error updating food item {FoodItemId}", id);
             return StatusCode(500, "An error occurred while updating the food item");
+        }
+    }
+
+    /// <summary>
+    /// Upload image for a food item
+    /// </summary>
+    [HttpPost("{id}/image")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UploadImage(int id, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("No file uploaded");
+        }
+
+        // Validate file type
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg" };
+        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+        {
+            return BadRequest("Invalid file type. Only JPEG and PNG are allowed.");
+        }
+
+        // Validate file size (5MB max)
+        if (file.Length > 5 * 1024 * 1024)
+        {
+            return BadRequest("File size exceeds 5MB limit.");
+        }
+
+        try
+        {
+            // Check if food item exists
+            var foodItem = await _foodItemService.GetByIdAsync(id);
+            if (foodItem == null)
+            {
+                return NotFound(new { message = $"Food item with ID {id} not found" });
+            }
+
+            // Upload to MinIO
+            var imageUrl = await _fileStorageService.UploadFileAsync(file, "foods", id.ToString());
+
+            // Update food item with image URL
+            var updateRequest = new UpdateFoodItemRequest
+            {
+                Name = foodItem.Name,
+                Category = foodItem.Category,
+                ServingSize = foodItem.ServingSize,
+                ServingUnit = foodItem.ServingUnit,
+                CaloriesPerServing = foodItem.CaloriesPerServing,
+                ProteinG = foodItem.ProteinG,
+                CarbsG = foodItem.CarbsG,
+                FatG = foodItem.FatG,
+                FiberG = foodItem.FiberG,
+                SugarG = foodItem.SugarG,
+                Description = foodItem.Description,
+                ImageUrl = imageUrl
+            };
+
+            var updated = await _foodItemService.UpdateAsync(id, updateRequest);
+            return Ok(new { imageUrl = imageUrl });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading image for food item {FoodItemId}", id);
+            return StatusCode(500, "An error occurred while uploading the image");
         }
     }
 

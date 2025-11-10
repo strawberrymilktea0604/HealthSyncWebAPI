@@ -11,5 +11,4 @@ public class ForumCategory
 
     // Navigation properties
     public ICollection<Post> Posts { get; set; } = new List<Post>();
-    public object? ForumCategoryId { get; set; }
 }

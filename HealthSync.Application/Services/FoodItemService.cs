@@ -52,7 +52,7 @@ public class FoodItemService : IFoodItemService
         var foodItem = new FoodItem
         {
             Name = request.Name,
-            Category = request.Category?.ToString(),
+            Category = request.Category ?? "Other",
             Description = request.Description,
             ImageUrl = request.ImageUrl,
             ServingSize = request.ServingSize,
@@ -91,7 +91,7 @@ public class FoodItemService : IFoodItemService
         var foodItem = new FoodItem
         {
             Name = request.Name,
-            Category = request.Category?.ToString(),
+            Category = request.Category ?? "Other",
             Description = request.Description,
             ImageUrl = request.ImageUrl,
             ServingSize = request.ServingSize,

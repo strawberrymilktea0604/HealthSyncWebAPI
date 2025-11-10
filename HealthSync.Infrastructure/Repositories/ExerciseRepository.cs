@@ -34,7 +34,7 @@ public class ExerciseRepository : IExerciseRepository
         if (!string.IsNullOrWhiteSpace(difficulty))
             query = query.Where(e => e.DifficultyLevel.ToString().ToLower() == difficulty.ToLower());
         if (!string.IsNullOrWhiteSpace(equipment))
-            query = query.Where(e => e.Equipment.ToString().ToLower() == equipment.ToLower());
+            query = query.Where(e => e.Equipment.HasValue && e.Equipment.Value.ToString().ToLower() == equipment.ToLower());
 
         // Get total count
         var totalItems = await query.CountAsync();

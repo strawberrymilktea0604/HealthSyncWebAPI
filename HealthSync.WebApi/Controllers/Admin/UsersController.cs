@@ -47,16 +47,14 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPut("{id}/lock")]
-    public async Task<IActionResult> LockUser([FromRoute] int id, [FromBody] LockUserRequest request)
+    [HttpPut("{id}/status")]
+    public async Task<IActionResult> SetUserStatus([FromRoute] int id, [FromBody] SetActiveRequest request)
     {
         var user = await _userRepository.GetByIdAsync(id);
         if (user == null)
             return NotFound(new { message = "User not found" });
 
-        // If IsLocked == true => set IsActive = false
-        var isActive = !request.IsLocked;
-        await _userRepository.SetActiveStatusAsync(id, isActive);
+        await _userRepository.SetActiveStatusAsync(id, request.IsActive);
 
         return NoContent();
     }

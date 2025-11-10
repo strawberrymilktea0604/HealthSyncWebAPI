@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using HealthSync.Application.DTOs.ForumCategories;
 using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
@@ -6,21 +7,22 @@ using HealthSync.Domain.Entities;
 namespace HealthSync.WebApi.Controllers;
 
 [ApiController]
-[Route("api/forum-categories")]
+[Route("api/admin/forum-categories")]
 public class ForumCategoriesController : ControllerBase
 {
-    private readonly IForumCategoryRepository _forumCategoryRepository;
+    private readonly IForumCategoryService _forumCategoryService;
     private readonly ILogger<ForumCategoriesController> _logger;
 
     public ForumCategoriesController(
-        IForumCategoryRepository forumCategoryRepository,
+        IForumCategoryService forumCategoryService,
         ILogger<ForumCategoriesController> logger)
     {
-        _forumCategoryRepository = forumCategoryRepository;
+        _forumCategoryService = forumCategoryService;
         _logger = logger;
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateForumCategoryRequest request)
     {
         try
@@ -28,30 +30,17 @@ public class ForumCategoriesController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Check duplicate name
-            if (await _forumCategoryRepository.ExistsByNameAsync(request.Name))
-            {
-                return BadRequest(new { success = false, message = "A category with this name already exists" });
-            }
-
-#pragma warning disable CS8601 // Possible null reference assignment.
-            var entity = new ForumCategory
-            {
-                Name = request.Name,
-                Description = request.Description,
-                DisplayOrder = request.DisplayOrder ?? 0,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-#pragma warning restore CS8601 // Possible null reference assignment.
-
-            var created = await _forumCategoryRepository.AddAsync(entity);
+            var result = await _forumCategoryService.CreateAsync(request);
 
             return CreatedAtAction(
                 nameof(GetById), 
-                new { id = created.CategoryId }, 
-                new { success = true, data = created, message = "Forum category created successfully" }
+                new { id = result.Id }, 
+                new { success = true, data = result, message = "Forum category created successfully" }
             );
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -61,11 +50,12 @@ public class ForumCategoriesController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAll()
     {
         try
         {
-            var categories = await _forumCategoryRepository.GetAllAsync();
+            var categories = await _forumCategoryService.GetAllAsync();
             return Ok(new { success = true, data = categories });
         }
         catch (Exception ex)
@@ -76,11 +66,12 @@ public class ForumCategoriesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetById(int id)
     {
         try
         {
-            var category = await _forumCategoryRepository.GetByIdAsync(id);
+            var category = await _forumCategoryService.GetByIdAsync(id);
             if (category == null)
             {
                 return NotFound(new { success = false, message = "Forum category not found" });
@@ -96,6 +87,7 @@ public class ForumCategoriesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateForumCategoryRequest request)
     {
         try
@@ -103,28 +95,17 @@ public class ForumCategoriesController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var existingCategory = await _forumCategoryRepository.GetByIdAsync(id);
-            if (existingCategory == null)
-            {
-                return NotFound(new { success = false, message = "Forum category not found" });
-            }
+            var result = await _forumCategoryService.UpdateAsync(id, request);
 
-            // Check duplicate name but exclude current category
-            if (await _forumCategoryRepository.ExistsByNameAsync(request.Name, id))
-            {
-                return BadRequest(new { success = false, message = "Another category with this name already exists" });
-            }
-
-            existingCategory.Name = request.Name;
-#pragma warning disable CS8601 // Possible null reference assignment.
-            existingCategory.Description = request.Description;
-#pragma warning restore CS8601 // Possible null reference assignment.
-            existingCategory.DisplayOrder = request.DisplayOrder ?? existingCategory.DisplayOrder;
-            existingCategory.UpdatedAt = DateTime.UtcNow;
-
-            await _forumCategoryRepository.UpdateAsync(existingCategory);
-
-            return Ok(new { success = true, data = existingCategory, message = "Forum category updated successfully" });
+            return Ok(new { success = true, data = result, message = "Forum category updated successfully" });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { success = false, message = "Forum category not found" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -134,24 +115,22 @@ public class ForumCategoriesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         try
         {
-            var category = await _forumCategoryRepository.GetByIdAsync(id);
-            if (category == null)
+            var deleted = await _forumCategoryService.DeleteAsync(id);
+            if (!deleted)
             {
                 return NotFound(new { success = false, message = "Forum category not found" });
             }
 
-            // Check if category has related posts
-            if (await _forumCategoryRepository.HasRelatedPostsAsync(id))
-            {
-                return Conflict(new { success = false, message = "Cannot delete category with existing posts" });
-            }
-
-            await _forumCategoryRepository.DeleteAsync(id);
             return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { success = false, message = ex.Message });
         }
         catch (Exception ex)
         {

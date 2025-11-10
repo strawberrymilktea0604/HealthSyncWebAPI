@@ -1,7 +1,7 @@
 using FluentValidation;
-using HealthSync.Application.DTOs.Forum;
+using HealthSync.Application.DTOs.ForumCategories;
 
-namespace HealthSync.Application.DTOs.Validators.ForumCategories;
+namespace HealthSync.Application.Validators.ForumCategories;
 
 public class CreateForumCategoryRequestValidator : AbstractValidator<CreateForumCategoryRequest>
 {
