@@ -6,7 +6,7 @@ namespace HealthSync.Application.DTOs.Goals;
 
 public class GoalDto
 {
-    public int Id { get; set; }
+    public int GoalId { get; set; }
     public int UserId { get; set; }
     public GoalType GoalType { get; set; }
     public decimal TargetValue { get; set; }
@@ -15,5 +15,7 @@ public class GoalDto
     public DateTime EndDate { get; set; }
     public GoalStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
     public List<ProgressRecordDto> ProgressRecords { get; set; } = new();
 }

@@ -8,58 +8,31 @@ using System.Security.Claims;
 namespace HealthSync.WebApi.Controllers;
 
 [ApiController]
-[Route("api/food-items")]
-public class FoodItemsController : ControllerBase
+[Route("api/v1/foods")]
+public class FoodsController : ControllerBase
 {
     private readonly IFoodItemService _foodItemService;
-    private readonly ILogger<FoodItemsController> _logger;
+    private readonly ILogger<FoodsController> _logger;
 
-    public FoodItemsController(IFoodItemService foodItemService, ILogger<FoodItemsController> logger)
+    public FoodsController(IFoodItemService foodItemService, ILogger<FoodsController> logger)
     {
         _foodItemService = foodItemService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Search food items with optional filters (public endpoint for customers)
+    /// Search food items (Customer access)
     /// </summary>
-    /// <param name="q">Search term to filter by name or description</param>
-    /// <param name="category">Optional food category filter</param>
-    /// <param name="page">Page number (starts at 1)</param>
-    /// <param name="size">Page size (1-100)</param>
-    [HttpGet("search")]
-    public async Task<IActionResult> Search(
-        [FromQuery] string? q,
-        [FromQuery] string? category,
-        [FromQuery] int page = 1,
-        [FromQuery] int size = 20)
+    [HttpGet]
+    public async Task<IActionResult> Search([FromQuery] string? search, [FromQuery] string? category)
     {
         try
         {
-            // Validate pagination parameters
-            if (page < 1)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Page number must be greater than or equal to 1"
-                });
-            }
-
-            if (size < 1 || size > 100)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Page size must be between 1 and 100"
-                });
-            }
-
             // Validate and sanitize search term
-            if (!string.IsNullOrWhiteSpace(q))
+            if (!string.IsNullOrWhiteSpace(search))
             {
-                q = q.Trim();
-                if (q.Length > 200)
+                search = search.Trim();
+                if (search.Length > 200)
                 {
                     return BadRequest(new
                     {
@@ -69,7 +42,7 @@ public class FoodItemsController : ControllerBase
                 }
             }
 
-            var result = await _foodItemService.SearchAsync(q, category, page, size);
+            var result = await _foodItemService.SearchAsync(search, category, 1, 100); // Default pagination
 
             return Ok(new
             {

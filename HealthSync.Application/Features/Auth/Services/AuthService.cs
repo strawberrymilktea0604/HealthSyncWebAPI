@@ -167,7 +167,7 @@ public class AuthService : IAuthService
             // Validate Google token
             var payload = await GoogleJsonWebSignature.ValidateAsync(request.Token, new GoogleJsonWebSignature.ValidationSettings
             {
-                Audience = new[] { Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") }
+                Audience = new[] { _configuration["GOOGLE_CLIENT_ID"] }
             });
 
             // Check if user exists

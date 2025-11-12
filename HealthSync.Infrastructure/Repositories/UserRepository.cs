@@ -104,4 +104,24 @@ public class UserRepository : IUserRepository
         user.IsActive = isActive;
         await _context.SaveChangesAsync();
     }
+
+    public async Task<int> GetTotalWorkoutsAsync(int userId)
+    {
+        return await _context.WorkoutLogs.CountAsync(w => w.UserId == userId);
+    }
+
+    public async Task<int> GetTotalNutritionLogsAsync(int userId)
+    {
+        return await _context.NutritionLogs.CountAsync(n => n.UserId == userId);
+    }
+
+    public async Task<int> GetTotalGoalsAsync(int userId)
+    {
+        return await _context.Goals.CountAsync(g => g.UserId == userId);
+    }
+
+    public async Task<int> GetTotalChallengesAsync(int userId)
+    {
+        return await _context.ChallengeParticipations.CountAsync(cp => cp.UserId == userId);
+    }
 }
