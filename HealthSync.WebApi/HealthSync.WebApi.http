@@ -58,3 +58,37 @@ Content-Type: application/json
 {
   "token": "your-google-id-token-here"
 }
+
+###
+
+# Register Admin User
+POST {{HealthSync_WebApi_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@healthsync.com",
+  "password": "Admin123!",
+  "fullName": "Admin User"
+}
+
+###
+
+# Login as Admin
+POST {{HealthSync_WebApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@healthsync.com",
+  "password": "Admin123!"
+}
+
+###
+
+# Update User Status (Admin only)
+PUT {{HealthSync_WebApi_HostAddress}}/api/v1/admin/users/1/status
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "isActive": false
+}

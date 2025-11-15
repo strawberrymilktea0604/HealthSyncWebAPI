@@ -3,9 +3,11 @@ using HealthSync.Application.Features.Auth.Interfaces;
 using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
 using System.Linq;
+using System;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Google.Apis.Auth;
+using Microsoft.Extensions.Configuration;
 
 namespace HealthSync.Application.Features.Auth.Services;
 
@@ -15,18 +17,23 @@ public class AuthService : IAuthService
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
     private readonly IJwtService _jwtService;
+    private readonly IConfiguration _configuration;
 
     public AuthService(
         IUserRepository userRepository,
         IUserProfileRepository userProfileRepository,
         ILeaderboardRepository leaderboardRepository,
-        IJwtService jwtService)
+        IJwtService jwtService,
+        IConfiguration configuration)
     {
         _userRepository = userRepository;
         _userProfileRepository = userProfileRepository;
         _leaderboardRepository = leaderboardRepository;
         _jwtService = jwtService;
+        _configuration = configuration;
     }
+
+    
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
@@ -160,7 +167,7 @@ public class AuthService : IAuthService
             // Validate Google token
             var payload = await GoogleJsonWebSignature.ValidateAsync(request.Token, new GoogleJsonWebSignature.ValidationSettings
             {
-                Audience = new[] { Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") }
+                Audience = new[] { _configuration["GOOGLE_CLIENT_ID"] }
             });
 
             // Check if user exists
@@ -180,7 +187,7 @@ public class AuthService : IAuthService
                 user = new ApplicationUser
                 {
                     Email = payload.Email,
-                    PasswordHash = null, // No password for OAuth users
+                    PasswordHash = string.Empty, // No password for OAuth users
                     Role = "Customer",
                     IsActive = true,
                     OauthProvider = "Google",
@@ -231,7 +238,7 @@ public class AuthService : IAuthService
                 currentLeaderboard?.TotalPoints ?? 0
             );
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             throw new UnauthorizedAccessException("Invalid Google token");
         }

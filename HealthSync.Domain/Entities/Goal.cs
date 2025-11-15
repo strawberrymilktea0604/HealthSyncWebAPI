@@ -18,6 +18,8 @@ public class Goal
     public DateTime EndDate { get; set; }
     public GoalStatus Status { get; set; } = GoalStatus.InProgress; // InProgress, Completed, Cancelled
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
 
     // Navigation properties
     public ICollection<ProgressRecord> ProgressRecords { get; set; } = new List<ProgressRecord>();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HealthSync.Domain.Entities;
 
 namespace HealthSync.Application.DTOs.Goals;
@@ -10,10 +11,9 @@ public class GoalResponse
     public GoalType GoalType { get; set; }
     public decimal TargetValue { get; set; }
     public string Unit { get; set; } = null!;
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
     public GoalStatus Status { get; set; }
-    public string? Description { get; set; }
     public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
+    public List<ProgressRecordDto> ProgressRecords { get; set; } = new();
 }

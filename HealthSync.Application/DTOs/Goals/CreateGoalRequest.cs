@@ -17,6 +17,9 @@ public class CreateGoalRequest
     [RegularExpression("kg|cm|%", ErrorMessage = "Unit must be one of: kg, cm, %")]
     public string Unit { get; set; } = null!;
 
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
+    [Required(ErrorMessage = "Start date is required")]
+    public DateTime StartDate { get; set; }
+
+    [Required(ErrorMessage = "End date is required")]
+    public DateTime EndDate { get; set; }
 }

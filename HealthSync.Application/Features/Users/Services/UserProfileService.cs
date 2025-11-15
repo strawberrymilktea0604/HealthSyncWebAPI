@@ -55,10 +55,10 @@ public class UserProfileService : IUserProfileService
         );
     }
 
-    public async Task<UserProfileDto> CreateUserProfileAsync(CreateUserProfileRequest request, int userId)
+    public Task<UserProfileDto> CreateUserProfileAsync(CreateUserProfileRequest request, int userId)
     {
         // Implementation for creating profile
-        throw new NotImplementedException();
+        return Task.FromException<UserProfileDto>(new NotImplementedException());
     }
 
     public async Task<UserProfileDto> UpdateUserProfileAsync(UpdateUserProfileRequest request, int userId)
@@ -104,21 +104,21 @@ public class UserProfileService : IUserProfileService
         );
     }
 
-    public async Task DeleteUserProfileAsync(int userId)
+    public Task DeleteUserProfileAsync(int userId)
     {
         // Implementation for deleting profile
-        throw new NotImplementedException();
+        return Task.FromException(new NotImplementedException());
     }
 
-    public async Task<string> UpdateAvatarAsync(int userId, IFormFile file)
+    public Task<string> UpdateAvatarAsync(int userId, IFormFile file)
     {
         // Implementation for updating avatar
-        throw new NotImplementedException();
+        return Task.FromException<string>(new NotImplementedException());
     }
 
-    public async Task<UserStatsDto> GetUserStatsAsync(int userId)
+    public Task<UserStatsDto> GetUserStatsAsync(int userId)
     {
         // Implementation for getting user stats
-        throw new NotImplementedException();
+        return Task.FromException<UserStatsDto>(new NotImplementedException());
     }
 }

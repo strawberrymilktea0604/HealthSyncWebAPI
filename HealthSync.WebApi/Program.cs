@@ -5,8 +5,14 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using HealthSync.Domain.Entities;
 using HealthSync.Infrastructure.Data;
+using HealthSync.Application.Interfaces;
+using HealthSync.Application.Services;
+using HealthSync.Infrastructure.Repositories;
 using FluentValidation.AspNetCore;
 using FluentValidation;
+
+// Load environment variables from .env file
+DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +20,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Add FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Users.UpdateUserProfileValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Exercises.CreateExerciseRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.FoodItems.CreateFoodItemRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.ForumCategories.CreateForumCategoryRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Goals.CreateGoalValidator>();
 
 // Add DbContext (without Identity)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -52,11 +62,10 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IUserRepository, He
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IUserProfileRepository, HealthSync.Infrastructure.Repositories.UserProfileRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardRepository, HealthSync.Infrastructure.Repositories.LeaderboardRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IJwtService, HealthSync.Infrastructure.Services.JwtService>();
-    builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
-    builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
-    builder.Services.AddScoped<HealthSync.Application.Interfaces.IFileStorageService, HealthSync.Infrastructure.Services.FileStorageService>();
-    builder.Services.AddScoped<HealthSync.Application.Interfaces.IFoodItemRepository, HealthSync.Infrastructure.Repositories.FoodItemRepository>();
-    builder.Services.AddScoped<HealthSync.Application.Interfaces.IWorkoutLogService, HealthSync.Infrastructure.Services.WorkoutLogService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IFileStorageService, HealthSync.Infrastructure.Services.FileStorageService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IFoodItemRepository, HealthSync.Infrastructure.Repositories.FoodItemRepository>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>

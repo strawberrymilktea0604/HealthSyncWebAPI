@@ -7,7 +7,7 @@ namespace HealthSync.Infrastructure.Services;
 
 public class FileStorageService : IFileStorageService
 {
-    public async Task<string> UploadFileAsync(IFormFile file, string bucketName, string? fileName = null)
+    public Task<string> UploadFileAsync(IFormFile file, string bucketName, string? fileName = null)
     {
         // TODO: Implement MinIO integration
         // For now, return a placeholder URL
@@ -20,20 +20,20 @@ public class FileStorageService : IFileStorageService
         // 2. Upload to MinIO
         // 3. Return the actual URL
 
-        return fileUrl;
+        return Task.FromResult(fileUrl);
     }
 
-    public async Task DeleteFileAsync(string fileUrl)
+    public Task DeleteFileAsync(string fileUrl)
     {
         // TODO: Implement MinIO file deletion
-        // For now, just return true
-        return;
+        // For now, just return
+        return Task.CompletedTask;
     }
 
-    public async Task<bool> FileExistsAsync(string fileUrl)
+    public Task<bool> FileExistsAsync(string fileUrl)
     {
         // TODO: Implement MinIO file existence check
         // For now, return true
-        return true;
+        return Task.FromResult(true);
     }
 }
