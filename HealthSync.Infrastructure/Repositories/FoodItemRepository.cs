@@ -170,4 +170,11 @@ public class FoodItemRepository : IFoodItemRepository
     {
         return await _context.FoodEntries.AnyAsync(fe => fe.FoodItemId == id);
     }
+
+    public async Task<List<FoodItem>> GetByIdsAsync(List<int> foodItemIds)
+    {
+        return await _context.FoodItems
+            .Where(f => foodItemIds.Contains(f.FoodItemId))
+            .ToListAsync();
+    }
 }

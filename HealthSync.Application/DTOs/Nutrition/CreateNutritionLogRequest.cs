@@ -15,4 +15,9 @@ public class CreateNutritionLogRequest
     /// Ghi chú chung cho ngày hôm nay (tùy chọn)
     /// </summary>
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// Danh sách các FoodEntry (món ăn) để thêm vào NutritionLog
+    /// </summary>
+    public List<CreateFoodEntryRequest> FoodEntries { get; set; } = new List<CreateFoodEntryRequest>();
 }
