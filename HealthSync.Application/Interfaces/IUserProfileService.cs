@@ -10,6 +10,6 @@ public interface IUserProfileService
     Task<UserProfileDto> CreateUserProfileAsync(CreateUserProfileRequest request, int userId);
     Task<UserProfileDto> UpdateUserProfileAsync(UpdateUserProfileRequest request, int userId);
     Task DeleteUserProfileAsync(int userId);
-    Task<string> UpdateAvatarAsync(int userId, IFormFile file);
+    Task UpdateAvatarAsync(int userId, string avatarUrl);
     Task<UserStatsDto> GetUserStatsAsync(int userId);
 }

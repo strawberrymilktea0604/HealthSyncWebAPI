@@ -57,20 +57,21 @@ public class MinIOService : IFileStorageService
         }
     }
 
-    public async Task<string> UploadFileAsync(IFormFile file, string bucketName, string? fileName = null)
+    public async Task<string> UploadAsync(IFormFile file, string folder)
     {
         if (file == null || file.Length == 0)
             throw new ArgumentException("File is required");
 
-        // Generate unique filename if not provided
-        fileName ??= $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        // Generate unique filename with timestamp
+        var fileName = $"{Guid.NewGuid()}_{DateTime.UtcNow:yyyyMMddHHmmss}{Path.GetExtension(file.FileName)}";
+        var key = $"{folder}/{fileName}";
 
         using var stream = file.OpenReadStream();
 
         var putRequest = new PutObjectRequest
         {
-            BucketName = bucketName,
-            Key = fileName,
+            BucketName = _bucketName,
+            Key = key,
             InputStream = stream,
             ContentType = file.ContentType,
             AutoCloseStream = false
@@ -80,7 +81,7 @@ public class MinIOService : IFileStorageService
 
         // Return the file URL
         var useSSL = _endpoint.Contains("https");
-        return $"{(useSSL ? "https" : "http")}://{_endpoint}/{bucketName}/{fileName}";
+        return $"{(useSSL ? "https" : "http")}://{_endpoint}/{_bucketName}/{key}";
     }
 
     public async Task DeleteFileAsync(string fileUrl)

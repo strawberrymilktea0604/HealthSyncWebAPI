@@ -12,10 +12,12 @@ namespace HealthSync.WebApi.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserProfileService _profileService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public UsersController(IUserProfileService profileService)
+    public UsersController(IUserProfileService profileService, IFileStorageService fileStorageService)
     {
         _profileService = profileService;
+        _fileStorageService = fileStorageService;
     }
 
     /// <summary>
@@ -96,7 +98,8 @@ public class UsersController : ControllerBase
             return Unauthorized(new { success = false, message = "User ID not found in token" });
         }
 
-        var imageUrl = await _profileService.UpdateAvatarAsync(id, file);
+        var imageUrl = await _fileStorageService.UploadAsync(file, "avatars");
+        await _profileService.UpdateAvatarAsync(id, imageUrl);
         return Ok(new { success = true, data = new { avatarUrl = imageUrl } });
     }
 

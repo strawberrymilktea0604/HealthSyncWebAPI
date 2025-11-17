@@ -177,7 +177,7 @@ public class ExerciseService : IExerciseService
         }
 
         // Upload file to storage
-        var imageUrl = await _fileStorageService.UploadFileAsync(file, "exercises", $"exercise_{id}_{Guid.NewGuid()}");
+        var imageUrl = await _fileStorageService.UploadAsync(file, "exercises");
         
         exercise.ImageUrl = imageUrl;
         exercise.UpdatedAt = DateTime.UtcNow;

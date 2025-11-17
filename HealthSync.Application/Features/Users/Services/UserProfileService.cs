@@ -110,10 +110,18 @@ public class UserProfileService : IUserProfileService
         return Task.FromException(new NotImplementedException());
     }
 
-    public Task<string> UpdateAvatarAsync(int userId, IFormFile file)
+    public async Task UpdateAvatarAsync(int userId, string avatarUrl)
     {
-        // Implementation for updating avatar
-        return Task.FromException<string>(new NotImplementedException());
+        var existingProfile = await _userProfileRepository.GetByUserIdAsync(userId);
+        if (existingProfile == null)
+        {
+            throw new KeyNotFoundException("User profile not found");
+        }
+
+        existingProfile.AvatarUrl = avatarUrl;
+        existingProfile.UpdatedAt = DateTime.UtcNow;
+
+        await _userProfileRepository.UpdateAsync(existingProfile);
     }
 
     public Task<UserStatsDto> GetUserStatsAsync(int userId)
