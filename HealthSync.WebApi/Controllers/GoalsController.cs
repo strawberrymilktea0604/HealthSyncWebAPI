@@ -87,7 +87,7 @@ public class GoalsController : ControllerBase
         {
             return NotFound(new { success = false, message = ex.Message });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving the goal" });
         }
@@ -111,7 +111,7 @@ public class GoalsController : ControllerBase
             var goals = await _goalService.GetUserGoalsAsync(userId.Value);
             return Ok(new { success = true, data = goals });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving goals" });
         }
@@ -345,7 +345,7 @@ public class GoalsController : ControllerBase
         {
             return NotFound(new { success = false, message = ex.Message });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new { success = false, message = "An error occurred while deleting the progress record" });
         }

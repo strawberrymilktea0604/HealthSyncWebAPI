@@ -14,28 +14,28 @@ public class UpdateProgressValidator : AbstractValidator<UpdateProgressRequest>
 
         When(x => x.WeightKg.HasValue, () =>
         {
-            RuleFor(x => x.WeightKg.Value)
+            RuleFor(x => x.WeightKg!.Value)
                 .InclusiveBetween(30, 300)
                 .WithMessage("Weight must be between 30kg and 300kg");
         });
 
         When(x => x.WaistCm.HasValue, () =>
         {
-            RuleFor(x => x.WaistCm.Value)
+            RuleFor(x => x.WaistCm!.Value)
                 .InclusiveBetween(50, 200)
                 .WithMessage("Waist measurement must be between 50cm and 200cm");
         });
 
         When(x => x.ChestCm.HasValue, () =>
         {
-            RuleFor(x => x.ChestCm.Value)
+            RuleFor(x => x.ChestCm!.Value)
                 .InclusiveBetween(60, 150)
                 .WithMessage("Chest measurement must be between 60cm and 150cm");
         });
 
         When(x => x.HipCm.HasValue, () =>
         {
-            RuleFor(x => x.HipCm.Value)
+            RuleFor(x => x.HipCm!.Value)
                 .InclusiveBetween(70, 150)
                 .WithMessage("Hip measurement must be between 70cm and 150cm");
         });
