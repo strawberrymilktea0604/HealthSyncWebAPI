@@ -57,4 +57,57 @@ public class NutritionLogRepository : INutritionLogRepository
         _context.FoodEntries.Add(foodEntry);
         await _context.SaveChangesAsync();
     }
+
+    /// <summary>
+    /// Lấy NutritionLog theo id (kèm FoodEntries + FoodItem)
+    /// </summary>
+    public async Task<NutritionLog?> GetByIdAsync(int nutritionLogId)
+    {
+        return await _context.NutritionLogs
+            .Include(nl => nl.FoodEntries)
+            .ThenInclude(fe => fe.FoodItem)
+            .FirstOrDefaultAsync(nl => nl.NutritionLogId == nutritionLogId);
+    }
+
+    /// <summary>
+    /// Lấy danh sách NutritionLog của user theo trang
+    /// Trả về items + tổng số items
+    /// Sắp xếp theo LogDate desc, CreatedAt desc
+    /// </summary>
+    public async Task<(List<NutritionLog> logs, int totalCount)> GetByUserIdAsync(int userId, int pageNumber, int pageSize)
+    {
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100; // Max page size
+
+        var query = _context.NutritionLogs
+            .AsNoTracking()
+            .Where(nl => nl.UserId == userId);
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .Include(nl => nl.FoodEntries)
+            .ThenInclude(fe => fe.FoodItem)
+            .OrderByDescending(nl => nl.LogDate)
+            .ThenByDescending(nl => nl.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
+    /// <summary>
+    /// Xóa NutritionLog theo id
+    /// </summary>
+    public async Task DeleteAsync(int nutritionLogId)
+    {
+        var nutritionLog = await _context.NutritionLogs.FindAsync(nutritionLogId);
+        if (nutritionLog != null)
+        {
+            _context.NutritionLogs.Remove(nutritionLog);
+            await _context.SaveChangesAsync();
+        }
+    }
 }

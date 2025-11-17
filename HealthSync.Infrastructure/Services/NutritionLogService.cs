@@ -1,3 +1,4 @@
+using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.Nutrition;
 using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
@@ -116,6 +117,71 @@ public class NutritionLogService : INutritionLogService
 
         // Mapping sang Response
         return MapToResponse(nutritionLog);
+    }
+
+    /// <summary>
+    /// Lấy danh sách NutritionLog của user với phân trang
+    /// </summary>
+    public async Task<PaginatedResult<NutritionLogResponse>> GetNutritionLogsAsync(int userId, int pageNumber, int pageSize)
+    {
+        var (logs, totalCount) = await _nutritionLogRepository.GetByUserIdAsync(userId, pageNumber, pageSize);
+
+        var items = logs.Select(MapToResponse).ToList();
+
+        return new PaginatedResult<NutritionLogResponse>(items, totalCount, pageNumber, pageSize);
+    }
+
+    /// <summary>
+    /// Lấy NutritionLog theo ID
+    /// </summary>
+    public async Task<NutritionLogResponse?> GetByIdAsync(int userId, int nutritionLogId)
+    {
+        var nutritionLog = await _nutritionLogRepository.GetByIdAsync(nutritionLogId);
+
+        if (nutritionLog == null || nutritionLog.UserId != userId)
+        {
+            return null;
+        }
+
+        return MapToResponse(nutritionLog);
+    }
+
+    /// <summary>
+    /// Cập nhật ghi chú của NutritionLog
+    /// </summary>
+    public async Task<NutritionLogResponse> UpdateNotesAsync(int userId, int nutritionLogId, string? notes)
+    {
+        var nutritionLog = await _nutritionLogRepository.GetByIdAsync(nutritionLogId);
+
+        if (nutritionLog == null || nutritionLog.UserId != userId)
+        {
+            throw new KeyNotFoundException($"Nutrition log with ID {nutritionLogId} not found for this user");
+        }
+
+        nutritionLog.Notes = notes;
+        await _nutritionLogRepository.UpdateAsync(nutritionLog);
+
+        // Reload để có dữ liệu mới nhất
+        nutritionLog = await _nutritionLogRepository.GetByIdAsync(nutritionLogId)
+            ?? throw new InvalidOperationException("Failed to retrieve updated nutrition log");
+
+        return MapToResponse(nutritionLog);
+    }
+
+    /// <summary>
+    /// Xóa NutritionLog
+    /// </summary>
+    public async Task<bool> DeleteAsync(int userId, int nutritionLogId)
+    {
+        var nutritionLog = await _nutritionLogRepository.GetByIdAsync(nutritionLogId);
+
+        if (nutritionLog == null || nutritionLog.UserId != userId)
+        {
+            return false;
+        }
+
+        await _nutritionLogRepository.DeleteAsync(nutritionLogId);
+        return true;
     }
 
     /// <summary>
