@@ -20,5 +20,8 @@
     <ProjectReference Include="..\HealthSync.Domain\HealthSync.Domain.csproj" />
     <ProjectReference Include="..\HealthSync.Application\HealthSync.Application.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Minio" Version="4.0.24" />
+  </ItemGroup>
 
 </Project>
