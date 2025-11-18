@@ -22,4 +22,5 @@ public interface IFoodItemRepository
     Task<bool> ExistsByNameAsync(string name);
     Task<bool> ExistsByNameAsync(string name, int excludeId);
     Task<bool> IsUsedInFoodEntriesAsync(int id);
+    Task<List<FoodItem>> GetByIdsAsync(List<int> foodItemIds);
 }

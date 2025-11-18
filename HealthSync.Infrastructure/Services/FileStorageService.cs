@@ -7,13 +7,13 @@ namespace HealthSync.Infrastructure.Services;
 
 public class FileStorageService : IFileStorageService
 {
-    public Task<string> UploadFileAsync(IFormFile file, string bucketName, string? fileName = null)
+    public Task<string> UploadAsync(IFormFile file, string folder)
     {
         // TODO: Implement MinIO integration
         // For now, return a placeholder URL
         var fileExtension = Path.GetExtension(file.FileName);
-        var uniqueFileName = fileName ?? $"{Guid.NewGuid()}{fileExtension}";
-        var fileUrl = $"https://minio.example.com/{bucketName}/{uniqueFileName}";
+        var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+        var fileUrl = $"https://minio.example.com/{folder}/{uniqueFileName}";
 
         // In a real implementation, you would:
         // 1. Validate file type and size

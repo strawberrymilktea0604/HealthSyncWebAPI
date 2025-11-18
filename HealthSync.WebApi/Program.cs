@@ -5,6 +5,10 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using HealthSync.Domain.Entities;
 using HealthSync.Infrastructure.Data;
+using HealthSync.Application.Interfaces;
+using HealthSync.Application.Services;
+using HealthSync.Infrastructure.Repositories;
+using HealthSync.Infrastructure.Services;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 
@@ -54,10 +58,13 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardReposit
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IJwtService, HealthSync.Infrastructure.Services.JwtService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
-builder.Services.AddScoped<HealthSync.Application.Interfaces.IFileStorageService, HealthSync.Infrastructure.Services.FileStorageService>();
+// Register storage service (MinIO)
+builder.Services.AddSingleton<HealthSync.Application.Interfaces.IStorageService, HealthSync.Infrastructure.Services.MinioService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IFoodItemRepository, HealthSync.Infrastructure.Repositories.FoodItemRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IWorkoutLogRepository, HealthSync.Infrastructure.Repositories.WorkoutLogRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IWorkoutLogService, HealthSync.Application.Services.WorkoutLogService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.INutritionLogService, HealthSync.Infrastructure.Services.NutritionLogService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.INutritionLogRepository, HealthSync.Infrastructure.Repositories.NutritionLogRepository>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>

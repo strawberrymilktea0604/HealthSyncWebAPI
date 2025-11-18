@@ -98,6 +98,11 @@ public class UsersController : ControllerBase
             ContributionPoints: leaderboard?.TotalPoints ?? 0
         );
 
+        if (profileDto == null)
+        {
+            return NotFound(new { success = false, message = "User profile not found" });
+        }
+
         var details = new AdminUserDetailsDto(
             User: userDto,
             Profile: profileDto,

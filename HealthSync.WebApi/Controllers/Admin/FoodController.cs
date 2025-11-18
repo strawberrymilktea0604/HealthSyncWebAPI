@@ -178,7 +178,7 @@ public class FoodController : ControllerBase
             }
 
             // Upload to MinIO
-            var imageUrl = await _fileStorageService.UploadFileAsync(file, "foods", id.ToString());
+            var imageUrl = await _fileStorageService.UploadAsync(file, "foods");
 
             // Update food item with image URL
             var updateRequest = new UpdateFoodItemRequest
