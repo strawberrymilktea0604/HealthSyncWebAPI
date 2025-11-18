@@ -63,6 +63,7 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IUserRepository, He
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IUserProfileRepository, HealthSync.Infrastructure.Repositories.UserProfileRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardRepository, HealthSync.Infrastructure.Repositories.LeaderboardRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IJwtService, HealthSync.Infrastructure.Services.JwtService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IWorkoutLogService, HealthSync.Infrastructure.Services.WorkoutLogService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
 // Register storage service (MinIO)
