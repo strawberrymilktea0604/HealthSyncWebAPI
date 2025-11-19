@@ -41,4 +41,14 @@ public interface INutritionLogRepository
     /// Thêm FoodEntry vào NutritionLog
     /// </summary>
     Task AddFoodEntryAsync(FoodEntry foodEntry);
+
+    /// <summary>
+    /// Xóa FoodEntry
+    /// </summary>
+    Task DeleteFoodEntryAsync(int foodEntryId);
+
+    /// <summary>
+    /// Lấy FoodEntry theo id với NutritionLog để check ownership
+    /// </summary>
+    Task<FoodEntry?> GetFoodEntryByIdAsync(int foodEntryId);
 }

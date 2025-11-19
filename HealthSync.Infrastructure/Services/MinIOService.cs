@@ -6,7 +6,7 @@ using Minio.Exceptions;
 
 namespace HealthSync.Infrastructure.Services;
 
-public class MinioService : IStorageService
+public class MinioService : IStorageService, IFileStorageService
 {
     private readonly MinioClient _client;
     private readonly string _bucket;
@@ -79,6 +79,57 @@ public class MinioService : IStorageService
         catch (MinioException)
         {
             // ignore not found / deletion errors for idempotency
+        }
+    }
+
+    // IFileStorageService implementation
+    public async Task<string> UploadAsync(IFormFile file, string folder)
+    {
+        return await UploadAsync(file, folder, null);
+    }
+
+    public async Task DeleteFileAsync(string fileUrl)
+    {
+        // Extract object name from URL
+        // Format: http://endpoint/bucket/folder/filename
+        if (string.IsNullOrEmpty(fileUrl)) return;
+
+        try
+        {
+            var uri = new Uri(fileUrl);
+            var pathParts = uri.AbsolutePath.TrimStart('/').Split('/', 2);
+            if (pathParts.Length > 1)
+            {
+                var objectName = pathParts[1]; // Skip bucket name
+                await DeleteAsync(objectName);
+            }
+        }
+        catch
+        {
+            // If URL parsing fails, try direct deletion
+            await DeleteAsync(fileUrl);
+        }
+    }
+
+    public async Task<bool> FileExistsAsync(string fileUrl)
+    {
+        if (string.IsNullOrEmpty(fileUrl)) return false;
+
+        try
+        {
+            var uri = new Uri(fileUrl);
+            var pathParts = uri.AbsolutePath.TrimStart('/').Split('/', 2);
+            if (pathParts.Length > 1)
+            {
+                var objectName = pathParts[1];
+                await _client.StatObjectAsync(new StatObjectArgs().WithBucket(_bucket).WithObject(objectName));
+                return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
         }
     }
 }

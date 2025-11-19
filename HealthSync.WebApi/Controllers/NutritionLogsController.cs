@@ -8,7 +8,7 @@ using HealthSync.Application.Interfaces;
 namespace HealthSync.WebApi.Controllers;
 
 [ApiController]
-[Route("api/nutrition-logs")]
+[Route("api/v1/nutrition")]
 [Authorize(Roles = "Customer")]
 public class NutritionLogsController : ControllerBase
 {
@@ -25,12 +25,128 @@ public class NutritionLogsController : ControllerBase
     }
 
     /// <summary>
+    /// Get or create nutrition log for a specific date
+    /// </summary>
+    /// <param name="date">Date in YYYY-MM-DD format</param>
+    /// <returns>Nutrition log for the date</returns>
+    [HttpGet("daily/{date}")]
+    [ProducesResponseType(typeof(NutritionLogResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<NutritionLogResponse>> GetDailyNutritionLog(string date)
+    {
+        try
+        {
+            if (!DateTime.TryParse(date, out var logDate))
+            {
+                return BadRequest(new { success = false, message = "Invalid date format. Use YYYY-MM-DD." });
+            }
+
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { success = false, message = UserIdNotFoundMessage });
+            }
+
+            var result = await _nutritionLogService.GetOrCreateDailyLogAsync(userId, logDate);
+
+            return Ok(new { success = true, data = result, message = "Nutrition log retrieved successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving daily nutrition log for date {Date}", date);
+            return StatusCode(500, new { success = false, message = "An error occurred while retrieving nutrition log", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Add a food entry to nutrition log for a specific date
+    /// </summary>
+    /// <param name="date">Date in YYYY-MM-DD format</param>
+    /// <param name="request">Food entry request</param>
+    /// <returns>Updated nutrition log with new entry</returns>
+    [HttpPost("daily/{date}/entries")]
+    [ProducesResponseType(typeof(NutritionLogResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<NutritionLogResponse>> AddFoodEntry(string date, [FromBody] CreateFoodEntryRequest request)
+    {
+        try
+        {
+            if (!DateTime.TryParse(date, out var logDate))
+            {
+                return BadRequest(new { success = false, message = "Invalid date format. Use YYYY-MM-DD." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, errors = ModelState });
+            }
+
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { success = false, message = UserIdNotFoundMessage });
+            }
+
+            var result = await _nutritionLogService.AddFoodEntryAsync(userId, logDate, request);
+
+            return Ok(new { success = true, data = result, message = "Food entry added successfully" });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid input for adding food entry");
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding food entry for date {Date}", date);
+            return StatusCode(500, new { success = false, message = "An error occurred while adding food entry", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Delete a food entry
+    /// </summary>
+    /// <param name="id">Food entry ID</param>
+    /// <returns>No content if successful</returns>
+    [HttpDelete("entries/{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeleteFoodEntry(int id)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { success = false, message = UserIdNotFoundMessage });
+            }
+
+            var deleted = await _nutritionLogService.DeleteFoodEntryAsync(userId, id);
+
+            if (!deleted)
+            {
+                return NotFound(new { success = false, message = $"Food entry with ID {id} not found" });
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting food entry with ID {FoodEntryId}", id);
+            return StatusCode(500, new { success = false, message = "An error occurred while deleting food entry", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Get nutrition logs history for the current user with pagination
     /// </summary>
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 20, max: 100)</param>
     /// <returns>Paginated list of nutrition logs</returns>
-    [HttpGet]
+    [HttpGet("logs")]
     [ProducesResponseType(typeof(PaginatedResult<NutritionLogResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -72,7 +188,7 @@ public class NutritionLogsController : ControllerBase
     /// </summary>
     /// <param name="id">Nutrition log ID</param>
     /// <returns>Nutrition log details</returns>
-    [HttpGet("{id}")]
+    [HttpGet("logs/{id}")]
     [ProducesResponseType(typeof(NutritionLogResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -107,7 +223,7 @@ public class NutritionLogsController : ControllerBase
     /// </summary>
     /// <param name="request">Nutrition log creation request</param>
     /// <returns>Created or updated nutrition log with calculated totals</returns>
-    [HttpPost]
+    [HttpPost("logs")]
     [ProducesResponseType(typeof(NutritionLogResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -151,7 +267,7 @@ public class NutritionLogsController : ControllerBase
     /// <param name="id">Nutrition log ID</param>
     /// <param name="request">Update notes request</param>
     /// <returns>Updated nutrition log</returns>
-    [HttpPut("{id}/notes")]
+    [HttpPut("logs/{id}/notes")]
     [ProducesResponseType(typeof(NutritionLogResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -193,7 +309,7 @@ public class NutritionLogsController : ControllerBase
     /// </summary>
     /// <param name="id">Nutrition log ID</param>
     /// <returns>No content if successful</returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("logs/{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

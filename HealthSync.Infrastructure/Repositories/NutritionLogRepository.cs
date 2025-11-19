@@ -110,4 +110,27 @@ public class NutritionLogRepository : INutritionLogRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    /// <summary>
+    /// Xóa FoodEntry theo id
+    /// </summary>
+    public async Task DeleteFoodEntryAsync(int foodEntryId)
+    {
+        var foodEntry = await _context.FoodEntries.FindAsync(foodEntryId);
+        if (foodEntry != null)
+        {
+            _context.FoodEntries.Remove(foodEntry);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    /// <summary>
+    /// Lấy FoodEntry theo id với NutritionLog để check ownership
+    /// </summary>
+    public async Task<FoodEntry?> GetFoodEntryByIdAsync(int foodEntryId)
+    {
+        return await _context.FoodEntries
+            .Include(fe => fe.NutritionLog)
+            .FirstOrDefaultAsync(fe => fe.FoodEntryId == foodEntryId);
+    }
 }

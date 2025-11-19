@@ -28,13 +28,24 @@ public class ExerciseRepository : IExerciseRepository
     {
         var query = _context.Exercises.AsQueryable();
 
-        // Apply filters if provided
+        // Apply filters if provided - Convert string to enum and compare
         if (!string.IsNullOrWhiteSpace(muscleGroup))
-            query = query.Where(e => e.MuscleGroup.ToString().ToLower() == muscleGroup.ToLower());
+        {
+            if (Enum.TryParse<MuscleGroup>(muscleGroup, true, out var muscleGroupEnum))
+                query = query.Where(e => e.MuscleGroup == muscleGroupEnum);
+        }
+        
         if (!string.IsNullOrWhiteSpace(difficulty))
-            query = query.Where(e => e.DifficultyLevel.ToString().ToLower() == difficulty.ToLower());
+        {
+            if (Enum.TryParse<DifficultyLevel>(difficulty, true, out var difficultyEnum))
+                query = query.Where(e => e.DifficultyLevel == difficultyEnum);
+        }
+        
         if (!string.IsNullOrWhiteSpace(equipment))
-            query = query.Where(e => e.Equipment.HasValue && e.Equipment.Value.ToString().ToLower() == equipment.ToLower());
+        {
+            if (Enum.TryParse<Equipment>(equipment, true, out var equipmentEnum))
+                query = query.Where(e => e.Equipment.HasValue && e.Equipment.Value == equipmentEnum);
+        }
 
         // Get total count
         var totalItems = await query.CountAsync();

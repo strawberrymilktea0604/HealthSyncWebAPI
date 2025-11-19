@@ -287,4 +287,93 @@ public class AuthService : IAuthService
             return false;
         }
     }
+
+    /// <summary>
+    /// Khởi tạo tài khoản Admin đầu tiên trong hệ thống
+    /// API này chỉ hoạt động một lần duy nhất khi chưa có Admin nào
+    /// </summary>
+    public async Task<AuthResponse> InitializeAdminAsync(InitializeAdminRequest request)
+    {
+        // Kiểm tra xem đã có Admin chưa
+        var hasAdmin = await HasAdminAccountAsync();
+        if (hasAdmin)
+        {
+            throw new InvalidOperationException("Admin account already exists. This endpoint is disabled.");
+        }
+
+        // Kiểm tra initialization key
+        var configKey = _configuration["AdminInitialization:SecretKey"];
+        if (string.IsNullOrEmpty(configKey) || configKey != request.InitializationKey)
+        {
+            throw new UnauthorizedAccessException("Invalid initialization key");
+        }
+
+        // Kiểm tra email đã tồn tại chưa
+        var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+        if (existingUser != null)
+        {
+            throw new InvalidOperationException("Email already exists");
+        }
+
+        // Hash password
+        var passwordHash = HashPassword(request.Password);
+
+        // Tạo Admin user
+        var adminUser = new ApplicationUser
+        {
+            Email = request.Email,
+            PasswordHash = passwordHash,
+            Role = "Admin", // Đặt role là Admin
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _userRepository.AddAsync(adminUser);
+
+        // Tạo UserProfile cho Admin
+        var userProfile = new UserProfile
+        {
+            UserId = adminUser.UserId,
+            FullName = request.FullName,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await _userProfileRepository.AddAsync(userProfile);
+
+        // Tạo Leaderboard entry (mặc dù Admin không tham gia leaderboard)
+        var leaderboard = new Leaderboard
+        {
+            UserId = adminUser.UserId,
+            TotalPoints = 0,
+            RankTitle = "System Administrator",
+            UpdatedAt = DateTime.UtcNow
+        };
+        await _leaderboardRepository.AddAsync(leaderboard);
+
+        // Generate tokens
+        var accessToken = _jwtService.GenerateAccessToken(adminUser);
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        var expiry = DateTime.UtcNow.AddDays(7);
+        await _userRepository.SaveRefreshTokenAsync(adminUser.UserId, refreshToken, expiry);
+
+        return new AuthResponse(
+            accessToken,
+            refreshToken,
+            adminUser.UserId.ToString(),
+            adminUser.Email!,
+            adminUser.Role,
+            userProfile.FullName,
+            leaderboard.TotalPoints
+        );
+    }
+
+    /// <summary>
+    /// Kiểm tra xem hệ thống đã có Admin hay chưa
+    /// </summary>
+    public async Task<bool> HasAdminAccountAsync()
+    {
+        var allUsers = await _userRepository.GetAllAsync();
+        return allUsers.Any(u => u.Role == "Admin" && u.IsActive);
+    }
 }

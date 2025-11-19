@@ -92,14 +92,45 @@ public class UsersController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { success = false, message = "No file uploaded" });
 
+        // Validate file size (< 5MB)
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { success = false, message = "File size must be less than 5MB" });
+
+        // Validate MIME type (image/jpeg, image/png)
+        var allowedTypes = new[] { "image/jpeg", "image/png" };
+        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+            return BadRequest(new { success = false, message = "Only JPEG and PNG images are allowed" });
+
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
         {
             return Unauthorized(new { success = false, message = "User ID not found in token" });
         }
 
+        // Get current profile to retrieve old avatar URL
+        var profile = await _profileService.GetUserProfileAsync(id);
+        string? oldAvatarUrl = profile?.AvatarUrl;
+
+        // Upload new avatar
         var imageUrl = await _fileStorageService.UploadAsync(file, "avatars");
+
+        // Update profile with new avatar URL
         await _profileService.UpdateAvatarAsync(id, imageUrl);
+
+        // Delete old avatar if exists
+        if (!string.IsNullOrEmpty(oldAvatarUrl))
+        {
+            // Extract object name from URL (assuming format: scheme://endpoint/bucket/objectName)
+            // e.g., https://localhost:9000/healthsync-images/avatars/guid.jpg -> avatars/guid.jpg
+            var uri = new Uri(oldAvatarUrl);
+            var segments = uri.AbsolutePath.TrimStart('/').Split('/');
+            if (segments.Length >= 2)
+            {
+                var objectName = string.Join("/", segments.Skip(1)); // Skip bucket name
+                await _fileStorageService.DeleteFileAsync(objectName);
+            }
+        }
+
         return Ok(new { success = true, data = new { avatarUrl = imageUrl } });
     }
 

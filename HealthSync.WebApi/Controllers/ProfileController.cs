@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace HealthSync.WebApi.Controllers;
 
 [ApiController]
-[Route("api/profile")]
+[Route("api/v1/profile")]
 [Authorize]
 public class ProfileController : ControllerBase
 {
@@ -21,7 +21,8 @@ public class ProfileController : ControllerBase
     }
 
     [HttpPost("avatar")]
-    public async Task<IActionResult> UploadAvatar([FromForm] IFormFile file)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadAvatar(IFormFile file)
     {
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "No file uploaded" });

@@ -49,4 +49,29 @@ public interface INutritionLogService
     /// <param name="nutritionLogId">ID của NutritionLog</param>
     /// <returns>True nếu xóa thành công, False nếu không tìm thấy</returns>
     Task<bool> DeleteAsync(int userId, int nutritionLogId);
+
+    /// <summary>
+    /// Lấy hoặc tạo NutritionLog cho một ngày cụ thể
+    /// </summary>
+    /// <param name="userId">ID của user</param>
+    /// <param name="date">Ngày cần lấy log</param>
+    /// <returns>NutritionLogResponse với chi tiết log và food entries</returns>
+    Task<NutritionLogResponse> GetOrCreateDailyLogAsync(int userId, DateTime date);
+
+    /// <summary>
+    /// Thêm FoodEntry vào NutritionLog của ngày cụ thể
+    /// </summary>
+    /// <param name="userId">ID của user</param>
+    /// <param name="date">Ngày của log</param>
+    /// <param name="request">Request chứa thông tin food entry</param>
+    /// <returns>FoodEntryResponse với thông tin đã tạo</returns>
+    Task<FoodEntryResponse> AddFoodEntryAsync(int userId, DateTime date, CreateFoodEntryRequest request);
+
+    /// <summary>
+    /// Xóa FoodEntry
+    /// </summary>
+    /// <param name="userId">ID của user</param>
+    /// <param name="entryId">ID của FoodEntry</param>
+    /// <returns>True nếu xóa thành công, False nếu không tìm thấy</returns>
+    Task<bool> DeleteFoodEntryAsync(int userId, int entryId);
 }

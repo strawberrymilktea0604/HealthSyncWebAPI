@@ -1,5 +1,8 @@
 using HealthSync.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Minio;
+using Minio.Exceptions;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -7,33 +10,90 @@ namespace HealthSync.Infrastructure.Services;
 
 public class FileStorageService : IFileStorageService
 {
-    public Task<string> UploadAsync(IFormFile file, string folder)
+    private readonly MinioClient _client;
+    private readonly string _bucket;
+    private readonly bool _useSsl;
+    private readonly string _endpoint;
+
+    public FileStorageService(IConfiguration configuration)
     {
-        // TODO: Implement MinIO integration
-        // For now, return a placeholder URL
-        var fileExtension = Path.GetExtension(file.FileName);
-        var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-        var fileUrl = $"https://minio.example.com/{folder}/{uniqueFileName}";
+        _endpoint = configuration["MinIO:Endpoint"] ?? "localhost:9000";
+        var accessKey = configuration["MinIO:AccessKey"] ?? "minioadmin";
+        var secretKey = configuration["MinIO:SecretKey"] ?? "minioadmin";
+        _bucket = configuration["MinIO:BucketName"] ?? "healthsync-images";
+        _useSsl = bool.TryParse(configuration["MinIO:UseSSL"], out var v) ? v : false;
 
-        // In a real implementation, you would:
-        // 1. Validate file type and size
-        // 2. Upload to MinIO
-        // 3. Return the actual URL
-
-        return Task.FromResult(fileUrl);
+        // Minio client accepts endpoint without scheme
+        _client = new MinioClient()
+            .WithEndpoint(_endpoint)
+            .WithCredentials(accessKey, secretKey)
+            .WithSSL(_useSsl)
+            .Build();
     }
 
-    public Task DeleteFileAsync(string fileUrl)
+    public async Task<string> UploadAsync(IFormFile file, string folder)
     {
-        // TODO: Implement MinIO file deletion
-        // For now, just return
-        return Task.CompletedTask;
+        if (file == null || file.Length == 0)
+            throw new ArgumentException("File is empty", nameof(file));
+
+        // Ensure bucket exists
+        try
+        {
+            var found = await _client.BucketExistsAsync(new BucketExistsArgs().WithBucket(_bucket));
+            if (!found)
+            {
+                await _client.MakeBucketAsync(new MakeBucketArgs().WithBucket(_bucket));
+            }
+        }
+        catch (Exception)
+        {
+            // swallow and continue - errors will surface on upload
+        }
+
+        var ext = Path.GetExtension(file.FileName);
+        var name = $"{Guid.NewGuid()}{ext}";
+        var objectName = string.IsNullOrEmpty(folder) ? name : $"{folder.Trim('/')}/{name}";
+
+        using var stream = file.OpenReadStream();
+        var args = new PutObjectArgs()
+            .WithBucket(_bucket)
+            .WithObject(objectName)
+            .WithStreamData(stream)
+            .WithObjectSize(stream.Length)
+            .WithContentType(file.ContentType ?? "application/octet-stream");
+
+        await _client.PutObjectAsync(args);
+
+        // Build a simple URL (may need adjustment depending on MinIO reverse proxy)
+        var scheme = _useSsl ? "https" : "http";
+        var url = $"{scheme}://{_endpoint}/{_bucket}/{objectName}";
+        return url;
     }
 
-    public Task<bool> FileExistsAsync(string fileUrl)
+    public async Task DeleteFileAsync(string objectName)
     {
-        // TODO: Implement MinIO file existence check
-        // For now, return true
-        return Task.FromResult(true);
+        if (string.IsNullOrEmpty(objectName)) return;
+
+        try
+        {
+            await _client.RemoveObjectAsync(new RemoveObjectArgs().WithBucket(_bucket).WithObject(objectName));
+        }
+        catch (MinioException)
+        {
+            // ignore not found / deletion errors for idempotency
+        }
+    }
+
+    public async Task<bool> FileExistsAsync(string objectName)
+    {
+        try
+        {
+            await _client.StatObjectAsync(new StatObjectArgs().WithBucket(_bucket).WithObject(objectName));
+            return true;
+        }
+        catch (MinioException)
+        {
+            return false;
+        }
     }
 }

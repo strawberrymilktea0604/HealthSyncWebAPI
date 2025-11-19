@@ -29,4 +29,7 @@ public class FoodEntry
     // Optional details
     public DateTime? ConsumedAt { get; set; }
     public string? Notes { get; set; }
+
+    // Audit fields
+    public DateTime CreatedAt { get; set; }
 }

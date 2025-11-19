@@ -25,6 +25,11 @@ public class UserRepository : IUserRepository
         return await _context.ApplicationUsers.FindAsync(id);
     }
 
+    public async Task<IEnumerable<ApplicationUser>> GetAllAsync()
+    {
+        return await _context.ApplicationUsers.ToListAsync();
+    }
+
     public async Task AddAsync(ApplicationUser user)
     {
         await _context.ApplicationUsers.AddAsync(user);

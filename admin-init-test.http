@@ -1,0 +1,109 @@
+### Admin Initialization API - Test Collection
+### Save this file as: admin-init-test.http
+### Use with VS Code REST Client extension or Postman
+
+@baseUrl = http://localhost:5258
+@initKey = CHANGE_THIS_SECRET_KEY_IN_PRODUCTION_BEFORE_DEPLOYMENT_2025
+
+###############################################
+# 1. Check Admin Status (trước khi khởi tạo)
+###############################################
+
+GET {{baseUrl}}/api/v1/auth/admin-status
+Content-Type: application/json
+
+###############################################
+# 2. Initialize First Admin Account
+###############################################
+
+POST {{baseUrl}}/api/v1/auth/initialize-admin
+Content-Type: application/json
+
+{
+  "email": "admin@healthsync.com",
+  "password": "Admin@123456",
+  "fullName": "System Administrator",
+  "initializationKey": "{{initKey}}"
+}
+
+###############################################
+# 3. Check Admin Status (sau khi khởi tạo)
+# Expected: hasAdmin = true
+###############################################
+
+GET {{baseUrl}}/api/v1/auth/admin-status
+Content-Type: application/json
+
+###############################################
+# 4. Try to Initialize Again (should fail with 403)
+###############################################
+
+POST {{baseUrl}}/api/v1/auth/initialize-admin
+Content-Type: application/json
+
+{
+  "email": "another-admin@healthsync.com",
+  "password": "Admin@123456",
+  "fullName": "Second Admin",
+  "initializationKey": "{{initKey}}"
+}
+
+###############################################
+# 5. Login with Admin Account
+###############################################
+
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@healthsync.com",
+  "password": "Admin@123456"
+}
+
+###############################################
+# TEST SCENARIOS
+###############################################
+
+### Scenario: Wrong Initialization Key (should return 401)
+POST {{baseUrl}}/api/v1/auth/initialize-admin
+Content-Type: application/json
+
+{
+  "email": "admin@healthsync.com",
+  "password": "Admin@123456",
+  "fullName": "System Administrator",
+  "initializationKey": "WRONG_KEY"
+}
+
+### Scenario: Invalid Email Format (should return 400)
+POST {{baseUrl}}/api/v1/auth/initialize-admin
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "password": "Admin@123456",
+  "fullName": "System Administrator",
+  "initializationKey": "{{initKey}}"
+}
+
+### Scenario: Weak Password (should return 400)
+POST {{baseUrl}}/api/v1/auth/initialize-admin
+Content-Type: application/json
+
+{
+  "email": "admin@healthsync.com",
+  "password": "123",
+  "fullName": "System Administrator",
+  "initializationKey": "{{initKey}}"
+}
+
+### Scenario: Missing Full Name (should return 400)
+POST {{baseUrl}}/api/v1/auth/initialize-admin
+Content-Type: application/json
+
+{
+  "email": "admin@healthsync.com",
+  "password": "Admin@123456",
+  "fullName": "",
+  "initializationKey": "{{initKey}}"
+}

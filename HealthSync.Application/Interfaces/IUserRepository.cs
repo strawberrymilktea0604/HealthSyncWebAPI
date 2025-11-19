@@ -7,6 +7,7 @@ public interface IUserRepository
 {
     Task<ApplicationUser?> GetByEmailAsync(string email);
     Task<ApplicationUser?> GetByIdAsync(int id);
+    Task<IEnumerable<ApplicationUser>> GetAllAsync();
     Task AddAsync(ApplicationUser user);
     Task UpdateAsync(ApplicationUser user);
     Task<ApplicationUser?> GetByRefreshTokenAsync(string refreshToken);

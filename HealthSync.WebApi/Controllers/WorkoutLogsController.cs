@@ -7,7 +7,7 @@ using HealthSync.Application.Interfaces;
 namespace HealthSync.WebApi.Controllers;
 
 [ApiController]
-[Route("api/workout-logs")]
+[Route("api/v1/workout-logs")]
 [Authorize(Roles = "Customer")]
 public class WorkoutLogsController : ControllerBase
 {
@@ -57,12 +57,14 @@ public class WorkoutLogsController : ControllerBase
     }
 
     /// <summary>
-    /// Get workout logs history for the current user with pagination
+    /// Get workout logs history for the current user with pagination and optional date filtering
     /// </summary>
     [HttpGet]
     public async Task<ActionResult> GetWorkoutLogs(
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
     {
         try
         {
@@ -76,13 +78,18 @@ public class WorkoutLogsController : ControllerBase
                 return BadRequest(new { success = false, message = "Page size must be between 1 and 100" });
             }
 
+            if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+            {
+                return BadRequest(new { success = false, message = "Start date must be before or equal to end date" });
+            }
+
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { success = false, message = "User ID not found in token" });
             }
 
-            var result = await _workoutLogService.GetWorkoutLogsAsync(userId, pageNumber, pageSize);
+            var result = await _workoutLogService.GetWorkoutLogsAsync(userId, pageNumber, pageSize, startDate, endDate);
 
             return Ok(new { success = true, data = result, message = "Workout logs retrieved successfully" });
         }

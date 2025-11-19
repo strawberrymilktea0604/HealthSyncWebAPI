@@ -364,6 +364,9 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<DateTime?>("ConsumedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("FatG")
                         .HasPrecision(6, 2)
                         .HasColumnType("decimal(6,2)");
@@ -527,6 +530,9 @@ namespace HealthSync.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GoalId"));
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -552,6 +558,9 @@ namespace HealthSync.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -734,6 +743,9 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<decimal>("RecordedValue")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal?>("WaistCm")
                         .HasPrecision(18, 2)

@@ -32,12 +32,23 @@ public class WorkoutLogRepository : IWorkoutLogRepository
         return workoutLog;
     }
 
-    public async Task<PaginatedResult<WorkoutLog>> GetByUserIdAsync(int userId, int pageNumber, int pageSize)
+    public async Task<PaginatedResult<WorkoutLog>> GetByUserIdAsync(int userId, int pageNumber, int pageSize, DateTime? startDate = null, DateTime? endDate = null)
     {
         var query = _context.WorkoutLogs
-            .Where(wl => wl.UserId == userId)
-            .OrderByDescending(wl => wl.WorkoutDate)
-            .ThenByDescending(wl => wl.CreatedAt);
+            .Where(wl => wl.UserId == userId);
+
+        if (startDate.HasValue)
+        {
+            query = query.Where(wl => wl.WorkoutDate >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(wl => wl.WorkoutDate <= endDate.Value);
+        }
+
+        query = query.OrderByDescending(wl => wl.WorkoutDate)
+                     .ThenByDescending(wl => wl.CreatedAt);
 
         var totalItems = await query.CountAsync();
 
@@ -55,5 +66,32 @@ public class WorkoutLogRepository : IWorkoutLogRepository
         return await _context.WorkoutLogs
             .Include(wl => wl.ExerciseSessions)
             .FirstOrDefaultAsync(wl => wl.WorkoutLogId == workoutLogId);
+    }
+
+    public async Task<WorkoutLog> AddAsync(WorkoutLog workoutLog)
+    {
+        _context.WorkoutLogs.Add(workoutLog);
+        await _context.SaveChangesAsync();
+        return workoutLog;
+    }
+
+    public async Task<ExerciseSession> AddExerciseSessionAsync(ExerciseSession session)
+    {
+        _context.ExerciseSessions.Add(session);
+        await _context.SaveChangesAsync();
+        return session;
+    }
+
+    public async Task<IEnumerable<ExerciseSession>> GetExerciseSessionsAsync(int workoutLogId)
+    {
+        return await _context.ExerciseSessions
+            .Where(es => es.WorkoutLogId == workoutLogId)
+            .ToListAsync();
+    }
+
+    public async Task UpdateAsync(WorkoutLog workoutLog)
+    {
+        _context.WorkoutLogs.Update(workoutLog);
+        await _context.SaveChangesAsync();
     }
 }
