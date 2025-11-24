@@ -1,0 +1,28 @@
+### Admin Forum Post Deletion Test
+
+@baseUrl = https://localhost:7144
+@adminToken = <YOUR_ADMIN_JWT_TOKEN_HERE>
+
+### Delete a forum post (Admin only)
+### Expected response: 204 No Content on success, 404 Not Found if post doesn't exist
+DELETE {{baseUrl}}/api/v1/admin/forum/posts/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Pin a forum post (Admin only)
+### Expected response: 200 OK with success message
+POST {{baseUrl}}/api/v1/admin/forum/posts/1/pin
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Lock a forum post (disable replies)
+POST {{baseUrl}}/api/v1/admin/forum/posts/1/lock
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Unlock a forum post (enable replies)
+POST {{baseUrl}}/api/v1/admin/forum/posts/1/unlock
+Authorization: Bearer {{adminToken}}
