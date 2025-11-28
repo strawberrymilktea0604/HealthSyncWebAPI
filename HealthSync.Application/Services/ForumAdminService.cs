@@ -50,6 +50,27 @@ public class ForumAdminService : IForumAdminService
         }
     }
 
+    public async Task<(bool Success, string Message, bool IsPinned)> TogglePinPostAsync(int postId, int adminId)
+    {
+        try
+        {
+            var post = await _forumPostRepository.GetByIdAsync(postId);
+            if (post is null)
+                return (false, "Post not found", false);
+
+            post.IsPinned = !post.IsPinned;
+            post.UpdatedAt = DateTime.UtcNow;
+            await _forumPostRepository.SaveChangesAsync();
+
+            var message = post.IsPinned ? "Post pinned successfully" : "Post unpinned successfully";
+            return (true, message, post.IsPinned);
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Error toggling pin status: {ex.Message}", false);
+        }
+    }
+
     public async Task<(bool Success, string Message)> LockPostAsync(int postId, int adminId)
     {
         try

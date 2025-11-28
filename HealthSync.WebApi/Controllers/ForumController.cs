@@ -5,6 +5,7 @@ using HealthSync.Infrastructure.Data;
 using HealthSync.Application.DTOs.Forum;
 using HealthSync.Application.DTOs;
 using HealthSync.Domain.Entities;
+using System.Security.Claims;
 
 namespace HealthSync.WebApi.Controllers;
 
@@ -188,7 +189,7 @@ public class ForumController : ControllerBase
                 return BadRequest(new { success = false, message = "Invalid input", errors = ModelState });
             }
 
-            var userIdClaim = User.FindFirst("userId")?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { success = false, message = "Invalid user" });
@@ -239,7 +240,7 @@ public class ForumController : ControllerBase
                 return BadRequest(new { success = false, message = "Invalid input", errors = ModelState });
             }
 
-            var userIdClaim = User.FindFirst("userId")?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { success = false, message = "Invalid user" });
@@ -293,7 +294,7 @@ public class ForumController : ControllerBase
                 return BadRequest(new { success = false, message = "Invalid input", errors = ModelState });
             }
 
-            var userIdClaim = User.FindFirst("userId")?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { success = false, message = "Invalid user" });
@@ -332,7 +333,7 @@ public class ForumController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst("userId")?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { success = false, message = "Invalid user" });
@@ -373,7 +374,7 @@ public class ForumController : ControllerBase
                 return BadRequest(new { success = false, message = "Invalid input", errors = ModelState });
             }
 
-            var userIdClaim = User.FindFirst("userId")?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { success = false, message = "Invalid user" });
@@ -411,7 +412,7 @@ public class ForumController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst("userId")?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { success = false, message = "Invalid user" });
