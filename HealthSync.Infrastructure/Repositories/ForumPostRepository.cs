@@ -35,6 +35,20 @@ public class ForumPostRepository : IForumPostRepository
             .AnyAsync(p => p.PostId == postId);
     }
 
+    public async Task<Post> AddAsync(Post post)
+    {
+        await _context.Posts.AddAsync(post);
+        await SaveChangesAsync();
+        return post;
+    }
+
+    public async Task UpdateAsync(Post post)
+    {
+        post.UpdatedAt = DateTime.UtcNow;
+        _context.Posts.Update(post);
+        await SaveChangesAsync();
+    }
+
     public async Task DeleteAsync(int postId)
     {
         var post = await GetByIdWithRepliesAsync(postId);
