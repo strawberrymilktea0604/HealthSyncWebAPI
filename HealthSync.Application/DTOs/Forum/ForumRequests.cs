@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace HealthSync.Application.DTOs.Forum;
 
 public class CreatePostRequest
@@ -5,6 +7,14 @@ public class CreatePostRequest
     public int CategoryId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+}
+
+public class CreatePostWithImageRequest
+{
+    public int CategoryId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public IFormFile? Image { get; set; }
 }
 
 public class CreateReplyRequest
@@ -17,6 +27,7 @@ public class UpdatePostRequest
 {
     public string? Title { get; set; }
     public string? Content { get; set; }
+    public IFormFile? Image { get; set; }
 }
 
 public class UpdateReplyRequest
