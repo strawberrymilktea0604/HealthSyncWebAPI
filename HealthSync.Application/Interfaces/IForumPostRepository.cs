@@ -20,6 +20,16 @@ public interface IForumPostRepository
     Task<bool> ExistsAsync(int postId);
 
     /// <summary>
+    /// Add a new post to the database
+    /// </summary>
+    Task<Post> AddAsync(Post post);
+
+    /// <summary>
+    /// Update an existing post
+    /// </summary>
+    Task UpdateAsync(Post post);
+
+    /// <summary>
     /// Delete post (cascade delete replies)
     /// </summary>
     Task DeleteAsync(int postId);
