@@ -5,6 +5,7 @@ using HealthSync.Infrastructure.Data;
 using HealthSync.Application.DTOs.Forum;
 using HealthSync.Application.DTOs;
 using HealthSync.Domain.Entities;
+using HealthSync.Application.Interfaces;
 using System.Security.Claims;
 
 namespace HealthSync.WebApi.Controllers;
@@ -15,10 +16,14 @@ namespace HealthSync.WebApi.Controllers;
 public class ForumController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly IFileStorageService _storageService;
+    private readonly IForumPostRepository _postRepository;
 
-    public ForumController(ApplicationDbContext db)
+    public ForumController(ApplicationDbContext db, IFileStorageService storageService, IForumPostRepository postRepository)
     {
         _db = db;
+        _storageService = storageService;
+        _postRepository = postRepository;
     }
 
     /// <summary>
@@ -177,16 +182,23 @@ public class ForumController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new post in a forum category
+    /// Create a new post in a forum category (supports optional image upload)
     /// </summary>
     [HttpPost("posts")]
-    public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> CreatePost([FromForm] string categoryId, [FromForm] string title, [FromForm] string content, [FromForm] IFormFile? image = null)
     {
         try
         {
-            if (!ModelState.IsValid)
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content))
             {
-                return BadRequest(new { success = false, message = "Invalid input", errors = ModelState });
+                return BadRequest(new { success = false, message = "Title and Content are required" });
+            }
+
+            if (!int.TryParse(categoryId, out var cId))
+            {
+                return BadRequest(new { success = false, message = "Invalid category ID" });
             }
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -195,31 +207,58 @@ public class ForumController : ControllerBase
                 return Unauthorized(new { success = false, message = "Invalid user" });
             }
 
-            var categoryExists = await _db.ForumCategories.AnyAsync(c => c.CategoryId == request.CategoryId);
+            var categoryExists = await _db.ForumCategories.AnyAsync(c => c.CategoryId == cId);
             if (!categoryExists)
             {
                 return BadRequest(new { success = false, message = "Invalid category" });
             }
 
+            string? imageUrl = null;
+            // Upload image if provided
+            if (image != null && image.Length > 0)
+            {
+                // Validate image file
+                var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
+                if (!allowedMimeTypes.Contains(image.ContentType))
+                {
+                    return BadRequest(new { success = false, message = "Invalid image format. Allowed: JPEG, PNG, GIF, WebP" });
+                }
+
+                const long maxFileSize = 5 * 1024 * 1024; // 5MB
+                if (image.Length > maxFileSize)
+                {
+                    return BadRequest(new { success = false, message = "Image size must not exceed 5MB" });
+                }
+
+                try
+                {
+                    imageUrl = await _storageService.UploadAsync(image, "forum-posts");
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new { success = false, message = "Failed to upload image", error = ex.Message });
+                }
+            }
+
             var post = new Post
             {
-                CategoryId = request.CategoryId,
+                CategoryId = cId,
                 UserId = userId,
-                Title = request.Title,
-                Content = request.Content,
+                Title = title.Trim(),
+                Content = content.Trim(),
+                ImageUrl = imageUrl,
                 IsPinned = false,
                 IsLocked = false,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _db.Posts.Add(post);
-            await _db.SaveChangesAsync();
+            await _postRepository.AddAsync(post);
 
             // TODO: Trigger background job to update user points (+2 for post)
 
             return CreatedAtAction(nameof(GetPostDetails), new { postId = post.PostId },
-                new { success = true, data = new { postId = post.PostId }, message = "Post created successfully" });
+                new { success = true, data = new { postId = post.PostId, imageUrl = imageUrl }, message = "Post created successfully" });
         }
         catch (Exception ex)
         {
@@ -285,15 +324,11 @@ public class ForumController : ControllerBase
     /// Update a post (only by the author)
     /// </summary>
     [HttpPut("posts/{postId}")]
-    public async Task<IActionResult> UpdatePost(int postId, [FromBody] UpdatePostRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UpdatePost(int postId, [FromForm] string? title, [FromForm] string? content, [FromForm] IFormFile? image = null)
     {
         try
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { success = false, message = "Invalid input", errors = ModelState });
-            }
-
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
@@ -306,18 +341,74 @@ public class ForumController : ControllerBase
                 return NotFound(new { success = false, message = "Post not found" });
             }
 
+            // Verify ownership: only author can update their post
             if (post.UserId != userId)
             {
                 return Forbid();
             }
 
-            post.Title = request.Title ?? post.Title;
-            post.Content = request.Content ?? post.Content;
+            // Validate at least one field is being updated
+            if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(content) && image == null)
+            {
+                return BadRequest(new { success = false, message = "At least one field (title, content, or image) must be provided" });
+            }
+
+            // Update title if provided
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                post.Title = title.Trim();
+            }
+
+            // Update content if provided
+            if (!string.IsNullOrWhiteSpace(content))
+            {
+                post.Content = content.Trim();
+            }
+
+            // Handle image update
+            if (image != null && image.Length > 0)
+            {
+                // Validate image: MIME type whitelist (JPEG, PNG, GIF, WebP)
+                var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
+                if (!allowedMimeTypes.Contains(image.ContentType))
+                {
+                    return BadRequest(new { success = false, message = "Invalid image format. Allowed: JPEG, PNG, GIF, WebP" });
+                }
+
+                // Validate size: max 5MB
+                const long maxFileSize = 5 * 1024 * 1024;
+                if (image.Length > maxFileSize)
+                {
+                    return BadRequest(new { success = false, message = "Image size must not exceed 5MB" });
+                }
+
+                try
+                {
+                    var newImageUrl = await _storageService.UploadAsync(image, "forum-posts");
+                    post.ImageUrl = newImageUrl;
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new { success = false, message = "Failed to upload image", error = ex.Message });
+                }
+            }
+
+            // Update the UpdatedAt timestamp
             post.UpdatedAt = DateTime.UtcNow;
 
-            await _db.SaveChangesAsync();
+            // Persist changes via repository pattern
+            await _postRepository.UpdateAsync(post);
 
-            return Ok(new { success = true, message = "Post updated successfully" });
+            return Ok(new { 
+                success = true, 
+                data = new { 
+                    postId = post.PostId, 
+                    title = post.Title, 
+                    content = post.Content, 
+                    imageUrl = post.ImageUrl 
+                }, 
+                message = "Post updated successfully" 
+            });
         }
         catch (Exception ex)
         {
