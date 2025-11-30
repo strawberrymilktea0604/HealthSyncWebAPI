@@ -228,10 +228,10 @@ public class ForumController : ControllerBase
     }
 
     /// <summary>
-    /// Create a reply to a post
+    /// Create a new reply to a post
     /// </summary>
-    [HttpPost("posts/{postId}/replies")]
-    public async Task<IActionResult> CreateReply(int postId, [FromBody] CreateReplyRequest request)
+    [HttpPost("replies")]
+    public async Task<IActionResult> CreateReply([FromBody] CreateReplyRequest request)
     {
         try
         {
@@ -246,7 +246,7 @@ public class ForumController : ControllerBase
                 return Unauthorized(new { success = false, message = "Invalid user" });
             }
 
-            var post = await _db.Posts.FindAsync(postId);
+            var post = await _db.Posts.FindAsync(request.PostId);
             if (post == null)
             {
                 return NotFound(new { success = false, message = "Post not found" });
@@ -259,7 +259,7 @@ public class ForumController : ControllerBase
 
             var reply = new Reply
             {
-                PostId = postId,
+                PostId = request.PostId,
                 UserId = userId,
                 Content = request.Content,
                 IsHidden = false,
@@ -272,7 +272,7 @@ public class ForumController : ControllerBase
 
             // TODO: Trigger background job to update user points (+1 for reply)
 
-            return CreatedAtAction(nameof(GetPostDetails), new { postId = postId },
+            return CreatedAtAction(nameof(GetPostDetails), new { postId = request.PostId },
                 new { success = true, data = new { replyId = reply.ReplyId }, message = "Reply created successfully" });
         }
         catch (Exception ex)
@@ -326,7 +326,7 @@ public class ForumController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a post (only by the author)
+    /// Delete a post (only by the author or Admin)
     /// </summary>
     [HttpDelete("posts/{postId}")]
     public async Task<IActionResult> DeletePost(int postId)
@@ -339,13 +339,16 @@ public class ForumController : ControllerBase
                 return Unauthorized(new { success = false, message = "Invalid user" });
             }
 
+            var isAdmin = User.IsInRole("Admin");
+
             var post = await _db.Posts.FindAsync(postId);
             if (post == null)
             {
                 return NotFound(new { success = false, message = "Post not found" });
             }
 
-            if (post.UserId != userId)
+            // Check authorization: owner or admin
+            if (post.UserId != userId && !isAdmin)
             {
                 return Forbid();
             }
