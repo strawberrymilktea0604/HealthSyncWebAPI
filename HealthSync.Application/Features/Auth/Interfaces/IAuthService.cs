@@ -8,6 +8,7 @@ public interface IAuthService
     Task<AuthResponse> LoginAsync(LoginRequest request);
     Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request);
     Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request);
+    Task<string> ExchangeGoogleCodeAsync(string code);
     
     /// <summary>
     /// Khởi tạo tài khoản Admin đầu tiên trong hệ thống

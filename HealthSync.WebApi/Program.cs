@@ -13,13 +13,9 @@ using FluentValidation.AspNetCore;
 using FluentValidation;
 using HealthSync.WebApi.Filters;
 
-var builder = WebApplication.CreateBuilder(args);
-
 // ========================================
-// LOAD ENVIRONMENT VARIABLES FROM .env FILE
+// LOAD ENVIRONMENT VARIABLES FROM .env FILE BEFORE BUILDING CONFIGURATION
 // ========================================
-// Priority: .env file > appsettings.json > Environment Variables
-// Check both WebApi directory and solution root directory
 var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
 if (!File.Exists(envFilePath))
 {
@@ -43,14 +39,13 @@ if (File.Exists(envFilePath))
             var key = parts[0].Trim();
             var value = parts[1].Trim();
             
-            // Set environment variable (only if not already set)
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
-            {
-                Environment.SetEnvironmentVariable(key, value);
-            }
+            // Set environment variable (force override)
+            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
         }
     }
 }
+
+var builder = WebApplication.CreateBuilder(args);
 
 // Override appsettings.json with environment variables if they exist
 var adminKeyFromEnv = Environment.GetEnvironmentVariable("ADMIN_INITIALIZATION_KEY");
@@ -141,6 +136,14 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumAdminService,
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthSync API", Version = "v1" });
+
+    // Support for file uploads
+    c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
+    c.MapType<IEnumerable<IFormFile>>(() => new OpenApiSchema 
+    { 
+        Type = "array", 
+        Items = new OpenApiSchema { Type = "string", Format = "binary" } 
+    });
 
     // Add JWT Authentication
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

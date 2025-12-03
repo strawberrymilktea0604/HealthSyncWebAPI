@@ -186,19 +186,14 @@ public class ForumController : ControllerBase
     /// </summary>
     [HttpPost("posts")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> CreatePost([FromForm] string categoryId, [FromForm] string title, [FromForm] string content, [FromForm] IFormFile? image = null)
+    public async Task<IActionResult> CreatePost([FromForm] CreatePostWithImageRequest request)
     {
         try
         {
             // Validate required fields
-            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content))
+            if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Content))
             {
                 return BadRequest(new { success = false, message = "Title and Content are required" });
-            }
-
-            if (!int.TryParse(categoryId, out var cId))
-            {
-                return BadRequest(new { success = false, message = "Invalid category ID" });
             }
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -207,7 +202,7 @@ public class ForumController : ControllerBase
                 return Unauthorized(new { success = false, message = "Invalid user" });
             }
 
-            var categoryExists = await _db.ForumCategories.AnyAsync(c => c.CategoryId == cId);
+            var categoryExists = await _db.ForumCategories.AnyAsync(c => c.CategoryId == request.CategoryId);
             if (!categoryExists)
             {
                 return BadRequest(new { success = false, message = "Invalid category" });
@@ -215,24 +210,24 @@ public class ForumController : ControllerBase
 
             string? imageUrl = null;
             // Upload image if provided
-            if (image != null && image.Length > 0)
+            if (request.Image != null && request.Image.Length > 0)
             {
                 // Validate image file
                 var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
-                if (!allowedMimeTypes.Contains(image.ContentType))
+                if (!allowedMimeTypes.Contains(request.Image.ContentType))
                 {
                     return BadRequest(new { success = false, message = "Invalid image format. Allowed: JPEG, PNG, GIF, WebP" });
                 }
 
                 const long maxFileSize = 5 * 1024 * 1024; // 5MB
-                if (image.Length > maxFileSize)
+                if (request.Image.Length > maxFileSize)
                 {
                     return BadRequest(new { success = false, message = "Image size must not exceed 5MB" });
                 }
 
                 try
                 {
-                    imageUrl = await _storageService.UploadAsync(image, "forum-posts");
+                    imageUrl = await _storageService.UploadAsync(request.Image, "forum-posts");
                 }
                 catch (Exception ex)
                 {
@@ -242,10 +237,10 @@ public class ForumController : ControllerBase
 
             var post = new Post
             {
-                CategoryId = cId,
+                CategoryId = request.CategoryId,
                 UserId = userId,
-                Title = title.Trim(),
-                Content = content.Trim(),
+                Title = request.Title.Trim(),
+                Content = request.Content.Trim(),
                 ImageUrl = imageUrl,
                 IsPinned = false,
                 IsLocked = false,
@@ -325,7 +320,7 @@ public class ForumController : ControllerBase
     /// </summary>
     [HttpPut("posts/{postId}")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UpdatePost(int postId, [FromForm] string? title, [FromForm] string? content, [FromForm] IFormFile? image = null)
+    public async Task<IActionResult> UpdatePost(int postId, [FromForm] UpdatePostRequest request)
     {
         try
         {
@@ -348,43 +343,43 @@ public class ForumController : ControllerBase
             }
 
             // Validate at least one field is being updated
-            if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(content) && image == null)
+            if (string.IsNullOrWhiteSpace(request.Title) && string.IsNullOrWhiteSpace(request.Content) && request.Image == null)
             {
                 return BadRequest(new { success = false, message = "At least one field (title, content, or image) must be provided" });
             }
 
             // Update title if provided
-            if (!string.IsNullOrWhiteSpace(title))
+            if (!string.IsNullOrWhiteSpace(request.Title))
             {
-                post.Title = title.Trim();
+                post.Title = request.Title.Trim();
             }
 
             // Update content if provided
-            if (!string.IsNullOrWhiteSpace(content))
+            if (!string.IsNullOrWhiteSpace(request.Content))
             {
-                post.Content = content.Trim();
+                post.Content = request.Content.Trim();
             }
 
             // Handle image update
-            if (image != null && image.Length > 0)
+            if (request.Image != null && request.Image.Length > 0)
             {
                 // Validate image: MIME type whitelist (JPEG, PNG, GIF, WebP)
                 var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
-                if (!allowedMimeTypes.Contains(image.ContentType))
+                if (!allowedMimeTypes.Contains(request.Image.ContentType))
                 {
                     return BadRequest(new { success = false, message = "Invalid image format. Allowed: JPEG, PNG, GIF, WebP" });
                 }
 
                 // Validate size: max 5MB
                 const long maxFileSize = 5 * 1024 * 1024;
-                if (image.Length > maxFileSize)
+                if (request.Image.Length > maxFileSize)
                 {
                     return BadRequest(new { success = false, message = "Image size must not exceed 5MB" });
                 }
 
                 try
                 {
-                    var newImageUrl = await _storageService.UploadAsync(image, "forum-posts");
+                    var newImageUrl = await _storageService.UploadAsync(request.Image, "forum-posts");
                     post.ImageUrl = newImageUrl;
                 }
                 catch (Exception ex)
