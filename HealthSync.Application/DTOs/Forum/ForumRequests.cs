@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
 namespace HealthSync.Application.DTOs.Forum;
@@ -19,7 +20,8 @@ public class CreatePostWithImageRequest
 
 public class CreateReplyRequest
 {
-    public int PostId { get; set; }
+    [Required(ErrorMessage = "Content is required")]
+    [StringLength(2000, ErrorMessage = "Content must not exceed 2000 characters")]
     public string Content { get; set; } = string.Empty;
 }
 

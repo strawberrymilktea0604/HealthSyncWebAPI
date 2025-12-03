@@ -269,8 +269,8 @@ public class ForumController : ControllerBase
     /// <summary>
     /// Create a new reply to a post
     /// </summary>
-    [HttpPost("replies")]
-    public async Task<IActionResult> CreateReply([FromBody] CreateReplyRequest request)
+    [HttpPost("posts/{postId}/replies")]
+    public async Task<IActionResult> CreateReply(int postId, [FromBody] CreateReplyRequest request)
     {
         try
         {
@@ -285,7 +285,7 @@ public class ForumController : ControllerBase
                 return Unauthorized(new { success = false, message = "Invalid user" });
             }
 
-            var post = await _db.Posts.FindAsync(request.PostId);
+            var post = await _db.Posts.FindAsync(postId);
             if (post == null)
             {
                 return NotFound(new { success = false, message = "Post not found" });
@@ -298,7 +298,7 @@ public class ForumController : ControllerBase
 
             var reply = new Reply
             {
-                PostId = request.PostId,
+                PostId = postId,
                 UserId = userId,
                 Content = request.Content,
                 IsHidden = false,
@@ -311,7 +311,7 @@ public class ForumController : ControllerBase
 
             // TODO: Trigger background job to update user points (+1 for reply)
 
-            return CreatedAtAction(nameof(GetPostDetails), new { postId = request.PostId },
+            return CreatedAtAction(nameof(GetPostDetails), new { postId = postId },
                 new { success = true, data = new { replyId = reply.ReplyId }, message = "Reply created successfully" });
         }
         catch (Exception ex)
@@ -442,6 +442,13 @@ public class ForumController : ControllerBase
             if (post.UserId != userId && !isAdmin)
             {
                 return Forbid();
+            }
+
+            // Check if post has replies - cannot delete if has replies
+            var hasReplies = await _db.Replies.AnyAsync(r => r.PostId == postId);
+            if (hasReplies)
+            {
+                return BadRequest(new { success = false, message = "Cannot delete post that has replies" });
             }
 
             _db.Posts.Remove(post);

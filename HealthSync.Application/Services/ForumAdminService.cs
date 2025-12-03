@@ -5,10 +5,14 @@ namespace HealthSync.Application.Services;
 public class ForumAdminService : IForumAdminService
 {
     private readonly IForumPostRepository _forumPostRepository;
+    private readonly IForumReplyRepository _forumReplyRepository;
 
-    public ForumAdminService(IForumPostRepository forumPostRepository)
+    public ForumAdminService(
+        IForumPostRepository forumPostRepository,
+        IForumReplyRepository forumReplyRepository)
     {
         _forumPostRepository = forumPostRepository;
+        _forumReplyRepository = forumReplyRepository;
     }
 
     public async Task<(bool Success, string Message)> DeletePostAsync(int postId, int adminId)
@@ -108,6 +112,45 @@ public class ForumAdminService : IForumAdminService
         catch (Exception ex)
         {
             return (false, $"Error unlocking post: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> HideReplyAsync(int replyId, int adminId)
+    {
+        try
+        {
+            var reply = await _forumReplyRepository.GetByIdAsync(replyId);
+            if (reply is null)
+                return (false, "Reply not found");
+
+            reply.IsHidden = true;
+            reply.UpdatedAt = DateTime.UtcNow;
+            await _forumReplyRepository.SaveChangesAsync();
+
+            return (true, "Reply hidden successfully");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Error hiding reply: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> DeleteReplyAsync(int replyId, int adminId)
+    {
+        try
+        {
+            var replyExists = await _forumReplyRepository.ExistsAsync(replyId);
+            if (!replyExists)
+                return (false, "Reply not found");
+
+            await _forumReplyRepository.DeleteAsync(replyId);
+            await _forumReplyRepository.SaveChangesAsync();
+
+            return (true, "Reply deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Error deleting reply: {ex.Message}");
         }
     }
 }

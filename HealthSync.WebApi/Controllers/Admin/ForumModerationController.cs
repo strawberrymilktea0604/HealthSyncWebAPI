@@ -25,16 +25,15 @@ public class ForumModerationController : ControllerBase
     }
 
     /// <summary>
-    /// Toggle pin status of a post (pin if unpinned, unpin if pinned)
+    /// Pin a post to top of category (Admin only)
     /// </summary>
     /// <param name="id">Post ID</param>
-    /// <returns>Result with current pin status</returns>
     [HttpPut("posts/{id}/pin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> TogglePinPost(int id)
+    public async Task<IActionResult> PinPost(int id)
     {
         try
         {
@@ -44,7 +43,7 @@ public class ForumModerationController : ControllerBase
                 return Unauthorized(new { message = "Invalid admin user" });
             }
 
-            var (success, message, isPinned) = await _forumAdminService.TogglePinPostAsync(id, adminId);
+            var (success, message) = await _forumAdminService.PinPostAsync(id, adminId);
 
             if (!success)
             {
@@ -55,11 +54,11 @@ public class ForumModerationController : ControllerBase
                 return BadRequest(new { message });
             }
 
-            return Ok(new { message, isPinned });
+            return Ok(new { message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error toggling pin status for post with ID {PostId}", id);
+            _logger.LogError(ex, "Error pinning post with ID {PostId}", id);
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
@@ -97,6 +96,117 @@ public class ForumModerationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error locking post with ID {PostId}", id);
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Delete a post and all its replies (Admin only)
+    /// </summary>
+    /// <param name="id">Post ID</param>
+    [HttpDelete("posts/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeletePost(int id)
+    {
+        try
+        {
+            var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(adminIdClaim, out var adminId) || adminId <= 0)
+            {
+                return Unauthorized(new { message = "Invalid admin user" });
+            }
+
+            var (success, message) = await _forumAdminService.DeletePostAsync(id, adminId);
+
+            if (!success)
+            {
+                if (message.Contains("not found"))
+                    return NotFound(new { message });
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting post with ID {PostId}", id);
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Hide a reply (set is_hidden = true) (Admin only)
+    /// </summary>
+    /// <param name="id">Reply ID</param>
+    [HttpPut("replies/{id}/hide")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> HideReply(int id)
+    {
+        try
+        {
+            var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(adminIdClaim, out var adminId) || adminId <= 0)
+            {
+                return Unauthorized(new { message = "Invalid admin user" });
+            }
+
+            var (success, message) = await _forumAdminService.HideReplyAsync(id, adminId);
+
+            if (!success)
+            {
+                if (message.Contains("not found"))
+                    return NotFound(new { message });
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error hiding reply with ID {ReplyId}", id);
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Delete a reply (Admin only)
+    /// </summary>
+    /// <param name="id">Reply ID</param>
+    [HttpDelete("replies/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteReply(int id)
+    {
+        try
+        {
+            var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(adminIdClaim, out var adminId) || adminId <= 0)
+            {
+                return Unauthorized(new { message = "Invalid admin user" });
+            }
+
+            var (success, message) = await _forumAdminService.DeleteReplyAsync(id, adminId);
+
+            if (!success)
+            {
+                if (message.Contains("not found"))
+                    return NotFound(new { message });
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting reply with ID {ReplyId}", id);
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
