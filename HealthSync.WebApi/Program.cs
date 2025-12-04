@@ -131,6 +131,9 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.INutritionLogReposi
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumPostRepository, HealthSync.Infrastructure.Repositories.ForumPostRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumReplyRepository, HealthSync.Infrastructure.Repositories.ForumReplyRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumAdminService, HealthSync.Application.Services.ForumAdminService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeRepository, HealthSync.Infrastructure.Repositories.ChallengeRepository>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeParticipationRepository, HealthSync.Infrastructure.Repositories.ChallengeParticipationRepository>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeAdminService, HealthSync.Application.Services.ChallengeAdminService>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>
