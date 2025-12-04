@@ -237,6 +237,24 @@ public class ChallengeAdminService : IChallengeAdminService
         }
     }
 
+    public async Task<(bool Success, PaginatedResult<ParticipationDto>? Data, string Message)> GetAllPendingApprovalsAsync(int page = 1, int pageSize = 20)
+    {
+        try
+        {
+            var (participations, totalCount) = await _participationRepository.GetAllPendingApprovalsAsync(page, pageSize);
+
+            var dtos = participations.Select(p => MapParticipationToDto(p)).ToList();
+
+            var result = new PaginatedResult<ParticipationDto>(dtos, totalCount, page, pageSize);
+
+            return (true, result, "Pending approvals retrieved successfully");
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Error retrieving pending approvals: {ex.Message}");
+        }
+    }
+
     // Helper methods
     private ChallengeDto MapToDto(Challenge challenge, int participantCount)
     {

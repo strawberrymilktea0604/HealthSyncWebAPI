@@ -281,6 +281,39 @@ public class CommunityChallengeController : ControllerBase
     }
 
     /// <summary>
+    /// Get all pending approvals across all challenges (paginated)
+    /// </summary>
+    /// <param name="page">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 20, max: 100)</param>
+    /// <returns>200 OK with paginated pending participations</returns>
+    [HttpGet("pending")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetAllPendingApprovals([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        try
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+            _logger.LogInformation($"Retrieving pending approvals - Page: {page}, PageSize: {pageSize}");
+
+            var (success, data, message) = await _challengeAdminService.GetAllPendingApprovalsAsync(page, pageSize);
+
+            if (!success)
+                return BadRequest(new { success = false, message });
+
+            return Ok(new { success = true, data, message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving pending approvals: {ex.Message}");
+            return StatusCode(500, new { success = false, message = "An error occurred while retrieving pending approvals" });
+        }
+    }
+
+    /// <summary>
     /// Get all participants for a challenge
     /// </summary>
     /// <param name="challengeId">Challenge ID</param>

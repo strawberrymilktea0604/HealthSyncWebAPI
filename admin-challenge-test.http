@@ -46,13 +46,19 @@ Content-Type: application/json
 
 ###
 
-### 5. Get pending approvals for challenge
+### 5. Get all pending approvals across all challenges (paginated)
+GET {{baseUrl}}/api/v1/admin/challenges/pending?page=1&pageSize=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 6. Get pending approvals for specific challenge
 GET {{baseUrl}}/api/v1/admin/challenges/1/pending-approvals
 Authorization: Bearer {{adminToken}}
 
 ###
 
-### 6. Review participation (approve)
+### 7. Review participation (approve)
 POST {{baseUrl}}/api/v1/admin/challenges/participations/1/review
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -64,7 +70,7 @@ Content-Type: application/json
 
 ###
 
-### 7. Review participation (reject)
+### 8. Review participation (reject)
 POST {{baseUrl}}/api/v1/admin/challenges/participations/2/review
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -76,13 +82,13 @@ Content-Type: application/json
 
 ###
 
-### 8. Get all participants for challenge
+### 9. Get all participants for challenge
 GET {{baseUrl}}/api/v1/admin/challenges/1/participants
 Authorization: Bearer {{adminToken}}
 
 ###
 
-### 9. Delete challenge
+### 10. Delete challenge
 DELETE {{baseUrl}}/api/v1/admin/challenges/1
 Authorization: Bearer {{adminToken}}
 

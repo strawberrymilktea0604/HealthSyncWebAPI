@@ -73,6 +73,24 @@ public class ChallengeParticipationRepository : IChallengeParticipationRepositor
             .CountAsync();
     }
 
+    public async Task<(List<ChallengeParticipation> Items, int TotalCount)> GetAllPendingApprovalsAsync(int page = 1, int pageSize = 20)
+    {
+        var query = _context.ChallengeParticipations
+            .Where(p => p.Status == ParticipationStatus.PendingApproval)
+            .Include(p => p.Challenge)
+            .Include(p => p.User)
+            .ThenInclude(u => u.UserProfile)
+            .OrderByDescending(p => p.SubmittedAt ?? p.JoinedDate);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
     public Task<ChallengeParticipation> AddAsync(ChallengeParticipation participation)
     {
         _context.ChallengeParticipations.Add(participation);

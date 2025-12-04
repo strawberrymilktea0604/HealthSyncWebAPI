@@ -45,6 +45,11 @@ public interface IChallengeParticipationRepository
     Task<int> GetPendingApprovalsCountAsync();
 
     /// <summary>
+    /// Get all pending approvals across all challenges (paginated)
+    /// </summary>
+    Task<(List<ChallengeParticipation> Items, int TotalCount)> GetAllPendingApprovalsAsync(int page = 1, int pageSize = 20);
+
+    /// <summary>
     /// Add new participation
     /// </summary>
     Task<ChallengeParticipation> AddAsync(ChallengeParticipation participation);

@@ -47,4 +47,9 @@ public interface IChallengeAdminService
     /// Get all participants for a challenge
     /// </summary>
     Task<(bool Success, List<ParticipationDto>? Data, string Message)> GetChallengeParticipantsAsync(int challengeId);
+
+    /// <summary>
+    /// Get all pending approvals across all challenges (paginated)
+    /// </summary>
+    Task<(bool Success, PaginatedResult<ParticipationDto>? Data, string Message)> GetAllPendingApprovalsAsync(int page = 1, int pageSize = 20);
 }
