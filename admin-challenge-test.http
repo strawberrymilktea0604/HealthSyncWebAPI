@@ -1,0 +1,89 @@
+### Admin Community Challenge Management Test
+
+@baseUrl = https://localhost:7144
+@adminToken = <YOUR_ADMIN_JWT_TOKEN_HERE>
+
+### 1. Create new community challenge
+POST {{baseUrl}}/api/v1/admin/challenges
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "30-Day Running Challenge",
+  "description": "Run a total of 50km in 30 days",
+  "challengeType": "Workout",
+  "startDate": "2025-12-01T00:00:00Z",
+  "endDate": "2025-12-31T23:59:59Z",
+  "criteria": "Complete 50km of running within 30 days and submit proof",
+  "maxParticipants": 100,
+  "rewardDescription": "Certificate + 20% discount coupon"
+}
+
+###
+
+### 2. Get all challenges (paginated)
+GET {{baseUrl}}/api/v1/admin/challenges?page=1&pageSize=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3. Get challenge by ID
+GET {{baseUrl}}/api/v1/admin/challenges/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4. Update challenge
+PUT {{baseUrl}}/api/v1/admin/challenges/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Updated: 30-Day Running Challenge",
+  "status": "Open",
+  "maxParticipants": 150
+}
+
+###
+
+### 5. Get pending approvals for challenge
+GET {{baseUrl}}/api/v1/admin/challenges/1/pending-approvals
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 6. Review participation (approve)
+POST {{baseUrl}}/api/v1/admin/challenges/participations/1/review
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "approved": true,
+  "reviewNotes": "Great effort! Distance verified from running app."
+}
+
+###
+
+### 7. Review participation (reject)
+POST {{baseUrl}}/api/v1/admin/challenges/participations/2/review
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "approved": false,
+  "reviewNotes": "Proof provided is not sufficient. Please resubmit with detailed logs."
+}
+
+###
+
+### 8. Get all participants for challenge
+GET {{baseUrl}}/api/v1/admin/challenges/1/participants
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 9. Delete challenge
+DELETE {{baseUrl}}/api/v1/admin/challenges/1
+Authorization: Bearer {{adminToken}}
+
+###
