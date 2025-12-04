@@ -199,6 +199,27 @@ app.MapControllers();
 // Add root endpoint
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
+// Trong file Program.cs của API
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        // Lệnh này sẽ tự động check, nếu chưa có DB thì tạo, chưa có bảng thì thêm
+        // Nếu có rồi thì thôi, không báo lỗi Crash app như lệnh CreateDatabase
+        context.Database.Migrate(); 
+    }
+    catch (Exception ex)
+    {
+        // Log lỗi ra nhưng KHÔNG làm crash app
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+        
+        // Mẹo: Nếu lỗi "Already exists" thì coi như thành công, cho chạy tiếp
+    }
+}
+
 app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
