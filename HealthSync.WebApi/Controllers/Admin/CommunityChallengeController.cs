@@ -339,4 +339,46 @@ public class CommunityChallengeController : ControllerBase
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving participants" });
         }
     }
+
+    /// <summary>
+    /// Reject participation submission (set status to Failed)
+    /// </summary>
+    /// <param name="submissionId">Participation ID (submission to reject)</param>
+    /// <param name="request">Rejection reason/notes</param>
+    /// <returns>200 OK with updated participation</returns>
+    [HttpPost("reject/{submissionId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RejectParticipation(int submissionId, [FromBody] ReviewParticipationRequest request)
+    {
+        try
+        {
+            var adminId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0;
+
+            if (adminId == 0)
+                return Unauthorized(new { success = false, message = "Invalid admin ID" });
+
+            _logger.LogInformation($"Admin {adminId} rejecting participation {submissionId}");
+
+            var (success, data, message) = await _challengeAdminService.RejectParticipationAsync(submissionId, request, adminId);
+
+            if (!success)
+            {
+                _logger.LogWarning($"Failed to reject participation {submissionId}: {message}");
+                return NotFound(new { success = false, message });
+            }
+
+            _logger.LogInformation($"Participation {submissionId} rejected successfully by admin {adminId}");
+            return Ok(new { success = true, data, message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error rejecting participation {submissionId}: {ex.Message}");
+            return StatusCode(500, new { success = false, message = "An error occurred while rejecting the participation" });
+        }
+    }
 }

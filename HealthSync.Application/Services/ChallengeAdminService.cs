@@ -297,4 +297,42 @@ public class ChallengeAdminService : IChallengeAdminService
             CompletedAt = participation.CompletedAt
         };
     }
+
+    public async Task<(bool Success, ParticipationDto? Data, string Message)> RejectParticipationAsync(
+        int participationId,
+        ReviewParticipationRequest request,
+        int adminId)
+    {
+        try
+        {
+            // Get participation
+            var participation = await _participationRepository.GetByIdWithDetailsAsync(participationId);
+            if (participation is null)
+                return (false, null, "Participation not found");
+
+            // Check if status is PendingApproval
+            if (participation.Status != ParticipationStatus.PendingApproval)
+                return (false, null, $"Cannot reject participation with status '{participation.Status}'. Only 'PendingApproval' status can be rejected.");
+
+            // Check admin exists
+            var admin = await _userRepository.GetByIdAsync(adminId);
+            if (admin is null)
+                return (false, null, "Admin not found");
+
+            // Update participation status to Failed
+            participation.Status = ParticipationStatus.Failed;
+            participation.ReviewedByAdminId = adminId;
+            participation.ReviewDate = DateTime.UtcNow;
+            participation.ReviewNotes = request.ReviewNotes;
+
+            await _participationRepository.UpdateAsync(participation);
+            await _participationRepository.SaveChangesAsync();
+
+            return (true, MapParticipationToDto(participation), "Participation rejected successfully");
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Error rejecting participation: {ex.Message}");
+        }
+    }
 }

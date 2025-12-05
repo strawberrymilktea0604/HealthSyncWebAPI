@@ -52,4 +52,12 @@ public interface IChallengeAdminService
     /// Get all pending approvals across all challenges (paginated)
     /// </summary>
     Task<(bool Success, PaginatedResult<ParticipationDto>? Data, string Message)> GetAllPendingApprovalsAsync(int page = 1, int pageSize = 20);
+
+    /// <summary>
+    /// Reject participation submission (set status to Failed)
+    /// </summary>
+    Task<(bool Success, ParticipationDto? Data, string Message)> RejectParticipationAsync(
+        int participationId, 
+        ReviewParticipationRequest request, 
+        int adminId);
 }

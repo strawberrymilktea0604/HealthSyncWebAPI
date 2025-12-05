@@ -93,3 +93,31 @@ DELETE {{baseUrl}}/api/v1/admin/challenges/1
 Authorization: Bearer {{adminToken}}
 
 ###
+
+### 11. Reject participation submission (set status to Failed)
+POST {{baseUrl}}/api/v1/admin/challenges/reject/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "approved": false,
+  "reviewNotes": "Distance not verified. Please provide clear photographic proof of completion."
+}
+
+### Expected Response (200 OK):
+### {
+###   "success": true,
+###   "data": {
+###     "participationId": 1,
+###     "challengeId": 1,
+###     "userId": 1,
+###     "userFullName": "Customer Name",
+###     "status": "Failed",
+###     "reviewNotes": "Distance not verified. Please provide clear photographic proof of completion.",
+###     "reviewedByAdminId": 2,
+###     "reviewDate": "2025-12-05T14:40:00Z"
+###   },
+###   "message": "Participation rejected successfully"
+### }
+
+###
