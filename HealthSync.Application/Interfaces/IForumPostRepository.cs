@@ -35,6 +35,11 @@ public interface IForumPostRepository
     Task DeleteAsync(int postId);
 
     /// <summary>
+    /// Get all posts
+    /// </summary>
+    Task<IEnumerable<Post>> GetAllPostsAsync();
+
+    /// <summary>
     /// Save changes to database
     /// </summary>
     Task<int> SaveChangesAsync();

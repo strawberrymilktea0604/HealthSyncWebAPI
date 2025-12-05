@@ -25,6 +25,11 @@ public interface IForumReplyRepository
     Task DeleteAsync(int replyId);
 
     /// <summary>
+    /// Get all replies
+    /// </summary>
+    Task<IEnumerable<Reply>> GetAllAsync();
+
+    /// <summary>
     /// Save changes to database
     /// </summary>
     Task<int> SaveChangesAsync();

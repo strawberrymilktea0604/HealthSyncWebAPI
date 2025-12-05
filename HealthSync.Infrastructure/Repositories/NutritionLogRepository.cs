@@ -133,4 +133,12 @@ public class NutritionLogRepository : INutritionLogRepository
             .Include(fe => fe.NutritionLog)
             .FirstOrDefaultAsync(fe => fe.FoodEntryId == foodEntryId);
     }
+
+    /// <summary>
+    /// Get all nutrition logs
+    /// </summary>
+    public async Task<IEnumerable<NutritionLog>> GetAllAsync()
+    {
+        return await _context.NutritionLogs.ToListAsync();
+    }
 }

@@ -134,6 +134,7 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumAdminService,
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeRepository, HealthSync.Infrastructure.Repositories.ChallengeRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeParticipationRepository, HealthSync.Infrastructure.Repositories.ChallengeParticipationRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeAdminService, HealthSync.Application.Services.ChallengeAdminService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IDashboardAdminService, HealthSync.Application.Services.DashboardAdminService>();
 
 // Register background jobs
 builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardUpdateJob, HealthSync.Infrastructure.BackgroundJobs.LeaderboardUpdateJob>();
