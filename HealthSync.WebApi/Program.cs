@@ -135,6 +135,9 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeRepositor
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeParticipationRepository, HealthSync.Infrastructure.Repositories.ChallengeParticipationRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeAdminService, HealthSync.Application.Services.ChallengeAdminService>();
 
+// Register background jobs
+builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardUpdateJob, HealthSync.Infrastructure.BackgroundJobs.LeaderboardUpdateJob>();
+
 // Add Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>
 {

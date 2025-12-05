@@ -1,0 +1,72 @@
+### Leaderboard Update Job Tests
+
+@baseUrl = https://localhost:7144
+@adminToken = <YOUR_ADMIN_JWT_TOKEN_HERE>
+
+### 1. Update all users' contribution points from Leaderboard to UserProfile
+POST {{baseUrl}}/api/v1/admin/leaderboard/update-all
+Authorization: Bearer {{adminToken}}
+
+### Expected Response (200 OK):
+# {
+#   "success": true,
+#   "message": "Leaderboard update job executed successfully. All users' contribution points have been synced from Leaderboard to UserProfile."
+# }
+
+### Response Details:
+# - Reads all Leaderboard entries
+# - For each entry, gets the corresponding UserProfile
+# - Updates UserProfile.ContributionPoints = Leaderboard.TotalPoints
+# - Sets UserProfile.UpdatedAt = now
+# - Persists changes to database
+# - Returns count of updated users and errors
+
+###
+
+### 2. Update a specific user's contribution points
+POST {{baseUrl}}/api/v1/admin/leaderboard/update/1
+Authorization: Bearer {{adminToken}}
+
+### Expected Response (200 OK):
+# {
+#   "success": true,
+#   "message": "Leaderboard update job executed successfully for user 1. Contribution points have been synced from Leaderboard to UserProfile."
+# }
+
+### Response Details:
+# - Gets Leaderboard entry for UserId = 1
+# - Gets UserProfile for UserId = 1
+# - Updates UserProfile.ContributionPoints = Leaderboard.TotalPoints
+# - Persists changes to database
+# - Returns success message
+
+###
+
+### Error Cases:
+
+### Case 1: Invalid User ID (UserId <= 0)
+POST {{baseUrl}}/api/v1/admin/leaderboard/update/0
+Authorization: Bearer {{adminToken}}
+
+# Response (400 Bad Request):
+# {
+#   "success": false,
+#   "message": "Invalid user ID"
+# }
+
+###
+
+### Case 2: Missing Authentication
+POST {{baseUrl}}/api/v1/admin/leaderboard/update-all
+
+# Response (401 Unauthorized)
+
+###
+
+### Case 3: Non-Admin User (Customer role)
+POST {{baseUrl}}/api/v1/admin/leaderboard/update-all
+Authorization: Bearer <CUSTOMER_JWT_TOKEN>
+
+# Response (403 Forbidden)
+
+###

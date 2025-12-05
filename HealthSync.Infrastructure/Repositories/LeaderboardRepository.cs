@@ -25,9 +25,19 @@ public class LeaderboardRepository : ILeaderboardRepository
         return await _context.Leaderboards.FirstOrDefaultAsync(l => l.UserId == userId);
     }
 
+    public async Task<IEnumerable<Leaderboard>> GetAllAsync()
+    {
+        return await _context.Leaderboards.ToListAsync();
+    }
+
     public async Task UpdateAsync(Leaderboard leaderboard)
     {
         _context.Leaderboards.Update(leaderboard);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task SaveChangesAsync()
+    {
         await _context.SaveChangesAsync();
     }
 }
