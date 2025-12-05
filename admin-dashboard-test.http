@@ -1,0 +1,82 @@
+### Admin Dashboard Statistics Tests
+
+@baseUrl = https://localhost:7144
+@adminToken = <YOUR_ADMIN_JWT_TOKEN_HERE>
+
+### 1. Get main dashboard statistics (3 key metrics)
+GET {{baseUrl}}/api/v1/admin/dashboard/stats
+Authorization: Bearer {{adminToken}}
+
+### Expected Response (200 OK):
+# {
+#   "success": true,
+#   "data": {
+#     "totalActiveUsers": 5,
+#     "newUsersThisMonth": 2,
+#     "workoutLogsToday": 3,
+#     "calculatedAt": "2025-12-05T14:30:00Z"
+#   },
+#   "message": "Dashboard statistics retrieved successfully"
+# }
+
+### Metrics Explanation:
+# - totalActiveUsers: Total count of users with is_active = true
+# - newUsersThisMonth: Count of users created from 1st of current month to today
+# - workoutLogsToday: Count of workout logs created on today's date
+
+###
+
+### 2. Get detailed dashboard statistics (extended metrics)
+GET {{baseUrl}}/api/v1/admin/dashboard/stats/detailed
+Authorization: Bearer {{adminToken}}
+
+### Expected Response (200 OK):
+# {
+#   "success": true,
+#   "data": {
+#     "totalActiveUsers": 5,
+#     "newUsersThisMonth": 2,
+#     "workoutLogsToday": 3,
+#     "nutritionLogsToday": 2,
+#     "forumPostsThisMonth": 4,
+#     "forumRepliesThisMonth": 8,
+#     "openChallenges": 2,
+#     "pendingChallengeSubmissions": 1,
+#     "calculatedAt": "2025-12-05T14:30:00Z"
+#   },
+#   "message": "Detailed statistics retrieved successfully"
+# }
+
+### Additional Metrics:
+# - nutritionLogsToday: Count of nutrition logs created today
+# - forumPostsThisMonth: Count of forum posts created this month
+# - forumRepliesThisMonth: Count of forum replies created this month
+# - openChallenges: Count of challenges with status = Open
+# - pendingChallengeSubmissions: Count of participations with status = PendingApproval
+
+###
+
+### Error Cases:
+
+### Case 1: Missing Authentication
+GET {{baseUrl}}/api/v1/admin/dashboard/stats
+
+# Response (401 Unauthorized)
+
+###
+
+### Case 2: Non-Admin User (Customer role)
+GET {{baseUrl}}/api/v1/admin/dashboard/stats
+Authorization: Bearer <CUSTOMER_JWT_TOKEN>
+
+# Response (403 Forbidden)
+
+###
+
+### Case 3: Server Error
+GET {{baseUrl}}/api/v1/admin/dashboard/stats
+Authorization: Bearer {{adminToken}}
+
+# Response (500 Internal Server Error) - if database connection fails or unexpected error occurs
+
+###

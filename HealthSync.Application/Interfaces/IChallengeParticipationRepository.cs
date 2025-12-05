@@ -50,6 +50,11 @@ public interface IChallengeParticipationRepository
     Task<(List<ChallengeParticipation> Items, int TotalCount)> GetAllPendingApprovalsAsync(int page = 1, int pageSize = 20);
 
     /// <summary>
+    /// Get all participations
+    /// </summary>
+    Task<IEnumerable<ChallengeParticipation>> GetAllAsync();
+
+    /// <summary>
     /// Add new participation
     /// </summary>
     Task<ChallengeParticipation> AddAsync(ChallengeParticipation participation);

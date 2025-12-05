@@ -51,4 +51,9 @@ public interface INutritionLogRepository
     /// Lấy FoodEntry theo id với NutritionLog để check ownership
     /// </summary>
     Task<FoodEntry?> GetFoodEntryByIdAsync(int foodEntryId);
+
+    /// <summary>
+    /// Get all nutrition logs
+    /// </summary>
+    Task<IEnumerable<NutritionLog>> GetAllAsync();
 }

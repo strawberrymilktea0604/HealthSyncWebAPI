@@ -45,6 +45,11 @@ public class ForumReplyRepository : IForumReplyRepository
         }
     }
 
+    public async Task<IEnumerable<Reply>> GetAllAsync()
+    {
+        return await _context.Replies.ToListAsync();
+    }
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

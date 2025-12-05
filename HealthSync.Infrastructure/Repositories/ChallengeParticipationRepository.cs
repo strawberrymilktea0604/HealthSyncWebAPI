@@ -112,6 +112,11 @@ public class ChallengeParticipationRepository : IChallengeParticipationRepositor
         }
     }
 
+    public async Task<IEnumerable<ChallengeParticipation>> GetAllAsync()
+    {
+        return await _context.ChallengeParticipations.ToListAsync();
+    }
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

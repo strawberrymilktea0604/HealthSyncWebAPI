@@ -59,6 +59,11 @@ public class ForumPostRepository : IForumPostRepository
         }
     }
 
+    public async Task<IEnumerable<Post>> GetAllPostsAsync()
+    {
+        return await _context.Posts.ToListAsync();
+    }
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();
