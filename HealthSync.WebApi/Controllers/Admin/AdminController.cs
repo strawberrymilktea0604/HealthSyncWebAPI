@@ -136,4 +136,37 @@ public class AdminController : ControllerBase
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving detailed statistics", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Get top content (top 5 exercises and top 5 forum categories)
+    /// </summary>
+    /// <returns>200 OK with top content data</returns>
+    [HttpGet("dashboard/top-content")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetTopContent()
+    {
+        try
+        {
+            _logger.LogInformation("[AdminController] Getting top content (exercises and forum categories)");
+
+            var (success, data, message) = await _dashboardService.GetTopContentAsync();
+
+            if (!success)
+            {
+                _logger.LogWarning($"[AdminController] Failed to get top content: {message}");
+                return StatusCode(500, new { success = false, message });
+            }
+
+            _logger.LogInformation("[AdminController] Top content retrieved successfully");
+            return Ok(new { success = true, data, message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"[AdminController] Error getting top content: {ex.Message}");
+            return StatusCode(500, new { success = false, message = "An error occurred while retrieving top content", error = ex.Message });
+        }
+    }
 }

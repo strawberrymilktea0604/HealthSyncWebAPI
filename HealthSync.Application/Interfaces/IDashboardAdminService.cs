@@ -18,4 +18,9 @@ public interface IDashboardAdminService
     /// Get detailed statistics with additional metrics
     /// </summary>
     Task<(bool Success, object? Data, string Message)> GetDetailedStatsAsync();
+
+    /// <summary>
+    /// Get top content (top 5 exercises and top 5 forum categories)
+    /// </summary>
+    Task<(bool Success, object? Data, string Message)> GetTopContentAsync();
 }

@@ -16,6 +16,9 @@ public class DashboardAdminService : IDashboardAdminService
     private readonly IForumReplyRepository _forumReplyRepository;
     private readonly IChallengeRepository _challengeRepository;
     private readonly IChallengeParticipationRepository _participationRepository;
+    private readonly IExerciseRepository _exerciseRepository;
+    private readonly IForumCategoryRepository _forumCategoryRepository;
+    private readonly IExerciseSessionRepository _exerciseSessionRepository;
     private readonly ILogger<DashboardAdminService> _logger;
 
     public DashboardAdminService(
@@ -26,6 +29,9 @@ public class DashboardAdminService : IDashboardAdminService
         IForumReplyRepository forumReplyRepository,
         IChallengeRepository challengeRepository,
         IChallengeParticipationRepository participationRepository,
+        IExerciseRepository exerciseRepository,
+        IForumCategoryRepository forumCategoryRepository,
+        IExerciseSessionRepository exerciseSessionRepository,
         ILogger<DashboardAdminService> logger)
     {
         _userRepository = userRepository;
@@ -35,6 +41,9 @@ public class DashboardAdminService : IDashboardAdminService
         _forumReplyRepository = forumReplyRepository;
         _challengeRepository = challengeRepository;
         _participationRepository = participationRepository;
+        _exerciseRepository = exerciseRepository;
+        _forumCategoryRepository = forumCategoryRepository;
+        _exerciseSessionRepository = exerciseSessionRepository;
         _logger = logger;
     }
 
@@ -201,4 +210,111 @@ public class DashboardAdminService : IDashboardAdminService
             return (false, null, $"Error calculating statistics: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Get top content (top 5 exercises and top 5 forum categories)
+    /// </summary>
+    public async Task<(bool Success, object? Data, string Message)> GetTopContentAsync()
+    {
+        try
+        {
+            _logger.LogInformation("[DashboardAdminService] Calculating top content");
+
+            // Get top 5 exercises (by usage count in ExerciseSessions)
+            var topExercises = new List<TopExerciseDto>();
+            try
+            {
+                var allExercises = await _exerciseRepository.GetAllAsync();
+                var allSessions = await _exerciseSessionRepository.GetAllAsync();
+
+                var exerciseUsage = allSessions
+                    .GroupBy(s => s.ExerciseId)
+                    .Select(g => new
+                    {
+                        ExerciseId = g.Key,
+                        UsageCount = g.Count()
+                    })
+                    .OrderByDescending(x => x.UsageCount)
+                    .Take(5)
+                    .ToList();
+
+                foreach (var usage in exerciseUsage)
+                {
+                    var exercise = allExercises.FirstOrDefault(e => e.ExerciseId == usage.ExerciseId);
+                    if (exercise != null)
+                    {
+                        topExercises.Add(new TopExerciseDto
+                        {
+                            ExerciseId = exercise.ExerciseId,
+                            Name = exercise.Name,
+                            MuscleGroup = exercise.MuscleGroup.ToString(),
+                            DifficultyLevel = exercise.DifficultyLevel.ToString(),
+                            UsageCount = usage.UsageCount
+                        });
+                    }
+                }
+
+                _logger.LogInformation($"[DashboardAdminService] Found {topExercises.Count} top exercises");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"[DashboardAdminService] Error getting top exercises: {ex.Message}");
+            }
+
+            // Get top 5 forum categories (by activity: posts + replies)
+            var topForumCategories = new List<TopForumCategoryDto>();
+            try
+            {
+                var allCategories = await _forumCategoryRepository.GetAllAsync();
+                var allPosts = await _forumPostRepository.GetAllPostsAsync();
+                var allReplies = await _forumReplyRepository.GetAllAsync();
+
+                var categoryActivity = allCategories
+                    .Select(c => new TopForumCategoryDto
+                    {
+                        CategoryId = c.CategoryId,
+                        Name = c.Name,
+                        PostCount = allPosts.Count(p => p.CategoryId == c.CategoryId),
+                        ReplyCount = allReplies.Count(r => 
+                            allPosts.FirstOrDefault(p => p.PostId == r.PostId)?.CategoryId == c.CategoryId),
+                        TotalActivity = 0 // Will calculate below
+                    })
+                    .ToList();
+
+                // Calculate total activity and sort
+                foreach (var cat in categoryActivity)
+                {
+                    cat.TotalActivity = cat.PostCount + cat.ReplyCount;
+                }
+
+                topForumCategories = categoryActivity
+                    .OrderByDescending(x => x.TotalActivity)
+                    .Take(5)
+                    .ToList();
+
+                _logger.LogInformation($"[DashboardAdminService] Found {topForumCategories.Count} top forum categories");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"[DashboardAdminService] Error getting top forum categories: {ex.Message}");
+            }
+
+            var topContent = new TopContentDto
+            {
+                TopExercises = topExercises,
+                TopForumCategories = topForumCategories,
+                CalculatedAt = DateTime.UtcNow
+            };
+
+            _logger.LogInformation("[DashboardAdminService] Top content calculated successfully");
+
+            return (true, topContent, "Top content retrieved successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"[DashboardAdminService] Error calculating top content: {ex.Message}");
+            return (false, null, $"Error calculating top content: {ex.Message}");
+        }
+    }
 }
+

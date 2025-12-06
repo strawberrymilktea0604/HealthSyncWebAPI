@@ -56,6 +56,67 @@ Authorization: Bearer {{adminToken}}
 
 ###
 
+### 3. Get top content (Top 5 exercises and Top 5 forum categories)
+GET {{baseUrl}}/api/v1/admin/dashboard/top-content
+Authorization: Bearer {{adminToken}}
+
+### Expected Response (200 OK):
+# {
+#   "success": true,
+#   "data": {
+#     "topExercises": [
+#       {
+#         "exerciseId": 1,
+#         "name": "Barbell Bench Press",
+#         "muscleGroup": "Chest",
+#         "difficultyLevel": "Intermediate",
+#         "usageCount": 15
+#       },
+#       {
+#         "exerciseId": 5,
+#         "name": "Squats",
+#         "muscleGroup": "Legs",
+#         "difficultyLevel": "Intermediate",
+#         "usageCount": 12
+#       }
+#     ],
+#     "topForumCategories": [
+#       {
+#         "categoryId": 1,
+#         "name": "Workout Tips",
+#         "postCount": 5,
+#         "replyCount": 12,
+#         "totalActivity": 17
+#       },
+#       {
+#         "categoryId": 2,
+#         "name": "Nutrition & Diet",
+#         "postCount": 3,
+#         "replyCount": 8,
+#         "totalActivity": 11
+#       }
+#     ]
+#   },
+#   "message": "Top content retrieved successfully"
+# }
+
+### Data Details:
+# - topExercises: Top 5 exercises by usage count (sorted descending)
+#   * exerciseId: Unique exercise identifier
+#   * name: Exercise name
+#   * muscleGroup: Target muscle group
+#   * difficultyLevel: Difficulty level
+#   * usageCount: Number of times used in ExerciseSessions
+#
+# - topForumCategories: Top 5 forum categories by activity (posts + replies, sorted descending)
+#   * categoryId: Unique category identifier
+#   * name: Category name
+#   * postCount: Number of posts in this category (current month)
+#   * replyCount: Number of replies to posts in this category (current month)
+#   * totalActivity: Sum of postCount + replyCount
+
+###
+
 ### Error Cases:
 
 ### Case 1: Missing Authentication
