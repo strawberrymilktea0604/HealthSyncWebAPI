@@ -6,4 +6,5 @@ public interface IUserService
 {
     Task UpdateUserStatusAsync(int userId, bool isActive);
     Task UpdateUserRoleAsync(int userId, string role);
+    Task<UserRankTitleDto?> SetUserRankTitleAsync(int userId, string? rankTitle);
 }
