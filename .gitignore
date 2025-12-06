@@ -465,3 +465,4 @@ certs/
 
 # ASP.NET Core Data Protection Keys (sensitive - shared across replicas)
 data-protection-keys/
+

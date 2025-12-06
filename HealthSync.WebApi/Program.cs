@@ -12,6 +12,8 @@ using HealthSync.Infrastructure.Services;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using HealthSync.WebApi.Filters;
+using Hangfire;
+using Hangfire.SqlServer;
 
 // ========================================
 // LOAD ENVIRONMENT VARIABLES FROM .env FILE BEFORE BUILDING CONFIGURATION
@@ -85,6 +87,20 @@ builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Vali
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Add Hangfire services
+var hangfireConn = builder.Configuration.GetConnectionString("HangfireConnection");
+builder.Services.AddHangfire(config => config
+    .UseSqlServerStorage(hangfireConn, new Hangfire.SqlServer.SqlServerStorageOptions
+    {
+        PrepareSchemaIfNecessary = true, // create Hangfire tables when the app runs
+        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+        QueuePollInterval = TimeSpan.FromSeconds(15),
+        UseRecommendedIsolationLevel = true,
+        DisableGlobalLocks = true
+    }));
+builder.Services.AddHangfireServer();
+
 // Add Authentication (JWT only, no Identity)
 Console.WriteLine($"[JWT DEBUG] SecretKey: {builder.Configuration["JwtSettings:SecretKey"]?.Substring(0, 20)}...");
 Console.WriteLine($"[JWT DEBUG] Issuer: {builder.Configuration["JwtSettings:Issuer"]}");
@@ -130,6 +146,7 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.INutritionLogServic
 builder.Services.AddScoped<HealthSync.Application.Interfaces.INutritionLogRepository, HealthSync.Infrastructure.Repositories.NutritionLogRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumPostRepository, HealthSync.Infrastructure.Repositories.ForumPostRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumReplyRepository, HealthSync.Infrastructure.Repositories.ForumReplyRepository>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumCategoryRepository, HealthSync.Infrastructure.Repositories.ForumCategoryRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IForumAdminService, HealthSync.Application.Services.ForumAdminService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeRepository, HealthSync.Infrastructure.Repositories.ChallengeRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeParticipationRepository, HealthSync.Infrastructure.Repositories.ChallengeParticipationRepository>();
@@ -139,6 +156,7 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseSessionRep
 
 // Register background jobs
 builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardUpdateJob, HealthSync.Infrastructure.BackgroundJobs.LeaderboardUpdateJob>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IPointCalculationService, HealthSync.Application.Services.PointCalculationService>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddSwaggerGen(c =>
@@ -196,6 +214,12 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+// Add Hangfire Dashboard (protected with authorization)
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireDashboardAuthorizationFilter() }
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -224,6 +248,16 @@ using (var scope = app.Services.CreateScope())
         // Mẹo: Nếu lỗi "Already exists" thì coi như thành công, cho chạy tiếp
     }
 }
+
+// Configure Hangfire Recurring Jobs
+RecurringJob.AddOrUpdate<ILeaderboardUpdateJob>(
+    "update-leaderboard-points",
+    job => job.UpdateUserContributionPointsAsync(),
+    Cron.Daily(2), // Run daily at 2:00 AM
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
 
 app.Run();
 
