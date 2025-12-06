@@ -341,6 +341,55 @@ public class CommunityChallengeController : ControllerBase
     }
 
     /// <summary>
+    /// Approve participation submission (set status to Completed)
+    /// </summary>
+    /// <param name="submissionId">Participation ID (submission to approve)</param>
+    /// <param name="request">Optional approval notes</param>
+    /// <returns>200 OK with updated participation and challenge details</returns>
+    [HttpPost("approve/{submissionId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ApproveParticipation(int submissionId, [FromBody] ReviewParticipationRequest? request = null)
+    {
+        try
+        {
+            var adminId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0;
+
+            if (adminId == 0)
+                return Unauthorized(new { success = false, message = "Invalid admin ID" });
+
+            _logger.LogInformation($"Admin {adminId} approving participation {submissionId}");
+
+            // Create approval request with Approved = true
+            var approvalRequest = new ReviewParticipationRequest
+            {
+                Approved = true,
+                ReviewNotes = request?.ReviewNotes
+            };
+
+            var (success, data, message) = await _challengeAdminService.ReviewParticipationAsync(submissionId, approvalRequest, adminId);
+
+            if (!success)
+            {
+                _logger.LogWarning($"Failed to approve participation {submissionId}: {message}");
+                return NotFound(new { success = false, message });
+            }
+
+            _logger.LogInformation($"Participation {submissionId} approved successfully by admin {adminId}");
+            return Ok(new { success = true, data, message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error approving participation {submissionId}: {ex.Message}");
+            return StatusCode(500, new { success = false, message = "An error occurred while approving the participation" });
+        }
+    }
+
+    /// <summary>
     /// Reject participation submission (set status to Failed)
     /// </summary>
     /// <param name="submissionId">Participation ID (submission to reject)</param>
