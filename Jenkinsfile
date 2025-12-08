@@ -183,6 +183,10 @@ pipeline {
         }
     }
 
+    triggers {
+        githubPush()  // Trigger automatically when push to GitHub
+    }
+
     post {
         always {
             script {
