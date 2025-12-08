@@ -454,3 +454,15 @@ Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
 Desktop.ini
+
+
+
+# SSL Certificates
+certs/
+*.crt
+*.key
+*.pem
+
+# ASP.NET Core Data Protection Keys (sensitive - shared across replicas)
+data-protection-keys/
+

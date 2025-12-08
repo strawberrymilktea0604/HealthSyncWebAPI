@@ -1,0 +1,71 @@
+### Admin Users Management Test Suite
+
+@baseUrl = http://localhost:5258/api/v1
+@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwibmFtZSI6IkFkbWluIFVzZXIiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MzA5MzcyMDB9.dummytoken
+@userId = 1
+
+### 1. Update User Status (Activate/Deactivate)
+PUT {{baseUrl}}/admin/users/{{userId}}/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+###
+
+### 2. Update User Role
+PUT {{baseUrl}}/admin/users/{{userId}}/role
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role": "Customer"
+}
+
+###
+
+### 3. Set User Rank Title (Top Contributor)
+POST {{baseUrl}}/admin/users/{{userId}}/set-title
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "rankTitle": "Top Contributor"
+}
+
+###
+
+### 4. Clear User Rank Title
+POST {{baseUrl}}/admin/users/{{userId}}/set-title
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "rankTitle": null
+}
+
+###
+
+### 5. Set Custom Rank Title
+POST {{baseUrl}}/admin/users/{{userId}}/set-title
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "rankTitle": "Rising Star"
+}
+
+###
+
+### 6. Set Rank Title for Non-existent User (should return 404)
+POST {{baseUrl}}/admin/users/99999/set-title
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "rankTitle": "Admin"
+}
+
+###

@@ -1,0 +1,143 @@
+### Admin Dashboard Statistics Tests
+
+@baseUrl = https://localhost:7144
+@adminToken = <YOUR_ADMIN_JWT_TOKEN_HERE>
+
+### 1. Get main dashboard statistics (3 key metrics)
+GET {{baseUrl}}/api/v1/admin/dashboard/stats
+Authorization: Bearer {{adminToken}}
+
+### Expected Response (200 OK):
+# {
+#   "success": true,
+#   "data": {
+#     "totalActiveUsers": 5,
+#     "newUsersThisMonth": 2,
+#     "workoutLogsToday": 3,
+#     "calculatedAt": "2025-12-05T14:30:00Z"
+#   },
+#   "message": "Dashboard statistics retrieved successfully"
+# }
+
+### Metrics Explanation:
+# - totalActiveUsers: Total count of users with is_active = true
+# - newUsersThisMonth: Count of users created from 1st of current month to today
+# - workoutLogsToday: Count of workout logs created on today's date
+
+###
+
+### 2. Get detailed dashboard statistics (extended metrics)
+GET {{baseUrl}}/api/v1/admin/dashboard/stats/detailed
+Authorization: Bearer {{adminToken}}
+
+### Expected Response (200 OK):
+# {
+#   "success": true,
+#   "data": {
+#     "totalActiveUsers": 5,
+#     "newUsersThisMonth": 2,
+#     "workoutLogsToday": 3,
+#     "nutritionLogsToday": 2,
+#     "forumPostsThisMonth": 4,
+#     "forumRepliesThisMonth": 8,
+#     "openChallenges": 2,
+#     "pendingChallengeSubmissions": 1,
+#     "calculatedAt": "2025-12-05T14:30:00Z"
+#   },
+#   "message": "Detailed statistics retrieved successfully"
+# }
+
+### Additional Metrics:
+# - nutritionLogsToday: Count of nutrition logs created today
+# - forumPostsThisMonth: Count of forum posts created this month
+# - forumRepliesThisMonth: Count of forum replies created this month
+# - openChallenges: Count of challenges with status = Open
+# - pendingChallengeSubmissions: Count of participations with status = PendingApproval
+
+###
+
+### 3. Get top content (Top 5 exercises and Top 5 forum categories)
+GET {{baseUrl}}/api/v1/admin/dashboard/top-content
+Authorization: Bearer {{adminToken}}
+
+### Expected Response (200 OK):
+# {
+#   "success": true,
+#   "data": {
+#     "topExercises": [
+#       {
+#         "exerciseId": 1,
+#         "name": "Barbell Bench Press",
+#         "muscleGroup": "Chest",
+#         "difficultyLevel": "Intermediate",
+#         "usageCount": 15
+#       },
+#       {
+#         "exerciseId": 5,
+#         "name": "Squats",
+#         "muscleGroup": "Legs",
+#         "difficultyLevel": "Intermediate",
+#         "usageCount": 12
+#       }
+#     ],
+#     "topForumCategories": [
+#       {
+#         "categoryId": 1,
+#         "name": "Workout Tips",
+#         "postCount": 5,
+#         "replyCount": 12,
+#         "totalActivity": 17
+#       },
+#       {
+#         "categoryId": 2,
+#         "name": "Nutrition & Diet",
+#         "postCount": 3,
+#         "replyCount": 8,
+#         "totalActivity": 11
+#       }
+#     ]
+#   },
+#   "message": "Top content retrieved successfully"
+# }
+
+### Data Details:
+# - topExercises: Top 5 exercises by usage count (sorted descending)
+#   * exerciseId: Unique exercise identifier
+#   * name: Exercise name
+#   * muscleGroup: Target muscle group
+#   * difficultyLevel: Difficulty level
+#   * usageCount: Number of times used in ExerciseSessions
+#
+# - topForumCategories: Top 5 forum categories by activity (posts + replies, sorted descending)
+#   * categoryId: Unique category identifier
+#   * name: Category name
+#   * postCount: Number of posts in this category (current month)
+#   * replyCount: Number of replies to posts in this category (current month)
+#   * totalActivity: Sum of postCount + replyCount
+
+###
+
+### Error Cases:
+
+### Case 1: Missing Authentication
+GET {{baseUrl}}/api/v1/admin/dashboard/stats
+
+# Response (401 Unauthorized)
+
+###
+
+### Case 2: Non-Admin User (Customer role)
+GET {{baseUrl}}/api/v1/admin/dashboard/stats
+Authorization: Bearer <CUSTOMER_JWT_TOKEN>
+
+# Response (403 Forbidden)
+
+###
+
+### Case 3: Server Error
+GET {{baseUrl}}/api/v1/admin/dashboard/stats
+Authorization: Bearer {{adminToken}}
+
+# Response (500 Internal Server Error) - if database connection fails or unexpected error occurs
+
+###

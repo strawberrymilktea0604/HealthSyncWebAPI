@@ -34,4 +34,20 @@ public interface IForumAdminService
     /// Unlock a post
     /// </summary>
     Task<(bool Success, string Message)> UnlockPostAsync(int postId, int adminId);
+
+    /// <summary>
+    /// Hide a reply (set is_hidden = true)
+    /// </summary>
+    /// <param name="replyId">ID of reply to hide</param>
+    /// <param name="adminId">ID of admin performing action</param>
+    /// <returns>Success response</returns>
+    Task<(bool Success, string Message)> HideReplyAsync(int replyId, int adminId);
+
+    /// <summary>
+    /// Delete a reply
+    /// </summary>
+    /// <param name="replyId">ID of reply to delete</param>
+    /// <param name="adminId">ID of admin performing deletion</param>
+    /// <returns>Success response</returns>
+    Task<(bool Success, string Message)> DeleteReplyAsync(int replyId, int adminId);
 }

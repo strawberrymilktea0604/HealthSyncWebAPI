@@ -25,9 +25,35 @@ public class LeaderboardRepository : ILeaderboardRepository
         return await _context.Leaderboards.FirstOrDefaultAsync(l => l.UserId == userId);
     }
 
+    public async Task<IEnumerable<Leaderboard>> GetAllAsync()
+    {
+        return await _context.Leaderboards.ToListAsync();
+    }
+
     public async Task UpdateAsync(Leaderboard leaderboard)
     {
         _context.Leaderboards.Update(leaderboard);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> SetRankTitleAsync(int userId, string? rankTitle)
+    {
+        var leaderboard = await _context.Leaderboards.FirstOrDefaultAsync(l => l.UserId == userId);
+        
+        if (leaderboard is null)
+            return false;
+
+        leaderboard.RankTitle = rankTitle;
+        leaderboard.UpdatedAt = DateTime.UtcNow;
+
+        _context.Leaderboards.Update(leaderboard);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task SaveChangesAsync()
+    {
         await _context.SaveChangesAsync();
     }
 }

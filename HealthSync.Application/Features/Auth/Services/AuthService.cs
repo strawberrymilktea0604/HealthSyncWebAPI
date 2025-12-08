@@ -8,6 +8,9 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace HealthSync.Application.Features.Auth.Services;
 
@@ -376,4 +379,39 @@ public class AuthService : IAuthService
         var allUsers = await _userRepository.GetAllAsync();
         return allUsers.Any(u => u.Role == "Admin" && u.IsActive);
     }
+
+    public async Task<string> ExchangeGoogleCodeAsync(string code)
+    {
+        using var client = new HttpClient();
+        
+        // Get the correct redirect URI based on ASPNETCORE_URLS
+        var urls = _configuration["ASPNETCORE_URLS"]?.Split(';');
+        var httpsUrl = urls?.FirstOrDefault(u => u.StartsWith("https://"));
+        var httpUrl = urls?.FirstOrDefault(u => u.StartsWith("http://"));
+        var baseUrl = httpsUrl ?? httpUrl ?? "https://localhost:7144";
+        var redirectUri = $"{baseUrl}/api/v1/auth/google/callback";
+        
+        var requestBody = new
+        {
+            code = code,
+            client_id = _configuration["GOOGLE_CLIENT_ID"],
+            client_secret = _configuration["GOOGLE_CLIENT_SECRET"],
+            redirect_uri = redirectUri,
+            grant_type = "authorization_code"
+        };
+
+        var response = await client.PostAsJsonAsync("https://oauth2.googleapis.com/token", requestBody);
+        response.EnsureSuccessStatusCode();
+        
+        var tokenResponse = await response.Content.ReadFromJsonAsync<GoogleTokenResponse>();
+        return tokenResponse?.id_token ?? throw new Exception("Failed to get ID token");
+    }
+}
+
+public class GoogleTokenResponse
+{
+    public string access_token { get; set; } = string.Empty;
+    public string id_token { get; set; } = string.Empty;
+    public string refresh_token { get; set; } = string.Empty;
+    public int expires_in { get; set; }
 }
