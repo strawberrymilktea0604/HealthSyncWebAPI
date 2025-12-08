@@ -27,6 +27,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ForumCategory> ForumCategories { get; set; }
     public DbSet<Post> Posts { get; set; }
     public DbSet<Reply> Replies { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
