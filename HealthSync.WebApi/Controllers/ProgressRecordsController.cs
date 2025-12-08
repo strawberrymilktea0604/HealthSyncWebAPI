@@ -301,4 +301,43 @@ public class ProgressRecordsController : ControllerBase
             return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Get progress chart data (date, weight) for current user. Optional filter by goalId.
+    /// </summary>
+    [HttpGet("chart")]
+    public async Task<IActionResult> GetProgressChart([FromQuery] int? goalId = null)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid user" });
+            }
+
+            var query = _context.ProgressRecords
+                .Include(pr => pr.Goal)
+                .Where(pr => pr.Goal.UserId == userId);
+
+            if (goalId.HasValue)
+                query = query.Where(pr => pr.GoalId == goalId.Value);
+
+            var points = await query
+                .Where(pr => pr.WeightKg != null)
+                .OrderBy(pr => pr.RecordDate)
+                .Select(pr => new
+                {
+                    date = pr.RecordDate,
+                    weightKg = pr.WeightKg
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, data = points });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+        }
+    }
 }
