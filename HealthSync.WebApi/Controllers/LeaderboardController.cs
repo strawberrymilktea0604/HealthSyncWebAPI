@@ -32,25 +32,25 @@ public class LeaderboardController : ControllerBase
                 return BadRequest(new { success = false, message = "Limit must be between 1 and 100" });
             }
 
-            var leaderboard = await _context.Leaderboards
-                .Include(l => l.User)
-                    .ThenInclude(u => u.UserProfile)
-                .OrderByDescending(l => l.TotalPoints)
+            // Return top users by ContributionPoints stored in UserProfile
+            var topUsers = await _context.UserProfiles
+                .Include(up => up.User)
+                .OrderByDescending(up => up.ContributionPoints)
                 .Take(limit)
-                .Select(l => new LeaderboardEntryDto
+                .Select(up => new LeaderboardEntryDto
                 {
-                    LeaderboardId = l.LeaderboardId,
-                    UserId = l.UserId,
-                    UserName = l.User.UserProfile != null ? l.User.UserProfile.FullName : l.User.Email ?? "Unknown",
-                    AvatarUrl = l.User.UserProfile != null ? l.User.UserProfile.AvatarUrl : null,
-                    TotalPoints = l.TotalPoints,
-                    RankTitle = l.RankTitle,
-                    RankPosition = l.RankPosition,
-                    UpdatedAt = l.UpdatedAt
+                    LeaderboardId = 0,
+                    UserId = up.UserId,
+                    UserName = !string.IsNullOrEmpty(up.FullName) ? up.FullName : up.User.Email ?? "Unknown",
+                    AvatarUrl = up.AvatarUrl,
+                    TotalPoints = up.ContributionPoints,
+                    RankTitle = null,
+                    RankPosition = null,
+                    UpdatedAt = up.UpdatedAt
                 })
                 .ToListAsync();
 
-            return Ok(new { success = true, data = leaderboard });
+            return Ok(new { success = true, data = topUsers });
         }
         catch (Exception ex)
         {
