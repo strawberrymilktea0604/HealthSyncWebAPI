@@ -56,9 +56,18 @@ Thumbs.db
 ## Secrets & environment
 appsettings.*.json
 !appsettings.json
+appsettings.Development.json
+appsettings.Production.json
 secrets.json
-.env
-.env.*
+
+# Environment variables - Production secrets MUST be ignored
+.env.prod
+.env.production
+.env.*.local
+
+# Development .env.dev CAN be committed (no sensitive data)
+# Uncomment below if you want to allow it:
+# !.env.dev
 
 ## VS Code
 .vscode/*
@@ -434,6 +443,8 @@ healthsync-*.log
 ## Docker & Deployment
 docker-volumes/
 docker-compose.override.yml
+jenkins_data/
+.docker/
 
 # macOS
 .DS_Store
