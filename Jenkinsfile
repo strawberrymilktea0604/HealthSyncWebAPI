@@ -149,7 +149,8 @@ pipeline {
                                 # Copy env file
                                 cp $ENV_FILE_PATH .env.dev
                                 # Stop and remove existing containers
-                                ./docker-compose -f docker-compose.yml --env-file .env.dev down --remove-orphans || true
+                                ./docker-compose -f docker-compose.yml --env-file .env.dev down --remove-orphans --volumes || true
+                                docker rm -f healthsync-db healthsync-minio healthsync-nginx healthsync-api-1 healthsync-api-2 || true
                                 # Use standalone docker-compose
                                 ./docker-compose -f docker-compose.yml --env-file .env.dev up -d --remove-orphans
                                 sleep 10
@@ -166,7 +167,8 @@ pipeline {
                                 # Copy env file
                                 cp $ENV_FILE_PATH .env.prod
                                 # Stop and remove existing containers
-                                ./docker-compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
+                                ./docker-compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans --volumes || true
+                                docker rm -f healthsync-db healthsync-minio healthsync-nginx healthsync-api-1 healthsync-api-2 || true
                                 # Use standalone docker-compose
                                 ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 sleep 10
