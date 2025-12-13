@@ -106,7 +106,8 @@ pipeline {
                                 /k:"${SONARQUBE_PROJECT_KEY}" \
                                 /n:"${SONARQUBE_PROJECT_NAME}" \
                                 /v:"${BUILD_NUMBER}" \
-                                /d:sonar.host.url="${SONARQUBE_SERVER}" \
+                                /d:sonar.token="$SONAR_AUTH_TOKEN" \
+                                /d:sonar.host.url="$SONAR_HOST_URL" \
                                 /d:sonar.cs.opencover.reportsPaths="test-results/*/coverage.opencover.xml" \
                                 /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**"
                             
