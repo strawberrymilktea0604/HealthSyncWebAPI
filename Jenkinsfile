@@ -32,6 +32,11 @@ pipeline {
         
         // Docker Socket
         DOCKER_SOCKET = '/var/run/docker.sock'
+        
+        // SonarQube
+        SONARQUBE_SERVER = 'http://localhost:9000'  // Adjust as needed
+        SONARQUBE_PROJECT_KEY = 'HealthSyncWebAPI'
+        SONARQUBE_PROJECT_NAME = 'HealthSync Web API'
     }
 
     stages {
@@ -86,18 +91,111 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    echo "========== STAGE: SonarQube Analysis =========="
+                    withSonarQubeEnv('SonarQube') {  // Configure SonarQube server in Jenkins
+                        sh '''
+                            # Install SonarScanner for .NET if not available
+                            dotnet tool install --global dotnet-sonarscanner --version 5.14.0 || true
+                            export PATH="$PATH:/root/.dotnet/tools"
+                            
+                            # Begin SonarQube analysis
+                            dotnet sonarscanner begin \
+                                /k:"${SONARQUBE_PROJECT_KEY}" \
+                                /n:"${SONARQUBE_PROJECT_NAME}" \
+                                /v:"${BUILD_NUMBER}" \
+                                /d:sonar.host.url="${SONARQUBE_SERVER}" \
+                                /d:sonar.cs.opencover.reportsPaths="test-results/*/coverage.opencover.xml" \
+                                /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**"
+                            
+                            # Build with coverage
+                            dotnet build HealthSyncWebAPI.sln -c Release
+                            
+                            # Run tests with OpenCover format for SonarQube
+                            find . -name "*.Tests.csproj" -type f | while read testproj; do
+                                echo "Running tests for SonarQube: $testproj"
+                                dotnet test "$testproj" -c Release --no-build \
+                                    --collect:"XPlat Code Coverage" \
+                                    --results-directory ./test-results \
+                                    --logger "trx;LogFileName=test-results.trx" || true
+                            done
+                            
+                            # End SonarQube analysis
+                            dotnet sonarscanner end
+                        '''
+                    }
+                    echo "✓ SonarQube analysis completed"
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    echo "========== STAGE: Quality Gate =========="
+                    timeout(time: 10, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
+                    echo "✓ Quality Gate passed"
+                }
+            }
+        }
+
         stage('Run Unit Tests') {
             steps {
                 script {
                     echo "========== STAGE: Run Unit Tests =========="
                     sh '''
-                        # Find and run test projects (if any exist)
-                        find . -name "*.Tests.csproj" -type f | while read testproj; do
-                            echo "Running tests: $testproj"
-                            dotnet test "$testproj" -c Release --no-build --verbosity normal || true
-                        done
+                        # Check if tests were already run by SonarQube
+                        if [ ! -d "test-results" ] || [ -z "$(ls -A test-results/*.trx 2>/dev/null)" ]; then
+                            echo "Running tests (not run by SonarQube)..."
+                            find . -name "*.Tests.csproj" -type f | while read testproj; do
+                                echo "Running tests: $testproj"
+                                dotnet test "$testproj" -c Release --no-build --verbosity normal \
+                                    --collect:"XPlat Code Coverage" \
+                                    --results-directory ./test-results \
+                                    --logger "trx;LogFileName=test-results.trx" || true
+                            done
+                        else
+                            echo "Tests already run by SonarQube stage, skipping..."
+                        fi
                     '''
                     echo "✓ Unit tests completed"
+                }
+            }
+            post {
+                always {
+                    script {
+                        echo "Publishing test results..."
+                        // Publish JUnit test results
+                        junit 'test-results/*.trx'
+                        
+                        echo "Generating coverage reports..."
+                        // Install ReportGenerator if not available
+                        sh '''
+                            dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
+                            export PATH="$PATH:/root/.dotnet/tools"
+                            
+                            # Generate HTML coverage reports
+                            reportgenerator \
+                                -reports:"test-results/*/coverage.cobertura.xml" \
+                                -targetdir:"test-results/coverage-report" \
+                                -reporttypes:Html
+                        '''
+                        
+                        // Publish HTML coverage report
+                        publishHTML([
+                            allowMissing: true,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: 'test-results/coverage-report',
+                            reportFiles: 'index.html',
+                            reportName: 'Coverage Report',
+                            reportTitles: 'Code Coverage'
+                        ])
+                    }
                 }
             }
         }

@@ -73,7 +73,42 @@ curl http://localhost:8081/
 4. Create admin user
 5. Configure Jenkins URL: http://localhost:8081
 
-### 3. Create a Pipeline Job
+### 3. Install Required Plugins
+
+**Required Plugins for Quality Analysis**:
+1. **SonarQube Scanner** - For code quality analysis
+2. **HTML Publisher** - For coverage reports
+3. **JUnit** - For test results
+4. **Quality Gates** - For SonarQube quality gate integration
+
+**Installation**:
+- Go to "Manage Jenkins" → "Manage Plugins"
+- Search and install the above plugins
+- Restart Jenkins after installation
+
+### 4. Configure SonarQube Server
+
+**Setup SonarQube**:
+```bash
+# Add SonarQube to docker-compose.yml
+# (See docker-compose.yml for SonarQube service)
+
+# Start SonarQube
+docker-compose up -d sonarqube
+
+# Access SonarQube: http://localhost:9000
+# Default credentials: admin/admin
+```
+
+**In Jenkins**:
+1. Go to "Manage Jenkins" → "Configure System"
+2. Scroll to "SonarQube servers" section
+3. Click "Add SonarQube"
+4. Name: `SonarQube`
+5. Server URL: `http://sonarqube:9000` (if using docker-compose) or `http://localhost:9000`
+6. Server authentication token: Generate from SonarQube UI
+
+### 5. Create a Pipeline Job
 
 **Steps in Jenkins UI**:
 1. Click "New Item"
