@@ -131,8 +131,7 @@ pipeline {
                 script {
                     echo "========== STAGE: Run Unit Tests =========="
                     sh '''
-                        # Check if tests were already run by SonarQube
-                        if [ ! -d "test-results" ] || [ -z "$(ls -A test-results/*.trx 2>/dev/null)" ]; then
+                        if [ ! -d "test-results" ] || [ -z "$(ls -A test-results/*.xml 2>/dev/null)" ]; then
                             echo "Running tests (not run by SonarQube)..."
                             find . -name "*.Tests.csproj" -type f | while read testproj; do
                                 echo "Running tests: $testproj"
