@@ -24,5 +24,16 @@ RUN wget https://dotnetcli.azureedge.net/dotnet/Sdk/8.0.405/dotnet-sdk-8.0.405-l
 # Add .NET to PATH
 ENV PATH="$PATH:/usr/share/dotnet"
 
+# Install SonarScanner CLI
+RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip -O sonar-scanner.zip && \
+    unzip sonar-scanner.zip && \
+    mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner && \
+    rm sonar-scanner.zip
+
+ENV PATH="$PATH:/opt/sonar-scanner/bin"
+
 # Switch back to jenkins user
 USER jenkins
+
+# Install dotnet-sonarscanner as jenkins user
+RUN dotnet tool install --global dotnet-sonarscanner --version 5.14.0
