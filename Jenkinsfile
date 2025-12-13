@@ -96,9 +96,9 @@ pipeline {
                 script {
                     echo "========== STAGE: SonarQube Analysis =========="
                     withSonarQubeEnv('SonarQube') {
-                        sh '''
+                        sh """
                             dotnet tool install --global dotnet-sonarscanner --version 5.14.0 || true
-                            export PATH="$PATH:/root/.dotnet/tools"
+                            export PATH="\$PATH:/root/.dotnet/tools"
                             
                             dotnet sonarscanner begin \
                               /k:"${SONARQUBE_PROJECT_KEY}" \
@@ -114,12 +114,15 @@ pipeline {
                             dotnet build HealthSyncWebAPI.sln -c Release
                             
                             find . -name "*.Tests.csproj" -type f | while read testproj; do
-                                echo "Running tests for SonarQube: $testproj"
-                                dotnet test "$testproj" -c Release --no-build \
+                                echo "Running tests for SonarQube: \$testproj"
+                                dotnet test "\$testproj" -c Release --no-build \
                                   --collect:"XPlat Code Coverage" \
                                   --results-directory ./test-results \
                               --logger "junit;LogFileName=test-results.xml" || true
-                    echo "✓ SonarQube analysis completed"
+                            done
+                            
+                            dotnet sonarscanner end /d:sonar.login="${SONAR_AUTH_TOKEN}"
+                        """
                 }
             }
         }
@@ -130,12 +133,12 @@ pipeline {
             steps {
                 script {
                     echo "========== STAGE: Run Unit Tests =========="
-                    sh '''
-                        if [ ! -d "test-results" ] || [ -z "$(ls -A test-results/*.xml 2>/dev/null)" ]; then
+                    sh """
+                        if [ ! -d "test-results" ] || [ -z "\$(ls -A test-results/*.xml 2>/dev/null)" ]; then
                             echo "Running tests (not run by SonarQube)..."
                             find . -name "*.Tests.csproj" -type f | while read testproj; do
-                                echo "Running tests: $testproj"
-                                dotnet test "$testproj" -c Release --no-build --verbosity normal \
+                                echo "Running tests: \$testproj"
+                                dotnet test "\$testproj" -c Release --no-build --verbosity normal \
                                     --collect:"XPlat Code Coverage" \
                                     --results-directory ./test-results \
                                     --logger "junit;LogFileName=test-results.xml" || true
@@ -143,7 +146,7 @@ pipeline {
                         else
                             echo "Tests already run by SonarQube stage, skipping..."
                         fi
-                    '''
+                    """
                     echo "✓ Unit tests completed"
                 }
             }
