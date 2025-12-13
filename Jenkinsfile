@@ -95,37 +95,34 @@ pipeline {
             steps {
                 script {
                     echo "========== STAGE: SonarQube Analysis =========="
-                    withSonarQubeEnv('SonarQube') {  // Configure SonarQube server in Jenkins
-                        sh '''
-                            # Install SonarScanner for .NET if not available
-                            dotnet tool install --global dotnet-sonarscanner --version 5.14.0 || true
-                            export PATH="$PATH:/root/.dotnet/tools"
-                            
-                            # Begin SonarQube analysis
-                            dotnet sonarscanner begin \
-                                /k:"${SONARQUBE_PROJECT_KEY}" \
-                                /n:"${SONARQUBE_PROJECT_NAME}" \
-                                /v:"${BUILD_NUMBER}" \
-                                /d:sonar.token="$SONAR_AUTH_TOKEN" \
-                                /d:sonar.host.url="$SONAR_HOST_URL" \
-                                /d:sonar.cs.opencover.reportsPaths="test-results/*/coverage.opencover.xml" \
-                                /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**"
-                            
-                            # Build with coverage
-                            dotnet build HealthSyncWebAPI.sln -c Release
-                            
-                            # Run tests with OpenCover format for SonarQube
-                            find . -name "*.Tests.csproj" -type f | while read testproj; do
-                                echo "Running tests for SonarQube: $testproj"
-                                dotnet test "$testproj" -c Release --no-build \
-                                    --collect:"XPlat Code Coverage" \
-                                    --results-directory ./test-results \
-                                    --logger "trx;LogFileName=test-results.trx" || true
-                            done
-                            
-                            # End SonarQube analysis
-                            dotnet sonarscanner end
-                        '''
+                    withSonarQubeEnv('SonarQube') {
+                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                            sh '''
+                                dotnet tool install --global dotnet-sonarscanner --version 5.14.0 || true
+                                export PATH="$PATH:/root/.dotnet/tools"
+                                
+                                dotnet sonarscanner begin \
+                                  /k:"${SONARQUBE_PROJECT_KEY}" \
+                                  /n:"${SONARQUBE_PROJECT_NAME}" \
+                                  /v:"${BUILD_NUMBER}" \
+                                  /d:sonar.login="${SONAR_TOKEN}" \
+                                  /d:sonar.host.url="${SONAR_HOST_URL}" \
+                                  /d:sonar.cs.opencover.reportsPaths="test-results/**/coverage.opencover.xml" \
+                                  /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**"
+                                
+                                dotnet build HealthSyncWebAPI.sln -c Release
+                                
+                                find . -name "*.Tests.csproj" -type f | while read testproj; do
+                                    echo "Running tests for SonarQube: $testproj"
+                                    dotnet test "$testproj" -c Release --no-build \
+                                      --collect:"XPlat Code Coverage" \
+                                      --results-directory ./test-results \
+                                      --logger "trx;LogFileName=test-results.trx" || true
+                                done
+                                
+                                dotnet sonarscanner end /d:sonar.login="${SONAR_TOKEN}"
+                            '''
+                        }
                     }
                     echo "✓ SonarQube analysis completed"
                 }
