@@ -148,9 +148,10 @@ pipeline {
                                 chmod +x ./docker-compose
                                 # Copy env file
                                 cp $ENV_FILE_PATH .env.dev
+                                # Stop and remove existing containers
+                                ./docker-compose -f docker-compose.yml --env-file .env.dev down --remove-orphans || true
                                 # Use standalone docker-compose
-                                ./docker-compose -f docker-compose.yml --env-file .env.dev down || true
-                                ./docker-compose -f docker-compose.yml --env-file .env.dev up -d
+                                ./docker-compose -f docker-compose.yml --env-file .env.dev up -d --remove-orphans
                                 sleep 10
                                 ./docker-compose ps
                             '''
@@ -164,9 +165,10 @@ pipeline {
                                 chmod +x ./docker-compose
                                 # Copy env file
                                 cp $ENV_FILE_PATH .env.prod
+                                # Stop and remove existing containers
+                                ./docker-compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
                                 # Use standalone docker-compose
-                                ./docker-compose -f docker-compose.prod.yml --env-file .env.prod down || true
-                                ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+                                ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 sleep 10
                                 ./docker-compose -f docker-compose.prod.yml ps
                             '''
