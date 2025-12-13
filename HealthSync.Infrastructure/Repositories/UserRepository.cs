@@ -129,4 +129,11 @@ public class UserRepository : IUserRepository
     {
         return await _context.ChallengeParticipations.CountAsync(cp => cp.UserId == userId);
     }
+
+    public async Task<IEnumerable<ApplicationUser>> GetActiveUsersAsync()
+    {
+        return await _context.ApplicationUsers
+            .Where(u => u.IsActive)
+            .ToListAsync();
+    }
 }

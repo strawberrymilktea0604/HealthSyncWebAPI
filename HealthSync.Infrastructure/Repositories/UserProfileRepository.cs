@@ -35,4 +35,19 @@ public class UserProfileRepository : IUserProfileRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<IEnumerable<UserProfile>> GetTopUsersByContributionPointsAsync(int limit)
+    {
+        return await _context.UserProfiles
+            .OrderByDescending(up => up.ContributionPoints)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<UserProfile>> GetAllUsersByContributionPointsAsync()
+    {
+        return await _context.UserProfiles
+            .OrderByDescending(up => up.ContributionPoints)
+            .ToListAsync();
+    }
 }

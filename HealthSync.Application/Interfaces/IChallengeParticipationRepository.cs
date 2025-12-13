@@ -70,7 +70,17 @@ public interface IChallengeParticipationRepository
     Task DeleteAsync(int participationId);
 
     /// <summary>
+    /// Get all participations for a user
+    /// </summary>
+    Task<List<ChallengeParticipation>> GetByUserIdAsync(int userId);
+
+    /// <summary>
     /// Save changes to database
     /// </summary>
     Task<int> SaveChangesAsync();
+
+    /// <summary>
+    /// Count completed participations by user ID in a specific month
+    /// </summary>
+    Task<int> CountCompletedByUserIdAndMonthAsync(int userId, int year, int month);
 }

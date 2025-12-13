@@ -19,6 +19,7 @@ public class DashboardAdminService : IDashboardAdminService
     private readonly IExerciseRepository _exerciseRepository;
     private readonly IForumCategoryRepository _forumCategoryRepository;
     private readonly IExerciseSessionRepository _exerciseSessionRepository;
+    private readonly IUserProfileRepository _userProfileRepository;
     private readonly ILogger<DashboardAdminService> _logger;
 
     public DashboardAdminService(
@@ -32,6 +33,7 @@ public class DashboardAdminService : IDashboardAdminService
         IExerciseRepository exerciseRepository,
         IForumCategoryRepository forumCategoryRepository,
         IExerciseSessionRepository exerciseSessionRepository,
+        IUserProfileRepository userProfileRepository,
         ILogger<DashboardAdminService> logger)
     {
         _userRepository = userRepository;
@@ -44,6 +46,7 @@ public class DashboardAdminService : IDashboardAdminService
         _exerciseRepository = exerciseRepository;
         _forumCategoryRepository = forumCategoryRepository;
         _exerciseSessionRepository = exerciseSessionRepository;
+        _userProfileRepository = userProfileRepository;
         _logger = logger;
     }
 
@@ -70,22 +73,7 @@ public class DashboardAdminService : IDashboardAdminService
             _logger.LogInformation($"[DashboardAdminService] New users this month: {newUsersThisMonth}");
 
             // Metric 3: Workouts logged today
-            // Note: This requires querying from repository
-            // For now, we'll estimate by checking if GetByUserIdAsync works per user
-            // In production, add a dedicated repository method for this
-            var workoutLogsToday = 0;
-            foreach (var user in allUsers.Where(u => u.IsActive))
-            {
-                try
-                {
-                    var result = await _workoutLogRepository.GetByUserIdAsync(user.UserId, 1, int.MaxValue, today, today);
-                    workoutLogsToday += result.Items.Count();
-                }
-                catch
-                {
-                    // Skip if error for this user
-                }
-            }
+            var workoutLogsToday = await _workoutLogRepository.CountWorkoutLogsTodayAsync();
 
             _logger.LogInformation($"[DashboardAdminService] Workout logs today: {workoutLogsToday}");
 
@@ -128,19 +116,7 @@ public class DashboardAdminService : IDashboardAdminService
             var newUsersThisMonth = allUsers.Count(u => u.CreatedAt >= firstDayOfMonth);
 
             // Workouts today
-            var workoutLogsToday = 0;
-            foreach (var user in allUsers.Where(u => u.IsActive))
-            {
-                try
-                {
-                    var result = await _workoutLogRepository.GetByUserIdAsync(user.UserId, 1, int.MaxValue, today, today);
-                    workoutLogsToday += result.Items.Count();
-                }
-                catch
-                {
-                    // Skip if error
-                }
-            }
+            var workoutLogsToday = await _workoutLogRepository.CountWorkoutLogsTodayAsync();
 
             // Nutrition logs today
             var nutritionLogsToday = 0;
@@ -314,6 +290,50 @@ public class DashboardAdminService : IDashboardAdminService
         {
             _logger.LogError($"[DashboardAdminService] Error calculating top content: {ex.Message}");
             return (false, null, $"Error calculating top content: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Get all users ordered by contribution points descending
+    /// </summary>
+    public async Task<(bool Success, object? Data, string Message)> GetUsersByContributionPointsAsync()
+    {
+        try
+        {
+            _logger.LogInformation("[DashboardAdminService] Getting users by contribution points");
+
+            var userProfiles = await _userProfileRepository.GetAllUsersByContributionPointsAsync();
+
+            var userContributions = new List<UserContributionDto>();
+            int rank = 1;
+
+            foreach (var profile in userProfiles)
+            {
+                var user = await _userRepository.GetByIdAsync(profile.UserId);
+                if (user != null)
+                {
+                    userContributions.Add(new UserContributionDto
+                    {
+                        UserId = user.UserId,
+                        FullName = profile.FullName,
+                        Email = user.Email,
+                        ContributionPoints = profile.ContributionPoints,
+                        Role = user.Role,
+                        IsActive = user.IsActive,
+                        RankTitle = null // Will be set by leaderboard service if needed
+                    });
+                }
+                rank++;
+            }
+
+            _logger.LogInformation($"[DashboardAdminService] Retrieved {userContributions.Count} users by contribution points");
+
+            return (true, userContributions, "Users retrieved successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"[DashboardAdminService] Error getting users by contribution points: {ex.Message}");
+            return (false, null, $"Error getting users by contribution points: {ex.Message}");
         }
     }
 }

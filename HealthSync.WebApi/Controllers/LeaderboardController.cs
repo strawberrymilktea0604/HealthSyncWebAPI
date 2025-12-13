@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using HealthSync.Infrastructure.Data;
+using HealthSync.Application.Interfaces;
 using HealthSync.Application.DTOs.Leaderboard;
 using System.Security.Claims;
 
@@ -12,11 +11,11 @@ namespace HealthSync.WebApi.Controllers;
 [Authorize(Roles = "Customer")]
 public class LeaderboardController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ILeaderboardService _leaderboardService;
 
-    public LeaderboardController(ApplicationDbContext context)
+    public LeaderboardController(ILeaderboardService leaderboardService)
     {
-        _context = context;
+        _leaderboardService = leaderboardService;
     }
 
     /// <summary>
@@ -32,23 +31,7 @@ public class LeaderboardController : ControllerBase
                 return BadRequest(new { success = false, message = "Limit must be between 1 and 100" });
             }
 
-            // Return top users by ContributionPoints stored in UserProfile
-            var topUsers = await _context.UserProfiles
-                .Include(up => up.User)
-                .OrderByDescending(up => up.ContributionPoints)
-                .Take(limit)
-                .Select(up => new LeaderboardEntryDto
-                {
-                    LeaderboardId = 0,
-                    UserId = up.UserId,
-                    UserName = !string.IsNullOrEmpty(up.FullName) ? up.FullName : up.User.Email ?? "Unknown",
-                    AvatarUrl = up.AvatarUrl,
-                    TotalPoints = up.ContributionPoints,
-                    RankTitle = null,
-                    RankPosition = null,
-                    UpdatedAt = up.UpdatedAt
-                })
-                .ToListAsync();
+            var topUsers = await _leaderboardService.GetTopUsersByContributionPointsAsync(limit);
 
             return Ok(new { success = true, data = topUsers });
         }
@@ -72,38 +55,14 @@ public class LeaderboardController : ControllerBase
                 return Unauthorized(new { success = false, message = "Invalid user" });
             }
 
-            var myEntry = await _context.Leaderboards
-                .Include(l => l.User)
-                    .ThenInclude(u => u.UserProfile)
-                .FirstOrDefaultAsync(l => l.UserId == userId);
+            var myRank = await _leaderboardService.GetUserRankAsync(userId);
 
-            if (myEntry == null)
+            if (myRank == null)
             {
                 return NotFound(new { success = false, message = "Leaderboard entry not found" });
             }
 
-            // Calculate rank position if not set
-            if (!myEntry.RankPosition.HasValue)
-            {
-                var rank = await _context.Leaderboards
-                    .Where(l => l.TotalPoints > myEntry.TotalPoints)
-                    .CountAsync() + 1;
-                myEntry.RankPosition = rank;
-            }
-
-            var dto = new LeaderboardEntryDto
-            {
-                LeaderboardId = myEntry.LeaderboardId,
-                UserId = myEntry.UserId,
-                UserName = myEntry.User.UserProfile?.FullName ?? myEntry.User.Email ?? "Unknown",
-                AvatarUrl = myEntry.User.UserProfile?.AvatarUrl,
-                TotalPoints = myEntry.TotalPoints,
-                RankTitle = myEntry.RankTitle,
-                RankPosition = myEntry.RankPosition,
-                UpdatedAt = myEntry.UpdatedAt
-            };
-
-            return Ok(new { success = true, data = dto });
+            return Ok(new { success = true, data = myRank });
         }
         catch (Exception ex)
         {
@@ -131,35 +90,7 @@ public class LeaderboardController : ControllerBase
                 return BadRequest(new { success = false, message = "Page size must be between 1 and 100" });
             }
 
-            var totalItems = await _context.Leaderboards.CountAsync();
-
-            var leaderboard = await _context.Leaderboards
-                .Include(l => l.User)
-                    .ThenInclude(u => u.UserProfile)
-                .OrderByDescending(l => l.TotalPoints)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(l => new LeaderboardEntryDto
-                {
-                    LeaderboardId = l.LeaderboardId,
-                    UserId = l.UserId,
-                    UserName = l.User.UserProfile != null ? l.User.UserProfile.FullName : l.User.Email ?? "Unknown",
-                    AvatarUrl = l.User.UserProfile != null ? l.User.UserProfile.AvatarUrl : null,
-                    TotalPoints = l.TotalPoints,
-                    RankTitle = l.RankTitle,
-                    RankPosition = l.RankPosition,
-                    UpdatedAt = l.UpdatedAt
-                })
-                .ToListAsync();
-
-            var result = new
-            {
-                items = leaderboard,
-                totalItems,
-                pageNumber,
-                pageSize,
-                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
-            };
+            var result = await _leaderboardService.GetLeaderboardAsync(pageNumber, pageSize);
 
             return Ok(new { success = true, data = result });
         }

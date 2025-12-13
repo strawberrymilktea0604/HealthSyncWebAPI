@@ -94,4 +94,20 @@ public class WorkoutLogRepository : IWorkoutLogRepository
         _context.WorkoutLogs.Update(workoutLog);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<int> CountByUserIdAndMonthAsync(int userId, int year, int month)
+    {
+        return await _context.WorkoutLogs
+            .Where(wl => wl.UserId == userId &&
+                        wl.WorkoutDate.Year == year &&
+                        wl.WorkoutDate.Month == month)
+            .CountAsync();
+    }
+
+    public async Task<int> CountWorkoutLogsTodayAsync()
+    {
+        var today = DateTime.Today;
+        return await _context.WorkoutLogs
+            .CountAsync(wl => wl.WorkoutDate.Date == today);
+    }
 }

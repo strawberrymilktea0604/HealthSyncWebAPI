@@ -150,10 +150,10 @@ pipeline {
                     } else if (params.ENVIRONMENT == 'prod') {
                         sh '''
                             echo "Deploying production stack..."
-                            docker-compose -f docker-compose.prod.yml --env-file .env.prod down || true
-                            docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+                            docker compose -f docker-compose.prod.yml --env-file .env.prod down || true
+                            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
                             sleep 10
-                            docker-compose -f docker-compose.prod.yml ps
+                            docker compose -f docker-compose.prod.yml ps
                         '''
                     }
                     echo "✓ Stack deployed"

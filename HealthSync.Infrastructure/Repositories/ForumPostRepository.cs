@@ -68,4 +68,13 @@ public class ForumPostRepository : IForumPostRepository
     {
         return await _context.SaveChangesAsync();
     }
+
+    public async Task<int> CountByUserIdAndMonthAsync(int userId, int year, int month)
+    {
+        return await _context.Posts
+            .Where(p => p.UserId == userId &&
+                       p.CreatedAt.Year == year &&
+                       p.CreatedAt.Month == month)
+            .CountAsync();
+    }
 }

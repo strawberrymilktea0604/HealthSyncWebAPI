@@ -8,4 +8,6 @@ public interface IUserProfileRepository
     Task<UserProfile?> GetByUserIdAsync(int userId);
     Task UpdateAsync(UserProfile userProfile);
     Task SaveChangesAsync();
+    Task<IEnumerable<UserProfile>> GetTopUsersByContributionPointsAsync(int limit);
+    Task<IEnumerable<UserProfile>> GetAllUsersByContributionPointsAsync();
 }

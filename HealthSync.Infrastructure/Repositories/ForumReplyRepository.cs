@@ -54,4 +54,13 @@ public class ForumReplyRepository : IForumReplyRepository
     {
         return await _context.SaveChangesAsync();
     }
+
+    public async Task<int> CountByUserIdAndMonthAsync(int userId, int year, int month)
+    {
+        return await _context.Replies
+            .Where(r => r.UserId == userId &&
+                       r.CreatedAt.Year == year &&
+                       r.CreatedAt.Month == month)
+            .CountAsync();
+    }
 }

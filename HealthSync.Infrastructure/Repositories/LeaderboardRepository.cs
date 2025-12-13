@@ -22,7 +22,10 @@ public class LeaderboardRepository : ILeaderboardRepository
 
     public async Task<Leaderboard?> GetByUserIdAsync(int userId)
     {
-        return await _context.Leaderboards.FirstOrDefaultAsync(l => l.UserId == userId);
+        return await _context.Leaderboards
+            .Include(l => l.User)
+                .ThenInclude(u => u.UserProfile)
+            .FirstOrDefaultAsync(l => l.UserId == userId);
     }
 
     public async Task<IEnumerable<Leaderboard>> GetAllAsync()
@@ -50,6 +53,37 @@ public class LeaderboardRepository : ILeaderboardRepository
         await _context.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task<IEnumerable<Leaderboard>> GetTopUsersAsync(int limit = 100)
+    {
+        return await _context.Leaderboards
+            .Include(l => l.User)
+                .ThenInclude(u => u.UserProfile)
+            .OrderByDescending(l => l.TotalPoints)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetHigherPointsCountAsync(int points)
+    {
+        return await _context.Leaderboards
+            .CountAsync(l => l.TotalPoints > points);
+    }
+
+    public async Task<(IEnumerable<Leaderboard> Items, int TotalCount)> GetLeaderboardAsync(int pageNumber, int pageSize)
+    {
+        var totalCount = await _context.Leaderboards.CountAsync();
+
+        var items = await _context.Leaderboards
+            .Include(l => l.User)
+                .ThenInclude(u => u.UserProfile)
+            .OrderByDescending(l => l.TotalPoints)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     public async Task SaveChangesAsync()

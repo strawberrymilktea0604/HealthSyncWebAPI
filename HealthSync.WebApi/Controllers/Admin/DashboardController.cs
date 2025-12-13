@@ -135,4 +135,37 @@ public class DashboardController : ControllerBase
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving top content", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Get all users ordered by contribution points descending
+    /// </summary>
+    /// <returns>200 OK with list of users by contribution points</returns>
+    [HttpGet("users-by-contribution")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetUsersByContributionPoints()
+    {
+        try
+        {
+            _logger.LogInformation("[DashboardController] Getting users by contribution points");
+
+            var (success, data, message) = await _dashboardService.GetUsersByContributionPointsAsync();
+
+            if (!success)
+            {
+                _logger.LogWarning("[DashboardController] Failed to get users by contribution points: {Message}", message);
+                return StatusCode(500, new { success = false, message });
+            }
+
+            _logger.LogInformation("[DashboardController] Users by contribution points retrieved successfully");
+            return Ok(new { success = true, data, message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[DashboardController] Error getting users by contribution points");
+            return StatusCode(500, new { success = false, message = "An error occurred while retrieving users by contribution points", error = ex.Message });
+        }
+    }
 }

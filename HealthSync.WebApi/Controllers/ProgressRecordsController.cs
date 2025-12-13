@@ -1,10 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using HealthSync.Infrastructure.Data;
 using HealthSync.Application.DTOs.Goals;
-using HealthSync.Domain.Entities;
+using HealthSync.Application.Interfaces;
 
 namespace HealthSync.WebApi.Controllers;
 
@@ -13,11 +11,15 @@ namespace HealthSync.WebApi.Controllers;
 [Authorize(Roles = "Customer")]
 public class ProgressRecordsController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IGoalService _goalService;
+    
+    private const string InvalidUserMessage = "Invalid user";
+    private const string ErrorOccurredMessage = "An error occurred";
+    private const string ProgressRecordNotFoundMessage = "Progress record not found";
 
-    public ProgressRecordsController(ApplicationDbContext context)
+    public ProgressRecordsController(IGoalService goalService)
     {
-        _context = context;
+        _goalService = goalService;
     }
 
     /// <summary>
@@ -36,71 +38,27 @@ public class ProgressRecordsController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
-            // Verify goal exists and belongs to user
-            var goal = await _context.Goals
-                .FirstOrDefaultAsync(g => g.GoalId == request.GoalId && g.UserId == userId);
-
-            if (goal == null)
-            {
-                return NotFound(new { success = false, message = "Goal not found" });
-            }
-
-            // Check if record already exists for this date
-            var existingRecord = await _context.ProgressRecords
-                .FirstOrDefaultAsync(pr => pr.GoalId == request.GoalId && pr.RecordDate.Date == request.RecordDate.Date);
-
-            if (existingRecord != null)
-            {
-                return BadRequest(new { success = false, message = "A progress record already exists for this date" });
-            }
-
-            // Validate record date is within goal period
-            if (request.RecordDate.Date < goal.StartDate.Date || request.RecordDate.Date > goal.EndDate.Date)
-            {
-                return BadRequest(new { success = false, message = "Record date must be within goal period" });
-            }
-
-            var progressRecord = new ProgressRecord
+            var progressRecord = await _goalService.RecordProgressAsync(new RecordProgressRequest
             {
                 GoalId = request.GoalId,
-                RecordDate = request.RecordDate.Date,
+                RecordDate = request.RecordDate,
                 RecordedValue = request.RecordedValue,
                 WeightKg = request.WeightKg,
                 WaistCm = request.WaistCm,
                 ChestCm = request.ChestCm,
                 HipCm = request.HipCm,
-                Notes = request.Notes,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            _context.ProgressRecords.Add(progressRecord);
-            await _context.SaveChangesAsync();
-
-            var dto = new ProgressRecordDto
-            {
-                ProgressRecordId = progressRecord.ProgressRecordId,
-                GoalId = progressRecord.GoalId,
-                RecordDate = progressRecord.RecordDate,
-                RecordedValue = progressRecord.RecordedValue,
-                WeightKg = progressRecord.WeightKg,
-                WaistCm = progressRecord.WaistCm,
-                ChestCm = progressRecord.ChestCm,
-                HipCm = progressRecord.HipCm,
-                Notes = progressRecord.Notes,
-                CreatedAt = progressRecord.CreatedAt,
-                UpdatedAt = progressRecord.UpdatedAt
-            };
+                Notes = request.Notes
+            }, userId);
 
             return CreatedAtAction(nameof(GetProgressRecord), new { id = progressRecord.ProgressRecordId },
-                new { success = true, data = dto, message = "Progress record created successfully" });
+                new { success = true, data = progressRecord, message = "Progress record created successfully" });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -115,38 +73,21 @@ public class ProgressRecordsController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
-            var progressRecord = await _context.ProgressRecords
-                .Include(pr => pr.Goal)
-                .FirstOrDefaultAsync(pr => pr.ProgressRecordId == id && pr.Goal.UserId == userId);
+            var progressRecord = await _goalService.GetProgressRecordAsync(id, userId);
 
             if (progressRecord == null)
             {
-                return NotFound(new { success = false, message = "Progress record not found" });
+                return NotFound(new { success = false, message = ProgressRecordNotFoundMessage });
             }
 
-            var dto = new ProgressRecordDto
-            {
-                ProgressRecordId = progressRecord.ProgressRecordId,
-                GoalId = progressRecord.GoalId,
-                RecordDate = progressRecord.RecordDate,
-                RecordedValue = progressRecord.RecordedValue,
-                WeightKg = progressRecord.WeightKg,
-                WaistCm = progressRecord.WaistCm,
-                ChestCm = progressRecord.ChestCm,
-                HipCm = progressRecord.HipCm,
-                Notes = progressRecord.Notes,
-                CreatedAt = progressRecord.CreatedAt,
-                UpdatedAt = progressRecord.UpdatedAt
-            };
-
-            return Ok(new { success = true, data = dto });
+            return Ok(new { success = true, data = progressRecord });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -161,42 +102,16 @@ public class ProgressRecordsController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
-            // Verify goal exists and belongs to user
-            var goal = await _context.Goals
-                .FirstOrDefaultAsync(g => g.GoalId == goalId && g.UserId == userId);
-
-            if (goal == null)
-            {
-                return NotFound(new { success = false, message = "Goal not found" });
-            }
-
-            var progressRecords = await _context.ProgressRecords
-                .Where(pr => pr.GoalId == goalId)
-                .OrderBy(pr => pr.RecordDate)
-                .Select(pr => new ProgressRecordDto
-                {
-                    ProgressRecordId = pr.ProgressRecordId,
-                    GoalId = pr.GoalId,
-                    RecordDate = pr.RecordDate,
-                    RecordedValue = pr.RecordedValue,
-                    WeightKg = pr.WeightKg,
-                    WaistCm = pr.WaistCm,
-                    ChestCm = pr.ChestCm,
-                    HipCm = pr.HipCm,
-                    Notes = pr.Notes,
-                    CreatedAt = pr.CreatedAt,
-                    UpdatedAt = pr.UpdatedAt
-                })
-                .ToListAsync();
+            var progressRecords = await _goalService.GetProgressRecordsByGoalAsync(goalId, userId);
 
             return Ok(new { success = true, data = progressRecords });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -216,55 +131,24 @@ public class ProgressRecordsController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
-            var progressRecord = await _context.ProgressRecords
-                .Include(pr => pr.Goal)
-                .FirstOrDefaultAsync(pr => pr.ProgressRecordId == id && pr.Goal.UserId == userId);
-
-            if (progressRecord == null)
+            await _goalService.UpdateProgressRecordAsync(id, new UpdateProgressRequest
             {
-                return NotFound(new { success = false, message = "Progress record not found" });
-            }
-
-            // Check if changing date would create duplicate
-            if (request.RecordDate.Date != progressRecord.RecordDate.Date)
-            {
-                var existingRecord = await _context.ProgressRecords
-                    .FirstOrDefaultAsync(pr => pr.GoalId == request.GoalId && 
-                                              pr.RecordDate.Date == request.RecordDate.Date &&
-                                              pr.ProgressRecordId != id);
-
-                if (existingRecord != null)
-                {
-                    return BadRequest(new { success = false, message = "A progress record already exists for this date" });
-                }
-
-                // Validate new record date is within goal period
-                if (request.RecordDate.Date < progressRecord.Goal.StartDate.Date || 
-                    request.RecordDate.Date > progressRecord.Goal.EndDate.Date)
-                {
-                    return BadRequest(new { success = false, message = "Record date must be within goal period" });
-                }
-            }
-
-            progressRecord.RecordDate = request.RecordDate.Date;
-            progressRecord.RecordedValue = request.RecordedValue;
-            progressRecord.WeightKg = request.WeightKg;
-            progressRecord.WaistCm = request.WaistCm;
-            progressRecord.ChestCm = request.ChestCm;
-            progressRecord.HipCm = request.HipCm;
-            progressRecord.Notes = request.Notes;
-            progressRecord.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
+                RecordedValue = request.RecordedValue,
+                WeightKg = request.WeightKg,
+                WaistCm = request.WaistCm,
+                ChestCm = request.ChestCm,
+                HipCm = request.HipCm,
+                Notes = request.Notes
+            }, userId);
 
             return Ok(new { success = true, message = "Progress record updated successfully" });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -279,65 +163,40 @@ public class ProgressRecordsController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
-            var progressRecord = await _context.ProgressRecords
-                .Include(pr => pr.Goal)
-                .FirstOrDefaultAsync(pr => pr.ProgressRecordId == id && pr.Goal.UserId == userId);
-
-            if (progressRecord == null)
-            {
-                return NotFound(new { success = false, message = "Progress record not found" });
-            }
-
-            _context.ProgressRecords.Remove(progressRecord);
-            await _context.SaveChangesAsync();
+            await _goalService.DeleteProgressRecordAsync(id, userId);
 
             return Ok(new { success = true, message = "Progress record deleted successfully" });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get progress chart data (date, weight) for current user. Optional filter by goalId.
+    /// Get progress chart data (date, weight) for current user.
     /// </summary>
     [HttpGet("chart")]
-    public async Task<IActionResult> GetProgressChart([FromQuery] int? goalId = null)
+    public async Task<IActionResult> GetProgressChart()
     {
         try
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
-            var query = _context.ProgressRecords
-                .Include(pr => pr.Goal)
-                .Where(pr => pr.Goal.UserId == userId);
+            var chartData = await _goalService.GetUserProgressChartAsync(userId);
 
-            if (goalId.HasValue)
-                query = query.Where(pr => pr.GoalId == goalId.Value);
-
-            var points = await query
-                .Where(pr => pr.WeightKg != null)
-                .OrderBy(pr => pr.RecordDate)
-                .Select(pr => new
-                {
-                    date = pr.RecordDate,
-                    weightKg = pr.WeightKg
-                })
-                .ToListAsync();
-
-            return Ok(new { success = true, data = points });
+            return Ok(new { success = true, data = chartData });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 }

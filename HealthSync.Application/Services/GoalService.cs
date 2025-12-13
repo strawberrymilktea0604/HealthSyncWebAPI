@@ -297,6 +297,55 @@ public class GoalService : IGoalService
         };
     }
 
+    public async Task<ProgressRecordDto> GetProgressRecordAsync(int recordId, int userId)
+    {
+        var record = await _goalRepository.GetProgressRecordByIdAsync(recordId);
+        if (record == null || record.Goal.UserId != userId)
+            throw new KeyNotFoundException("Progress record not found");
+
+        return MapToProgressDto(record);
+    }
+
+    public async Task<IEnumerable<ProgressRecordDto>> GetProgressRecordsByGoalAsync(int goalId, int userId)
+    {
+        var goal = await _goalRepository.GetByIdAsync(goalId);
+        if (goal == null || goal.UserId != userId)
+            throw new KeyNotFoundException("Goal not found");
+
+        var records = await _goalRepository.GetProgressRecordsByGoalIdAsync(goalId);
+        return records.Select(MapToProgressDto);
+    }
+
+    public async Task<UserProgressChartDto> GetUserProgressChartAsync(int userId)
+    {
+        // Get all goals for the user
+        var goals = await _goalRepository.GetUserGoalsAsync(userId);
+        if (!goals.Any())
+        {
+            return new UserProgressChartDto { ProgressPoints = new List<ProgressPointDto>() };
+        }
+
+        // Get all progress records for all goals
+        var allProgressRecords = new List<ProgressRecord>();
+        foreach (var goal in goals)
+        {
+            var records = await _goalRepository.GetProgressRecordsByGoalIdAsync(goal.GoalId);
+            allProgressRecords.AddRange(records);
+        }
+
+        // Sort by date and map to points
+        var progressPoints = allProgressRecords
+            .OrderBy(r => r.RecordDate)
+            .Select(r => new ProgressPointDto
+            {
+                Date = r.RecordDate,
+                Weight = r.WeightKg ?? r.RecordedValue // Use WeightKg if available, otherwise RecordedValue
+            })
+            .ToList();
+
+        return new UserProgressChartDto { ProgressPoints = progressPoints };
+    }
+
     private GoalDto MapToDto(Goal goal)
     {
         return new GoalDto

@@ -12,4 +12,6 @@ public interface IWorkoutLogRepository
     Task<WorkoutLog> CreateWithSessionsAsync(WorkoutLog workoutLog, List<ExerciseSession> sessions);
     Task<PaginatedResult<WorkoutLog>> GetByUserIdAsync(int userId, int pageNumber, int pageSize, DateTime? startDate = null, DateTime? endDate = null);
     Task<WorkoutLog?> GetByIdAsync(int workoutLogId);
+    Task<int> CountByUserIdAndMonthAsync(int userId, int year, int month);
+    Task<int> CountWorkoutLogsTodayAsync();
 }

@@ -1,41 +1,35 @@
-version: '3.8'
-
 services:
   db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: healthsync-db-prod
+    env_file:
+      - .env.prod
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=${DB_SA_PASSWORD}
       - MSSQL_PID=Standard
+      - ACCEPT_EULA=Y
     ports:
       - "1433:1433"
-    volumes:
-      - sqlserver_data_prod:/var/opt/mssql
-    networks:
-      - healthsync-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${DB_SA_PASSWORD}", "-Q", "SELECT 1"]
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$SA_PASSWORD" -C -Q "SELECT 1" || exit 1
       interval: 10s
       timeout: 3s
       retries: 10
       start_period: 40s
 
   minio:
-    image: minio/minio:latest
     container_name: healthsync-minio-prod
+    env_file:
+      - .env.prod
+    environment:
+      - MINIO_ROOT_USER=minioadminprod
+      - MINIO_ROOT_PASSWORD=minioadminprod
     ports:
       - "9000:9000"
       - "9001:9001"
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
-      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
     volumes:
       - minio_data_prod:/data
-    command: server /data --console-address ":9001"
-    networks:
-      - healthsync-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -46,26 +40,16 @@ services:
   api:
     image: healthsync-api:latest
     container_name: healthsync-api-prod
+    env_file:
+      - .env.prod
     environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_DATABASE};User Id=sa;Password=${DB_SA_PASSWORD};TrustServerCertificate=True;
+      - ASPNETCORE_ENVIRONMENT=Production
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-Prod_HSync_2025_9d8f7a6c5b4e3d2a1f0e9d8c7b6a5f4e3d2a1f0e9d8c7b6a5f4e3d2a1f0e}
       - MinIO__Endpoint=minio:9000
-      - MinIO__AccessKey=${MINIO_ACCESS_KEY}
-      - MinIO__SecretKey=${MINIO_SECRET_KEY}
-      - MinIO__BucketName=${MINIO_BUCKET_NAME}
+      - MinIO__AccessKey=${MINIO_ACCESS_KEY:-minioadminprod}
+      - MinIO__SecretKey=${MINIO_SECRET_KEY:-minioadminprod}
+      - MinIO__BucketName=${MINIO_BUCKET_NAME:-healthsync-prod-images}
       - MinIO__UseSSL=false
-      - JwtSettings__SecretKey=${JWT_SECRET_KEY}
-      - JwtSettings__Issuer=${JWT_ISSUER}
-      - JwtSettings__Audience=${JWT_AUDIENCE}
-      - Authentication__Google__ClientId=${GOOGLE_CLIENT_ID}
-      - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
-    depends_on:
-      db:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    networks:
-      - healthsync-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -77,27 +61,49 @@ services:
   nginx:
     image: nginx:1.25-alpine
     container_name: healthsync-nginx-prod
+    env_file:
+      - .env.prod
     ports:
       - "${NGINX_PORT_HTTP}:80"
       - "${NGINX_PORT_HTTPS}:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/nginx/certs:ro
+    restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
     networks:
       - healthsync-network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
+  jenkins:
+    image: jenkins/jenkins:lts-alpine
+    container_name: healthsync-jenkins-prod
+    user: root
+    env_file:
+      - .env.prod
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_data_prod:/var/jenkins_home
+      - //var/run/docker.sock:/var/run/docker.sock
+      - ./Jenkinsfile:/var/jenkins_home/Jenkinsfile:ro
+    environment:
+      - JENKINS_OPTS=--httpPort=8080
+    restart: unless-stopped
+    networks:
+      - healthsync-network
+
 volumes:
   sqlserver_data_prod:
   minio_data_prod:
+  jenkins_data_prod:
 
 networks:
   healthsync-network:

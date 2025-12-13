@@ -10,7 +10,10 @@ public interface IGoalService
     Task<GoalDto> UpdateGoalAsync(int goalId, UpdateGoalRequest request, int userId);
     Task DeleteGoalAsync(int goalId, int userId);
     Task<ProgressRecordDto> RecordProgressAsync(RecordProgressRequest request, int userId);
+    Task<ProgressRecordDto> GetProgressRecordAsync(int recordId, int userId);
+    Task<IEnumerable<ProgressRecordDto>> GetProgressRecordsByGoalAsync(int goalId, int userId);
     Task<ProgressRecordDto> UpdateProgressRecordAsync(int recordId, UpdateProgressRequest request, int userId);
     Task DeleteProgressRecordAsync(int recordId, int userId);
     Task<ChartDataDto> GetProgressChartAsync(int goalId, int userId);
+    Task<UserProgressChartDto> GetUserProgressChartAsync(int userId);
 }

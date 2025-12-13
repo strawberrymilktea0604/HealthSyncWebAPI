@@ -16,11 +16,16 @@ public class ChallengesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IStorageService _storageService;
+    private readonly IChallengeParticipationService _participationService;
 
-    public ChallengesController(ApplicationDbContext context, IStorageService storageService)
+    public ChallengesController(
+        ApplicationDbContext context, 
+        IStorageService storageService,
+        IChallengeParticipationService participationService)
     {
         _context = context;
         _storageService = storageService;
+        _participationService = participationService;
     }
 
     /// <summary>
@@ -44,7 +49,7 @@ public class ChallengesController : ControllerBase
             }
 
             var query = _context.Challenges
-                .Where(c => c.Status == ChallengeStatus.Open)
+                .Where(c => c.Status == ChallengeStatus.Open && c.EndDate >= DateTime.Now)
                 .OrderByDescending(c => c.CreatedAt)
                 .AsQueryable();
 
@@ -133,5 +138,60 @@ public class ChallengesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Submit challenge result
+    /// </summary>
+    [HttpPost("{challengeId}/submit")]
+    public async Task<IActionResult> SubmitChallenge(int challengeId, [FromForm] SubmitChallengeRequest request)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid user token" });
+            }
+
+            var result = await _participationService.SubmitChallengeResultAsync(challengeId, userId, request);
+
+            return Ok(new { success = true, data = result, message = "Challenge submission successful, waiting for admin approval" });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get user's challenge participations
+    /// </summary>
+    [HttpGet("my-participations")]
+    public async Task<IActionResult> GetMyParticipations()
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid user token" });
+            }
+
+            var participations = await _participationService.GetUserParticipationsAsync(userId);
+
+            return Ok(new { success = true, data = participations });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+        }
+    }
     
 }

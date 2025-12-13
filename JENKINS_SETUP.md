@@ -136,7 +136,7 @@ curl http://localhost:8081/
 Used with `docker-compose.yml` for local development:
 
 ```properties
-DB_SA_PASSWORD=YourStrong!Passw0rd123
+DB_SA_PASSWORD=CHANGE_ME
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 ASPNETCORE_ENVIRONMENT=Development

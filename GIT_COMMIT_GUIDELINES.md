@@ -58,7 +58,7 @@ git push origin main
 #### 3. **.env.dev** (Development environment)
 ```properties
 # Contains: Dev passwords (hardcoded for testing)
-# Example: DB_SA_PASSWORD=YourStrong!Passw0rd123
+# Example: DB_SA_PASSWORD=CHANGE_ME
 # Why commit: Safe for development, no production data
 # Usage: Local testing only, different from production
 ```
@@ -268,7 +268,7 @@ git log -p --all -S "PROD_DB_SA_PASSWORD" | head -20
 **A**: Yes! `.env.dev` contains only development secrets safe for local testing. It's different from `.env.prod`.
 
 **Why it's safe**:
-- Credentials are generic (minioadmin, YourStrong!Passw0rd123)
+- Credentials are generic (minioadmin, CHANGE_ME)
 - No production data
 - Every developer gets same config
 - Not used in production

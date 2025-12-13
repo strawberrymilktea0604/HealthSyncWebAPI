@@ -15,12 +15,14 @@ public class UsersController : ControllerBase
     private readonly IUserRepository _userRepository;
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
+    private readonly IUserService _userService;
 
-    public UsersController(IUserRepository userRepository, IUserProfileRepository userProfileRepository, ILeaderboardRepository leaderboardRepository)
+    public UsersController(IUserRepository userRepository, IUserProfileRepository userProfileRepository, ILeaderboardRepository leaderboardRepository, IUserService userService)
     {
         _userRepository = userRepository;
         _userProfileRepository = userProfileRepository;
         _leaderboardRepository = leaderboardRepository;
+        _userService = userService;
     }
 
     [HttpGet]
@@ -159,5 +161,23 @@ public class UsersController : ControllerBase
         }
 
         return Ok(new { success = true, message = "User rank title updated successfully" });
+    }
+
+    [HttpPost("{id}/set-title")]
+    public async Task<IActionResult> SetUserTitle(int id, [FromBody] SetRankTitleRequest request)
+    {
+        try
+        {
+            var result = await _userService.SetUserRankTitleAsync(id, request.RankTitle);
+            return Ok(new { success = true, data = result, message = "User rank title set successfully" });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { success = false, message = "User not found" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
     }
 }

@@ -43,4 +43,9 @@ public interface IForumPostRepository
     /// Save changes to database
     /// </summary>
     Task<int> SaveChangesAsync();
+
+    /// <summary>
+    /// Count posts by user ID in a specific month
+    /// </summary>
+    Task<int> CountByUserIdAndMonthAsync(int userId, int year, int month);
 }

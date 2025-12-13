@@ -17,7 +17,7 @@ Created two environment files:
 
 ```
 Development (.env.dev):
-- DB_SA_PASSWORD=YourStrong!Passw0rd123 (hardcoded for dev)
+- DB_SA_PASSWORD=CHANGE_ME (hardcoded for dev)
 - ASPNETCORE_ENVIRONMENT=Development
 - JWT_SECRET_KEY=dev-secret-key-... (weak, for testing)
 - MinIO local credentials (minioadmin/minioadmin)
@@ -126,7 +126,7 @@ docker-compose ps
 - API: http://localhost:8080/swagger
 - NGINX (HTTPS): https://localhost/swagger (with -k flag)
 - MinIO UI: http://localhost:9001 (minioadmin/minioadmin)
-- SQL Server: localhost:1433 (sa/YourStrong!Passw0rd123)
+- SQL Server: localhost:1433 (sa/CHANGE_ME)
 - Jenkins: http://localhost:8081
 
 **Step 3: Test the pipeline**
@@ -150,12 +150,12 @@ Create a secure `.env.prod` file with actual values:
 
 ```bash
 # .env.prod
-DB_SA_PASSWORD=SuperSecure!DBPass123
-MINIO_ACCESS_KEY=prod-access-key
-MINIO_SECRET_KEY=prod-secret-key
-JWT_SECRET_KEY=production-jwt-secret-min-32-chars-long
-GOOGLE_CLIENT_ID=prod-google-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=prod-google-secret
+DB_SA_PASSWORD=CHANGE_ME
+MINIO_ACCESS_KEY=CHANGE_ME
+MINIO_SECRET_KEY=CHANGE_ME
+JWT_SECRET_KEY=CHANGE_ME
+GOOGLE_CLIENT_ID=CHANGE_ME
+GOOGLE_CLIENT_SECRET=CHANGE_ME
 ```
 
 **Step 2: Deploy**
@@ -282,7 +282,7 @@ NGINX_PORT_HTTPS=443
 ### Dev-Specific (.env.dev)
 
 ```properties
-DB_SA_PASSWORD=YourStrong!Passw0rd123         # Hardcoded for local dev
+DB_SA_PASSWORD=CHANGE_ME         # Hardcoded for local dev
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 JWT_SECRET_KEY=dev-secret-key-...            # Weak for testing

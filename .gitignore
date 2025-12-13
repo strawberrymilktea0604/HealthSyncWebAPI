@@ -64,10 +64,12 @@ secrets.json
 .env.prod
 .env.production
 .env.*.local
+.env.dev
 
-# Development .env.dev CAN be committed (no sensitive data)
-# Uncomment below if you want to allow it:
-# !.env.dev
+# Allow .env.example for template
+!.env.example
+!.env.dev.example
+!.env.prod.example
 
 ## VS Code
 .vscode/*

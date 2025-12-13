@@ -117,8 +117,28 @@ public class ChallengeParticipationRepository : IChallengeParticipationRepositor
         return await _context.ChallengeParticipations.ToListAsync();
     }
 
+    public async Task<List<ChallengeParticipation>> GetByUserIdAsync(int userId)
+    {
+        return await _context.ChallengeParticipations
+            .Include(p => p.Challenge)
+            .Where(p => p.UserId == userId)
+            .OrderByDescending(p => p.JoinedDate)
+            .ToListAsync();
+    }
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> CountCompletedByUserIdAndMonthAsync(int userId, int year, int month)
+    {
+        return await _context.ChallengeParticipations
+            .Where(p => p.UserId == userId &&
+                       p.Status == ParticipationStatus.Completed &&
+                       p.CompletedAt.HasValue &&
+                       p.CompletedAt.Value.Year == year &&
+                       p.CompletedAt.Value.Month == month)
+            .CountAsync();
     }
 }

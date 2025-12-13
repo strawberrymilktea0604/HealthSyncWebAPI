@@ -18,5 +18,6 @@ public interface IUserRepository
     Task<int> GetTotalNutritionLogsAsync(int userId);
     Task<int> GetTotalGoalsAsync(int userId);
     Task<int> GetTotalChallengesAsync(int userId);
+    Task<IEnumerable<ApplicationUser>> GetActiveUsersAsync();
     // Note: single GetUsersAsync signature (page, pageSize, search, role)
 }

@@ -390,10 +390,10 @@ public class CommunityChallengeController : ControllerBase
     }
 
     /// <summary>
-    /// Reject participation submission (set status to Failed)
+    /// Reject participation submission
     /// </summary>
-    /// <param name="submissionId">Participation ID (submission to reject)</param>
-    /// <param name="request">Rejection reason/notes</param>
+    /// <param name="submissionId">Participation ID</param>
+    /// <param name="request">Review notes for rejection</param>
     /// <returns>200 OK with updated participation</returns>
     [HttpPost("reject/{submissionId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -413,7 +413,10 @@ public class CommunityChallengeController : ControllerBase
 
             _logger.LogInformation($"Admin {adminId} rejecting participation {submissionId}");
 
-            var (success, data, message) = await _challengeAdminService.RejectParticipationAsync(submissionId, request, adminId);
+            // Set Approved to false for rejection
+            request.Approved = false;
+
+            var (success, data, message) = await _challengeAdminService.ReviewParticipationAsync(submissionId, request, adminId);
 
             if (!success)
             {

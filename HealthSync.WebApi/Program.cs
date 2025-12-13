@@ -1,8 +1,10 @@
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Collections.Generic;
 using HealthSync.Domain.Entities;
 using HealthSync.Infrastructure.Data;
 using HealthSync.Application.Interfaces;
@@ -16,33 +18,49 @@ using Hangfire;
 using Hangfire.SqlServer;
 
 // ========================================
-// LOAD ENVIRONMENT VARIABLES FROM .env FILE BEFORE BUILDING CONFIGURATION
+// LOAD ENVIRONMENT VARIABLES FROM .env FILES BASED ON ENVIRONMENT
 // ========================================
-var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
-if (!File.Exists(envFilePath))
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+var envFiles = new List<string> { ".env" }; // Always load base .env first
+
+// Add environment-specific .env file
+if (environment == "Development")
 {
-    // Try solution root (one level up)
-    envFilePath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
+    envFiles.Add(".env.dev");
+}
+else if (environment == "Production")
+{
+    envFiles.Add(".env.prod");
 }
 
-if (File.Exists(envFilePath))
+foreach (var envFile in envFiles)
 {
-    foreach (var line in File.ReadAllLines(envFilePath))
+    var envFilePath = Path.Combine(Directory.GetCurrentDirectory(), envFile);
+    if (!File.Exists(envFilePath))
     {
-        var trimmedLine = line.Trim();
-        
-        // Skip empty lines and comments
-        if (string.IsNullOrWhiteSpace(trimmedLine) || trimmedLine.StartsWith("#"))
-            continue;
+        // Try solution root (one level up)
+        envFilePath = Path.Combine(Directory.GetCurrentDirectory(), "..", envFile);
+    }
 
-        var parts = trimmedLine.Split('=', 2);
-        if (parts.Length == 2)
+    if (File.Exists(envFilePath))
+    {
+        foreach (var line in File.ReadAllLines(envFilePath))
         {
-            var key = parts[0].Trim();
-            var value = parts[1].Trim();
+            var trimmedLine = line.Trim();
             
-            // Set environment variable (force override)
-            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+            // Skip empty lines and comments
+            if (string.IsNullOrWhiteSpace(trimmedLine) || trimmedLine.StartsWith("#"))
+                continue;
+
+            var parts = trimmedLine.Split('=', 2);
+            if (parts.Length == 2)
+            {
+                var key = parts[0].Trim();
+                var value = parts[1].Trim();
+                
+                // Set environment variable (force override for later files)
+                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+            }
         }
     }
 }
@@ -78,6 +96,9 @@ if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MINIO_USE_SSL")))
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Add Health Checks
+builder.Services.AddHealthChecks();
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Users.UpdateUserProfileValidator>();
@@ -129,9 +150,11 @@ builder.Services.AddAuthorization();
 // Register application services
 builder.Services.AddScoped<HealthSync.Application.Features.Auth.Interfaces.IAuthService, HealthSync.Application.Features.Auth.Services.AuthService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IUserProfileService, HealthSync.Application.Features.Users.Services.UserProfileService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IUserService, HealthSync.Application.Services.UserService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IUserRepository, HealthSync.Infrastructure.Repositories.UserRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IUserProfileRepository, HealthSync.Infrastructure.Repositories.UserProfileRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardRepository, HealthSync.Infrastructure.Repositories.LeaderboardRepository>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.ILeaderboardService, HealthSync.Application.Services.LeaderboardService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IJwtService, HealthSync.Infrastructure.Services.JwtService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
@@ -152,6 +175,7 @@ builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeRepositor
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeParticipationRepository, HealthSync.Infrastructure.Repositories.ChallengeParticipationRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.INotificationRepository, HealthSync.Infrastructure.Repositories.NotificationRepository>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeAdminService, HealthSync.Application.Services.ChallengeAdminService>();
+builder.Services.AddScoped<HealthSync.Application.Interfaces.IChallengeParticipationService, HealthSync.Application.Services.ChallengeParticipationService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IDashboardAdminService, HealthSync.Application.Services.DashboardAdminService>();
 builder.Services.AddScoped<HealthSync.Application.Interfaces.IExerciseSessionRepository, HealthSync.Infrastructure.Repositories.ExerciseSessionRepository>();
 
@@ -208,12 +232,22 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    
+    // Enable detailed error pages in development
+    if (builder.Configuration.GetValue<bool>("DevelopmentSettings:EnableDetailedErrors"))
+    {
+        app.UseDeveloperExceptionPage();
+    }
 }
 
-if (!app.Environment.IsDevelopment())
+// HTTPS redirection - can be disabled in development for easier local testing
+if (!app.Environment.IsDevelopment() || !builder.Configuration.GetValue<bool>("DevelopmentSettings:DisableHttpsRedirection"))
 {
     app.UseHttpsRedirection();
 }
+
+// Add Health Check endpoint
+app.MapHealthChecks("/health");
 
 // Add Hangfire Dashboard (protected with authorization)
 app.UseHangfireDashboard("/hangfire", new DashboardOptions

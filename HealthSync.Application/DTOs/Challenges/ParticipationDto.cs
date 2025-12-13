@@ -17,4 +17,5 @@ public class ParticipationDto
     public DateTime? ReviewDate { get; set; }
     public string? ReviewNotes { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

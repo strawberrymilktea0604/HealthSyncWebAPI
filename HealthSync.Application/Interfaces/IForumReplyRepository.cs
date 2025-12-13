@@ -33,4 +33,9 @@ public interface IForumReplyRepository
     /// Save changes to database
     /// </summary>
     Task<int> SaveChangesAsync();
+
+    /// <summary>
+    /// Count replies by user ID in a specific month
+    /// </summary>
+    Task<int> CountByUserIdAndMonthAsync(int userId, int year, int month);
 }

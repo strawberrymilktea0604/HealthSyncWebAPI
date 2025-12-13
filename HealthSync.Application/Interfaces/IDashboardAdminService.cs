@@ -23,4 +23,9 @@ public interface IDashboardAdminService
     /// Get top content (top 5 exercises and top 5 forum categories)
     /// </summary>
     Task<(bool Success, object? Data, string Message)> GetTopContentAsync();
+
+    /// <summary>
+    /// Get users ordered by contribution points (descending)
+    /// </summary>
+    Task<(bool Success, object? Data, string Message)> GetUsersByContributionPointsAsync();
 }

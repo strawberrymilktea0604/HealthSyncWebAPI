@@ -30,6 +30,119 @@ public class CommunityChallengeController : ControllerBase
     }
 
     /// <summary>
+    /// Get list of open challenges
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetOpenChallenges([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        try
+        {
+            var (challenges, totalCount) = await _challengeRepository.GetAllAsync(page, pageSize);
+            var openChallenges = challenges.Where(c => c.Status == ChallengeStatus.Open).ToList();
+
+            var result = openChallenges.Select(c => new ChallengeDto
+            {
+                ChallengeId = c.ChallengeId,
+                Title = c.Title,
+                Description = c.Description,
+                ChallengeType = c.ChallengeType,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                Criteria = c.Criteria,
+                Status = c.Status,
+                MaxParticipants = c.MaxParticipants,
+                CurrentParticipants = c.Participations?.Count ?? 0,
+                RewardDescription = c.RewardDescription,
+                ImageUrl = c.ImageUrl,
+                CreatedByAdminId = c.CreatedByAdminId,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt
+            }).ToList();
+
+            return Ok(new
+            {
+                success = true,
+                data = result,
+                pagination = new
+                {
+                    page,
+                    pageSize,
+                    totalItems = totalCount,
+                    totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get user's joined challenges
+    /// </summary>
+    [HttpGet("my-challenges")]
+    public async Task<IActionResult> GetMyChallenges()
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new { success = false, message = "Invalid user" });
+
+            var userParticipations = await _participationRepository.GetByUserIdAsync(userId);
+
+            var result = userParticipations.Select(p => new
+            {
+                challenge = new ChallengeDto
+                {
+                    ChallengeId = p.Challenge.ChallengeId,
+                    Title = p.Challenge.Title,
+                    Description = p.Challenge.Description,
+                    ChallengeType = p.Challenge.ChallengeType,
+                    StartDate = p.Challenge.StartDate,
+                    EndDate = p.Challenge.EndDate,
+                    Criteria = p.Challenge.Criteria,
+                    Status = p.Challenge.Status,
+                    MaxParticipants = p.Challenge.MaxParticipants,
+                    CurrentParticipants = p.Challenge.Participations?.Count ?? 0,
+                    RewardDescription = p.Challenge.RewardDescription,
+                    ImageUrl = p.Challenge.ImageUrl,
+                    CreatedByAdminId = p.Challenge.CreatedByAdminId,
+                    CreatedAt = p.Challenge.CreatedAt,
+                    UpdatedAt = p.Challenge.UpdatedAt
+                },
+                participation = new ParticipationDto
+                {
+                    ParticipationId = p.ParticipationId,
+                    ChallengeId = p.ChallengeId,
+                    UserId = p.UserId,
+                    JoinedDate = p.JoinedDate,
+                    Status = p.Status,
+                    SubmissionText = p.SubmissionText,
+                    SubmissionUrl = p.SubmissionUrl,
+                    SubmittedAt = p.SubmittedAt,
+                    ReviewedByAdminId = p.ReviewedByAdminId,
+                    ReviewDate = p.ReviewDate,
+                    ReviewNotes = p.ReviewNotes,
+                    CompletedAt = p.CompletedAt,
+                    CreatedAt = p.CreatedAt
+                }
+            }).ToList();
+
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Join a challenge (create participation with status = Joined)
     /// </summary>
     [HttpPost("{id}/join")]
