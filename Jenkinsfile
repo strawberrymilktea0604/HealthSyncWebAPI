@@ -34,7 +34,7 @@ pipeline {
         DOCKER_SOCKET = '/var/run/docker.sock'
         
         // SonarQube
-        SONARQUBE_SERVER = 'http://sonarqube:9000'  // Use service name for Docker network
+        SONARQUBE_SERVER = 'http://localhost:9002'  // Use service name for Docker network
         SONARQUBE_PROJECT_KEY = 'HealthSyncWebAPI'
         SONARQUBE_PROJECT_NAME = 'HealthSync Web API'
     }
