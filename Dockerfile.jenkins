@@ -1,0 +1,28 @@
+FROM jenkins/jenkins:lts-alpine
+
+USER root
+
+# Install dependencies for .NET
+RUN apk update && \
+    apk add --no-cache \
+        wget \
+        icu-libs \
+        krb5-libs \
+        libgcc \
+        libintl \
+        libssl3 \
+        libstdc++ \
+        zlib \
+        docker-cli
+
+# Download and install .NET 8.0 SDK
+RUN wget https://dotnetcli.azureedge.net/dotnet/Sdk/8.0.405/dotnet-sdk-8.0.405-linux-musl-x64.tar.gz -O dotnet.tar.gz && \
+    mkdir -p /usr/share/dotnet && \
+    tar -zxf dotnet.tar.gz -C /usr/share/dotnet && \
+    rm dotnet.tar.gz
+
+# Add .NET to PATH
+ENV PATH="$PATH:/usr/share/dotnet"
+
+# Switch back to jenkins user
+USER jenkins

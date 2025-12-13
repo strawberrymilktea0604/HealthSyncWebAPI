@@ -88,7 +88,9 @@ services:
       - healthsync-network
 
   jenkins:
-    image: jenkins/jenkins:lts-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
     container_name: healthsync-jenkins
     user: root
     volumes:
