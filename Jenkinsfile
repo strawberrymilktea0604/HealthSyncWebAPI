@@ -53,7 +53,7 @@ pipeline {
                 ])
                 script {
                     echo "✓ Code checked out successfully"
-                    echo "Commit: $(git rev-parse --short HEAD)"
+                    sh 'echo "Commit: $(git rev-parse --short HEAD)"'
                 }
             }
         }
