@@ -140,29 +140,37 @@ pipeline {
                 script {
                     echo "========== STAGE: Deploy Stack =========="
                     if (params.ENVIRONMENT == 'dev') {
-                        sh '''
-                            echo "Deploying development stack..."
-                            # Download docker-compose standalone
-                            curl -SL https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-linux-x86_64 -o ./docker-compose
-                            chmod +x ./docker-compose
-                            # Use standalone docker-compose
-                            ./docker-compose -f docker-compose.yml --env-file .env.dev down || true
-                            ./docker-compose -f docker-compose.yml --env-file .env.dev up -d
-                            sleep 10
-                            ./docker-compose ps
-                        '''
+                        withCredentials([file(credentialsId: 'dev-env-file-healthsync', variable: 'ENV_FILE_PATH')]) {
+                            sh '''
+                                echo "Deploying development stack..."
+                                # Download docker-compose standalone
+                                curl -SL https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-linux-x86_64 -o ./docker-compose
+                                chmod +x ./docker-compose
+                                # Copy env file
+                                cp $ENV_FILE_PATH .env.dev
+                                # Use standalone docker-compose
+                                ./docker-compose -f docker-compose.yml --env-file .env.dev down || true
+                                ./docker-compose -f docker-compose.yml --env-file .env.dev up -d
+                                sleep 10
+                                ./docker-compose ps
+                            '''
+                        }
                     } else if (params.ENVIRONMENT == 'prod') {
-                        sh '''
-                            echo "Deploying production stack..."
-                            # Download docker-compose standalone
-                            curl -SL https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-linux-x86_64 -o ./docker-compose
-                            chmod +x ./docker-compose
-                            # Use standalone docker-compose
-                            ./docker-compose -f docker-compose.prod.yml --env-file .env.prod down || true
-                            ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
-                            sleep 10
-                            ./docker-compose -f docker-compose.prod.yml ps
-                        '''
+                        withCredentials([file(credentialsId: 'dev-prod-file-healthsync', variable: 'ENV_FILE_PATH')]) {
+                            sh '''
+                                echo "Deploying production stack..."
+                                # Download docker-compose standalone
+                                curl -SL https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-linux-x86_64 -o ./docker-compose
+                                chmod +x ./docker-compose
+                                # Copy env file
+                                cp $ENV_FILE_PATH .env.prod
+                                # Use standalone docker-compose
+                                ./docker-compose -f docker-compose.prod.yml --env-file .env.prod down || true
+                                ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+                                sleep 10
+                                ./docker-compose -f docker-compose.prod.yml ps
+                            '''
+                        }
                     }
                     echo "✓ Stack deployed"
                 }
