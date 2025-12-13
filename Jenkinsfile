@@ -107,7 +107,9 @@ pipeline {
                               /d:sonar.login="${SONAR_AUTH_TOKEN}" \
                               /d:sonar.host.url="${SONAR_HOST_URL}" \
                               /d:sonar.cs.opencover.reportsPaths="test-results/**/coverage.opencover.xml" \
-                              /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**"
+                              /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**" \
+                              /d:sonar.qualitygate.wait=true \
+                              /d:sonar.qualitygate.timeout=300
                             
                             dotnet build HealthSyncWebAPI.sln -c Release
                             
@@ -127,17 +129,7 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                script {
-                    echo "========== STAGE: Quality Gate =========="
-                    timeout(time: 10, unit: 'MINUTES') {
-                        waitForQualityGate abortPipeline: true
-                    }
-                    echo "✓ Quality Gate passed"
-                }
-            }
-        }
+
 
         stage('Run Unit Tests') {
             steps {
