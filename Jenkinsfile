@@ -74,6 +74,12 @@ pipeline {
         }
 
         stage('Build Solution') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/dotnet/sdk:9.0'
+                    args '-u root'
+                }
+            }
             steps {
                 script {
                     echo "========== STAGE: Build Solution =========="
@@ -87,6 +93,12 @@ pipeline {
         }
 
         stage('Run Unit Tests') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/dotnet/sdk:9.0'
+                    args '-u root'
+                }
+            }
             steps {
                 script {
                     echo "========== STAGE: Run Unit Tests =========="
