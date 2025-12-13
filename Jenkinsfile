@@ -142,10 +142,10 @@ pipeline {
                     if (params.ENVIRONMENT == 'dev') {
                         sh '''
                             echo "Deploying development stack..."
-                            docker-compose -f docker-compose.yml --env-file .env.dev down || true
-                            docker-compose -f docker-compose.yml --env-file .env.dev up -d
+                            docker compose -f docker-compose.yml --env-file .env.dev down || true
+                            docker compose -f docker-compose.yml --env-file .env.dev up -d
                             sleep 10
-                            docker-compose ps
+                            docker compose ps
                         '''
                     } else if (params.ENVIRONMENT == 'prod') {
                         sh '''
