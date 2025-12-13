@@ -142,18 +142,26 @@ pipeline {
                     if (params.ENVIRONMENT == 'dev') {
                         sh '''
                             echo "Deploying development stack..."
-                            docker compose -f docker-compose.yml --env-file .env.dev down || true
-                            docker compose -f docker-compose.yml --env-file .env.dev up -d
+                            # Download docker-compose standalone
+                            curl -SL https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-linux-x86_64 -o ./docker-compose
+                            chmod +x ./docker-compose
+                            # Use standalone docker-compose
+                            ./docker-compose -f docker-compose.yml --env-file .env.dev down || true
+                            ./docker-compose -f docker-compose.yml --env-file .env.dev up -d
                             sleep 10
-                            docker compose ps
+                            ./docker-compose ps
                         '''
                     } else if (params.ENVIRONMENT == 'prod') {
                         sh '''
                             echo "Deploying production stack..."
-                            docker compose -f docker-compose.prod.yml --env-file .env.prod down || true
-                            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+                            # Download docker-compose standalone
+                            curl -SL https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-linux-x86_64 -o ./docker-compose
+                            chmod +x ./docker-compose
+                            # Use standalone docker-compose
+                            ./docker-compose -f docker-compose.prod.yml --env-file .env.prod down || true
+                            ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
                             sleep 10
-                            docker compose -f docker-compose.prod.yml ps
+                            ./docker-compose -f docker-compose.prod.yml ps
                         '''
                     }
                     echo "✓ Stack deployed"
