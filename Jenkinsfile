@@ -135,7 +135,7 @@ pipeline {
                 script {
                     echo "========== STAGE: Run Unit Tests =========="
                     sh """
-if [ ! -f "test-results/TestResults.xml" ]; then
+if [ ! -d "test-results" ] || [ -z "\$(find test-results -name '*.xml' 2>/dev/null)" ]; then
     echo "Running tests (not run by SonarQube)..."
     dotnet test HealthSyncWebAPI.sln -c Release --no-build --verbosity normal \
         --collect:"XPlat Code Coverage" \
@@ -160,7 +160,7 @@ fi
                             export PATH="$PATH:/root/.dotnet/tools"
                             
                             reportgenerator \
-                                -reports:"test-results/*/coverage.cobertura.xml" \
+                                -reports:"test-results/**/coverage.opencover.xml" \
                                 -targetdir:"test-results/coverage-report" \
                                 -reporttypes:Html
                         '''
