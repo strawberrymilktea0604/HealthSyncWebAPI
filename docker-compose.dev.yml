@@ -106,6 +106,19 @@ services:
     networks:
       - healthsync-network
 
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: healthsync-ngrok
+    env_file:
+      - .env.dev
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: ["http", "--domain=nonliberal-unhappily-china.ngrok-free.dev", "jenkins:8080"]
+    depends_on:
+      - jenkins
+    networks:
+      - healthsync-network
+
   sonarqube-db:
     image: postgres:13
     container_name: healthsync-sonarqube-db

@@ -479,3 +479,9 @@ certs/
 # ASP.NET Core Data Protection Keys (sensitive - shared across replicas)
 data-protection-keys/
 
+# Environment Variables (sensitive - contains secrets)
+.env*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+
