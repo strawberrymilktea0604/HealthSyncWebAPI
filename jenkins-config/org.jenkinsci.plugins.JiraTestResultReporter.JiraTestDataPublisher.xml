@@ -1,0 +1,9 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<org.jenkinsci.plugins.JiraTestResultReporter.JiraTestDataPublisher_-JiraTestDataPublisherDescriptor plugin="JiraTestResultReporter@340.v8ea_26d65222d">
+  <jiraUri>http://localhost</jiraUri>
+  <username></username>
+  <password>{AQAAABAAAAAQ9frKHNJ5KYw6Bwy4mjAyB3RAidLUDIHPHWptLUTemx8=}</password>
+  <useBearerAuth>false</useBearerAuth>
+  <defaultSummary>${TEST_FULL_NAME} : ${TEST_ERROR_DETAILS}</defaultSummary>
+  <defaultDescription>${BUILD_URL}${CRLF}${TEST_STACK_TRACE}</defaultDescription>
+</org.jenkinsci.plugins.JiraTestResultReporter.JiraTestDataPublisher_-JiraTestDataPublisherDescriptor>
