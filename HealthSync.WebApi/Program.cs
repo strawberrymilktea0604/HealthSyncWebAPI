@@ -67,6 +67,9 @@ foreach (var envFile in envFiles)
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure URLs for Docker
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
+
 // Override appsettings.json with environment variables if they exist
 var adminKeyFromEnv = Environment.GetEnvironmentVariable("ADMIN_INITIALIZATION_KEY");
 if (!string.IsNullOrEmpty(adminKeyFromEnv))
@@ -146,6 +149,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Add Authorization
 builder.Services.AddAuthorization();
+
+// Configure HTTPS redirection to prevent warnings in production
+builder.Services.Configure<HttpsRedirectionOptions>(options =>
+{
+    options.HttpsPort = null; // Disable HTTPS redirection
+});
 
 // Register application services
 builder.Services.AddScoped<HealthSync.Application.Features.Auth.Interfaces.IAuthService, HealthSync.Application.Features.Auth.Services.AuthService>();
@@ -240,8 +249,8 @@ if (app.Environment.IsDevelopment())
     }
 }
 
-// HTTPS redirection - can be disabled in development for easier local testing
-if (!app.Environment.IsDevelopment() || !builder.Configuration.GetValue<bool>("DevelopmentSettings:DisableHttpsRedirection"))
+// HTTPS redirection - only enable in Development, disabled in Production since NGINX handles SSL
+if (app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
@@ -270,8 +279,9 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        // Lệnh này sẽ tự động check, nếu chưa có DB thì tạo, chưa có bảng thì thêm
-        // Nếu có rồi thì thôi, không báo lỗi Crash app như lệnh CreateDatabase
+        // Tạo database nếu chưa tồn tại
+        context.Database.EnsureCreated();
+        // Chạy migrations
         context.Database.Migrate(); 
     }
     catch (Exception ex)
