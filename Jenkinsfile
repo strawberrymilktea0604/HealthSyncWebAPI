@@ -137,6 +137,8 @@ pipeline {
                     sh """
 if [ ! -d "test-results" ] || [ -z "\$(find test-results -name '*.xml' 2>/dev/null)" ]; then
     echo "Running tests (not run by SonarQube)..."
+    rm -rf test-results || true
+    mkdir -p test-results
     dotnet test HealthSyncWebAPI.sln -c Release --no-build --verbosity normal \
         --collect:"XPlat Code Coverage;Format=opencover" \
         --results-directory ./test-results \
@@ -152,7 +154,7 @@ fi
                 always {
                     script {
                         echo "Publishing test results..."
-                        junit allowEmptyResults: true, testResults: 'test-results/**/*.xml'
+                        junit allowEmptyResults: true, testResults: 'test-results/**/TEST-*.xml'
                         
                         echo "Generating coverage reports..."
                         sh '''
