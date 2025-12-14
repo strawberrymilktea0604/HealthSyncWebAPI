@@ -190,6 +190,7 @@ pipeline {
                     echo "========== STAGE: SonarQube End =========="
                     withSonarQubeEnv('SonarQube') {
                         sh """
+                            export PATH="\$PATH:/root/.dotnet/tools"
                             dotnet sonarscanner end /d:sonar.login="${SONAR_AUTH_TOKEN}"
                         """
                     }
