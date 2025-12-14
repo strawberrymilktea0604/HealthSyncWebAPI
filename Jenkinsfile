@@ -119,7 +119,7 @@ pipeline {
                             dotnet build HealthSyncWebAPI.sln -c Release
                             
                             dotnet test HealthSyncWebAPI.sln -c Release --no-build \
-                              --collect:"XPlat Code Coverage" \
+                              --collect:"XPlat Code Coverage;Format=opencover" \
                               --results-directory ./test-results \
                               --logger "junit" || true
                             
@@ -138,7 +138,7 @@ pipeline {
 if [ ! -d "test-results" ] || [ -z "\$(find test-results -name '*.xml' 2>/dev/null)" ]; then
     echo "Running tests (not run by SonarQube)..."
     dotnet test HealthSyncWebAPI.sln -c Release --no-build --verbosity normal \
-        --collect:"XPlat Code Coverage" \
+        --collect:"XPlat Code Coverage;Format=opencover" \
         --results-directory ./test-results \
         --logger "junit" || true
 else
