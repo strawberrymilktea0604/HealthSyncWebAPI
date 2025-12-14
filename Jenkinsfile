@@ -121,7 +121,7 @@ pipeline {
                             dotnet test HealthSyncWebAPI.sln -c Release --no-build \
                               --collect:"XPlat Code Coverage" \
                               --results-directory ./test-results \
-                              --logger "junit;LogFileName=test_results.xml" || true
+                              --logger "junit" || true
                             
                             dotnet sonarscanner end /d:sonar.login="${SONAR_AUTH_TOKEN}"
                         """
@@ -135,12 +135,12 @@ pipeline {
                 script {
                     echo "========== STAGE: Run Unit Tests =========="
                     sh """
-if [ ! -f "test-results/test_results.xml" ]; then
+if [ ! -f "test-results/TestResults.xml" ]; then
     echo "Running tests (not run by SonarQube)..."
     dotnet test HealthSyncWebAPI.sln -c Release --no-build --verbosity normal \
         --collect:"XPlat Code Coverage" \
         --results-directory ./test-results \
-        --logger "junit;LogFileName=test_results.xml" || true
+        --logger "junit" || true
 else
     echo "Tests already run by SonarQube stage, skipping..."
 fi
@@ -152,7 +152,7 @@ fi
                 always {
                     script {
                         echo "Publishing test results..."
-                        junit allowEmptyResults: true, testResults: 'test-results/*.xml'
+                        junit allowEmptyResults: true, testResults: 'test-results/**/*.xml'
                         
                         echo "Generating coverage reports..."
                         sh '''
