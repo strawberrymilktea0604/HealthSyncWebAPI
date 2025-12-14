@@ -96,10 +96,10 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('SonarQube Begin') {
             steps {
                 script {
-                    echo "========== STAGE: SonarQube Analysis =========="
+                    echo "========== STAGE: SonarQube Begin =========="
                     withSonarQubeEnv('SonarQube') {
                         sh """
                             dotnet tool install --global dotnet-sonarscanner --version 5.14.0 || true
@@ -115,15 +115,6 @@ pipeline {
                               /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**" \\
                               /d:sonar.qualitygate.wait=true \\
                               /d:sonar.qualitygate.timeout=300
-                            
-                            dotnet build HealthSyncWebAPI.sln -c Release
-                            
-                            dotnet test HealthSyncWebAPI.sln -c Release --no-build \
-                              --collect:"XPlat Code Coverage;Format=opencover" \
-                              --results-directory ./test-results \
-                              --logger "junit" || true
-                            
-                            dotnet sonarscanner end /d:sonar.login="${SONAR_AUTH_TOKEN}"
                         """
                     }
                 }
@@ -134,20 +125,38 @@ pipeline {
             steps {
                 script {
                     echo "========== STAGE: Run Unit Tests =========="
-                    sh """
-if [ ! -d "test-results" ] || [ -z "\$(find test-results -name '*.xml' 2>/dev/null)" ]; then
-    echo "Running tests (not run by SonarQube)..."
-    rm -rf test-results || true
-    mkdir -p test-results
-    dotnet test HealthSyncWebAPI.sln -c Release --no-build --verbosity normal \
-        --collect:"XPlat Code Coverage;Format=opencover" \
-        --results-directory ./test-results \
-        --logger "junit" || true
-else
-    echo "Tests already run by SonarQube stage, skipping..."
-fi
-"""
-                    echo "✓ Unit tests completed"
+                    sh '''
+                        # clean previous results
+                        rm -rf test-results || true
+                        mkdir -p test-results
+
+                        # find test projects (adjust glob if your tests live in different folders)
+                        TEST_PROJECTS=$(find . -type f -name '*Tests*.csproj' -o -name '*Test*.csproj' || true)
+                        if [ -z "$TEST_PROJECTS" ]; then
+                            echo "No test project files found by pattern '*Tests*' or '*Test*' - aborting tests"
+                            exit 0
+                        fi
+
+                        echo "Found test projects:"
+                        echo "$TEST_PROJECTS"
+
+                        # loop over projects -> run dotnet test for each and write a distinct JUnit XML
+                        for p in $TEST_PROJECTS; do
+                            # derive short name for file
+                            pname=$(basename "$p" .csproj | sed 's/[^a-zA-Z0-9._-]/_/g')
+                            logfile="test-results/TEST-${pname}.xml"
+                            echo "Running tests for [$p] -> $logfile"
+                            # Note: NO --no-build to be safe; remove newline escaping if you embed in pipeline groovy string
+                            dotnet test "$p" -c Release \
+                                --collect:"XPlat Code Coverage;Format=opencover" \
+                                --results-directory ./test-results \
+                                --logger "junit;LogFileName=${logfile}" || true
+                        done
+
+                        echo "List generated test results:"
+                        ls -la test-results || true
+                    '''
+                    echo "✓ Unit tests stage finished (see artifacts/test-results)"
                 }
             }
             post {
@@ -155,18 +164,12 @@ fi
                     script {
                         echo "Publishing test results..."
                         junit allowEmptyResults: true, testResults: 'test-results/**/TEST-*.xml'
-                        
-                        echo "Generating coverage reports..."
+                        echo "Generating coverage (if any)..."
                         sh '''
                             dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
                             export PATH="$PATH:/root/.dotnet/tools"
-                            
-                            reportgenerator \
-                                -reports:"test-results/**/coverage.opencover.xml" \
-                                -targetdir:"test-results/coverage-report" \
-                                -reporttypes:Html
+                            reportgenerator -reports:"test-results/**/coverage.opencover.xml" -targetdir:"test-results/coverage-report" -reporttypes:Html || true
                         '''
-                        
                         publishHTML([
                             allowMissing: true,
                             alwaysLinkToLastBuild: true,
@@ -176,6 +179,19 @@ fi
                             reportName: 'Coverage Report',
                             reportTitles: 'Code Coverage'
                         ])
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube End') {
+            steps {
+                script {
+                    echo "========== STAGE: SonarQube End =========="
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            dotnet sonarscanner end /d:sonar.login="${SONAR_AUTH_TOKEN}"
+                        """
                     }
                 }
             }
