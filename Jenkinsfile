@@ -307,8 +307,8 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 for i in {1..30}; do
                                     # Curl vào localhost của server prod (container đang chạy ở đó)
-                                    if curl -f http://localhost:9080/health 2>/dev/null; then
-                                        echo '✓ Production API is healthy (port 9080)'
+                                    if curl -f http://localhost:9180/health 2>/dev/null; then
+                                        echo '✓ Production API is healthy (port 9180)'
                                         exit 0
                                     fi
                                     echo 'Attempt \$i/30 - waiting...'
