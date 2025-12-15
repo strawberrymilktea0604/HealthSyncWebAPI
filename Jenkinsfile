@@ -262,10 +262,10 @@ pipeline {
                                 sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
                                 
                                 # Pull latest image from Docker Hub
-                                docker compose -f docker-compose.prod.yml pull
+                                docker compose -f docker-compose.prod.yml --env-file .env.prod pull
                                 
                                 # Stop and remove old containers
-                                docker compose -f docker-compose.prod.yml down --remove-orphans || true
+                                docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
                                 
                                 # Start new containers (including Ngrok)
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
@@ -274,7 +274,7 @@ pipeline {
                                 sleep 20
                                 
                                 # Show running containers
-                                docker compose -f docker-compose.prod.yml ps
+                                docker compose -f docker-compose.prod.yml --env-file .env.prod ps
                                 
                                 # Show Ngrok URL
                                 echo ''

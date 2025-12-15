@@ -48,7 +48,7 @@ services:
     # Pull image from Docker Hub instead of building locally
     # Image name sẽ được thay thế tự động bởi Jenkins pipeline
     image: healthsync-api:latest
-    container_name: healthsync-api-prod
+    # container_name: healthsync-api-prod  # Xóa vì dùng replicas: 2
     env_file:
       - .env.prod
     environment:
