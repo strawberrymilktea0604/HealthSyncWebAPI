@@ -279,7 +279,7 @@ pipeline {
                                 # Show Ngrok URL
                                 echo ""
                                 echo "========== Ngrok Public URL =========="
-                                docker logs healthsync-ngrok-prod 2>&1 | grep -o "https://[a-z0-9-]*\.ngrok-free\.app" | head -1 || echo "Ngrok URL not ready yet, check logs: docker logs healthsync-ngrok-prod"
+                                docker logs healthsync-ngrok-prod 2>&1 | grep -o "https://[a-z0-9-]*\\.ngrok-free\\.app" | head -1 || echo "Ngrok URL not ready yet, check logs: docker logs healthsync-ngrok-prod"
                                 echo "======================================"
                                 
                                 # Clean up old images
