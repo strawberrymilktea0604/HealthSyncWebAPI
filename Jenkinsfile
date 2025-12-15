@@ -243,19 +243,19 @@ pipeline {
                     ]) {
                         sh """
                             # Create deployment directory on production server
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
                                 "mkdir -p ${PROD_DEPLOY_DIR}"
                             
                             # Copy deployment files to production server
-                            scp -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                            scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 docker-compose.prod.yml \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
-                            scp -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                            scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 nginx.conf \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
-                            scp -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                            scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 \$ENV_FILE_PATH \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
                             
                             # Deploy on production server
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
                                 # Update DOCKER_HUB_REPO in docker-compose.prod.yml
@@ -304,7 +304,7 @@ pipeline {
                             echo "Checking Health on Production Server..."
                             
                             # SSH vào server để chạy health check từ bên trong
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 for i in {1..30}; do
                                     # Curl vào localhost của server prod (container đang chạy ở đó)
                                     if curl -f http://localhost:9080/health 2>/dev/null; then
