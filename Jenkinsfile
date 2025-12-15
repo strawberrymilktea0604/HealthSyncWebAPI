@@ -302,7 +302,7 @@ pipeline {
                     ]) {
                         sh """
                             echo "Waiting for Production API to be ready..."
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${PROD_SERVER_USER}@${PROD_SERVER_IP} '
+                            ssh -v -o StrictHostKeyChecking=no -i $SSH_KEY_FILE $SSH_USER@$PROD_SERVER_IP "mkdir -p $PROD_DEPLOY_DIR"'
                                 for i in {1..30}; do
                                     if curl -f http://localhost:9080/health 2>/dev/null; then
                                         echo "✓ Production API is healthy (port 9080)"
