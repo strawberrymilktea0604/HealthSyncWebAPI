@@ -8,7 +8,7 @@ services:
       - MSSQL_PID=Standard
       - ACCEPT_EULA=Y
     ports:
-      - "1433:1433"
+      - "1434:1433"  # Port 1434 để tránh xung đột với dev (1433)
     restart: unless-stopped
     healthcheck:
       test:
@@ -30,8 +30,8 @@ services:
       - MINIO_ROOT_USER=minioadminprod
       - MINIO_ROOT_PASSWORD=minioadminprod
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9002:9000"  # Port 9002 để tránh xung đột với dev (9000)
+      - "9003:9001"  # Port 9003 để tránh xung đột với dev (9001)
     volumes:
       - minio_data_prod:/data
     command: server /data --console-address ":9001"
@@ -45,7 +45,10 @@ services:
       - healthsync-network
 
   api:
+    # Pull image from Docker Hub instead of building locally
+    # Image name sẽ được thay thế tự động bởi Jenkins pipeline
     image: healthsync-api:latest
+    container_name: healthsync-api-prod
     env_file:
       - .env.prod
     environment:
@@ -82,8 +85,8 @@ services:
       - NGINX_PORT_HTTPS=443
       - Md3=
     ports:
-      - "80:80"
-      - "443:443"
+      - "9080:80"   # Port 9080 để tránh xung đột với dev (8080)
+      - "9443:443"  # Port 9443 để tránh xung đột với dev (8443)
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/nginx/certs:ro
@@ -98,6 +101,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: healthsync-ngrok-prod
+    env_file:
+      - .env.prod
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http nginx:80 --log stdout
+    depends_on:
+      - nginx
+    networks:
+      - healthsync-network
 
 volumes:
   sqlserver_data_prod:
