@@ -243,23 +243,23 @@ pipeline {
                     ]) {
                         sh """
                             # Create deployment directory on production server
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${PROD_SERVER_USER}@${PROD_SERVER_IP} \
-                                'mkdir -p ${PROD_DEPLOY_DIR}'
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
+                                "mkdir -p ${PROD_DEPLOY_DIR}"
                             
                             # Copy deployment files to production server
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} \
-                                docker-compose.prod.yml ${PROD_SERVER_USER}@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} \
-                                nginx.conf ${PROD_SERVER_USER}@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} \
-                                \${ENV_FILE_PATH} ${PROD_SERVER_USER}@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
+                            scp -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                                docker-compose.prod.yml \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                            scp -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                                nginx.conf \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                            scp -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                                \$ENV_FILE_PATH \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
                             
                             # Deploy on production server
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${PROD_SERVER_USER}@${PROD_SERVER_IP} '
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
                                 # Update DOCKER_HUB_REPO in docker-compose.prod.yml
-                                sed -i "s|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g" docker-compose.prod.yml
+                                sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
                                 
                                 # Pull latest image from Docker Hub
                                 docker compose -f docker-compose.prod.yml pull
@@ -277,14 +277,14 @@ pipeline {
                                 docker compose -f docker-compose.prod.yml ps
                                 
                                 # Show Ngrok URL
-                                echo ""
-                                echo "========== Ngrok Public URL =========="
-                                docker logs healthsync-ngrok-prod 2>&1 | grep -o "https://[a-z0-9-]*\\.ngrok-free\\.app" | head -1 || echo "Ngrok URL not ready yet, check logs: docker logs healthsync-ngrok-prod"
-                                echo "======================================"
+                                echo ''
+                                echo '========== Ngrok Public URL =========='
+                                docker logs healthsync-ngrok-prod 2>&1 | grep -o 'https://[a-z0-9-]*\\.ngrok-free\\.app' | head -1 || echo 'Ngrok URL not ready yet, check logs: docker logs healthsync-ngrok-prod'
+                                echo '======================================'
                                 
                                 # Clean up old images
                                 docker image prune -f
-                            '
+                            "
                             
                             echo "✓ Production deployment completed"
                         """
@@ -301,19 +301,22 @@ pipeline {
                         sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
                     ]) {
                         sh """
-                            echo "Waiting for Production API to be ready..."
-                            ssh -v -o StrictHostKeyChecking=no -i $SSH_KEY_FILE $SSH_USER@$PROD_SERVER_IP "mkdir -p $PROD_DEPLOY_DIR"'
+                            echo "Checking Health on Production Server..."
+                            
+                            # SSH vào server để chạy health check từ bên trong
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 for i in {1..30}; do
+                                    # Curl vào localhost của server prod (container đang chạy ở đó)
                                     if curl -f http://localhost:9080/health 2>/dev/null; then
-                                        echo "✓ Production API is healthy (port 9080)"
+                                        echo '✓ Production API is healthy (port 9080)'
                                         exit 0
                                     fi
-                                    echo "Attempt \$i/30 - waiting..."
+                                    echo 'Attempt \$i/30 - waiting...'
                                     sleep 2
                                 done
-                                echo "✗ Production API health check failed"
+                                echo '✗ Production API health check failed'
                                 exit 1
-                            '
+                            "
                         """
                     }
                 }
