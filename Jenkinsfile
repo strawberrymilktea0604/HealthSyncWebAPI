@@ -212,23 +212,23 @@ pipeline {
                 script {
                     echo "========== STAGE: Push Docker Image =========="
                     echo "Pushing image to Docker Hub: ${DOCKER_HUB_REPO}"
-                    sh """
-                        # Login to Docker Hub
-                        echo "${DOCKER_HUB_PASSWORD}" | docker login -u "${DOCKER_HUB_USERNAME}" --password-stdin
+                    sh '''
+                        # Login to Docker Hub (using single quotes to avoid secret interpolation warning)
+                        echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
                         
                         # Tag image with Docker Hub repository name
-                        docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_HUB_REPO}:${DOCKER_IMAGE_TAG}
-                        docker tag ${DOCKER_IMAGE_NAME}:latest ${DOCKER_HUB_REPO}:latest
+                        docker tag ''' + DOCKER_IMAGE_NAME + ':' + DOCKER_IMAGE_TAG + ''' ''' + DOCKER_HUB_REPO + ':' + DOCKER_IMAGE_TAG + '''
+                        docker tag ''' + DOCKER_IMAGE_NAME + ''':latest ''' + DOCKER_HUB_REPO + ''':latest
                         
                         # Push to Docker Hub
-                        docker push ${DOCKER_HUB_REPO}:${DOCKER_IMAGE_TAG}
-                        docker push ${DOCKER_HUB_REPO}:latest
+                        docker push ''' + DOCKER_HUB_REPO + ':' + DOCKER_IMAGE_TAG + '''
+                        docker push ''' + DOCKER_HUB_REPO + ''':latest
                         
-                        echo "✓ Image pushed successfully"
+                        echo "\u2713 Image pushed successfully"
                         
                         # Logout from Docker Hub
                         docker logout
-                    """
+                    '''
                 }
             }
         }
@@ -252,6 +252,8 @@ pipeline {
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 nginx.conf \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                                Dockerfile.loophole \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                            scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 \$ENV_FILE_PATH \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
                             
                             # Deploy on production server
@@ -267,7 +269,7 @@ pipeline {
                                 # Stop and remove old containers
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
                                 
-                                # Start new containers (including Ngrok)
+                                # Start new containers (including Loophole tunnels)
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 
                                 # Wait for services to start
@@ -276,11 +278,15 @@ pipeline {
                                 # Show running containers
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod ps
                                 
-                                # Show Ngrok URL
+                                # Show Loophole Tunnel URLs
                                 echo ''
-                                echo '========== Ngrok Public URL =========='
-                                docker logs healthsync-ngrok-prod 2>&1 | grep -o 'https://[a-z0-9-]*\\.ngrok-free\\.app' | head -1 || echo 'Ngrok URL not ready yet, check logs: docker logs healthsync-ngrok-prod'
-                                echo '======================================'
+                                echo '========== Loophole Tunnel URLs =========='
+                                echo 'API (Nginx):'
+                                docker logs healthsync-tunnel-nginx 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-nginx'
+                                echo ''
+                                echo 'MinIO (Files):'
+                                docker logs healthsync-tunnel-minio 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-minio'
+                                echo '=========================================='
                                 
                                 # Clean up old images
                                 docker image prune -f
