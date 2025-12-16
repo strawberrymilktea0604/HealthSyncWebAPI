@@ -102,16 +102,33 @@ services:
       timeout: 10s
       retries: 3
 
-  ngrok:
-    image: ngrok/ngrok:latest
-    container_name: healthsync-ngrok-prod
-    env_file:
-      - .env.prod
-    environment:
-      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-    command: http nginx:80 --log stdout
+  tunnel-nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.loophole
+    container_name: healthsync-tunnel-nginx
+    restart: unless-stopped
+    command: ["http", "80", "nginx", "--hostname", "healthsync-api"]
+    volumes:
+      - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
-      - nginx
+      nginx:
+        condition: service_healthy
+    networks:
+      - healthsync-network
+
+  tunnel-minio:
+    build:
+      context: .
+      dockerfile: Dockerfile.loophole
+    container_name: healthsync-tunnel-minio
+    restart: unless-stopped
+    command: ["http", "9000", "minio", "--hostname", "healthsync-files"]
+    volumes:
+      - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
+    depends_on:
+      minio:
+        condition: service_healthy
     networks:
       - healthsync-network
 

@@ -106,16 +106,32 @@ services:
     networks:
       - healthsync-network
 
-  ngrok:
-    image: ngrok/ngrok:latest
-    container_name: healthsync-ngrok
-    env_file:
-      - .env.dev
-    environment:
-      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-    command: ["http", "--domain=nonliberal-unhappily-china.ngrok-free.dev", "jenkins:8080"]
+  tunnel-jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.loophole
+    container_name: healthsync-tunnel-jenkins
+    restart: unless-stopped
+    command: ["http", "8080", "jenkins", "--hostname", "healthsync-jenkins-dev"]
+    volumes:
+      - C:/Users/minhk/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
       - jenkins
+    networks:
+      - healthsync-network
+
+  tunnel-sonarqube:
+    build:
+      context: .
+      dockerfile: Dockerfile.loophole
+    container_name: healthsync-tunnel-sonarqube
+    restart: unless-stopped
+    command: ["http", "9000", "sonarqube", "--hostname", "healthsync-sonarqube-dev"]
+    volumes:
+      - C:/Users/minhk/.loophole/tokens.json:/root/.loophole/tokens.json
+    depends_on:
+      sonarqube:
+        condition: service_healthy
     networks:
       - healthsync-network
 

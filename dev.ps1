@@ -12,7 +12,7 @@ $composeFile = "docker-compose.dev.yml"
 switch ($Action) {
     "up" {
         Write-Host "Starting development environment..." -ForegroundColor Green
-        & docker-compose --env-file $envFile -f $composeFile up -d
+        & docker-compose --env-file $envFile -f $composeFile up -d --build
     }
     "down" {
         Write-Host "Stopping development environment..." -ForegroundColor Yellow

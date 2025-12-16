@@ -1530,7 +1530,7 @@ Display:
 18. **Load Balancing & Scaling**:
     - NGINX reverse proxy
     - 2+ API instances (Docker Compose)
-    - Ngrok cho public access (dev/testing)
+    - Serveo (SSH tunnel) cho public access (dev/testing)
     - Health check endpoints: GET `/health`, `/ready`
 
 ## Non-Functional Requirements (NFRs)
