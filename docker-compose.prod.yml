@@ -29,6 +29,9 @@ services:
     environment:
       - MINIO_ROOT_USER=minioadminprod
       - MINIO_ROOT_PASSWORD=minioadminprod
+      # Public URLs cho Loophole tunnels
+      - MINIO_SERVER_URL=https://healthsync-files.loophole.site
+      - MINIO_BROWSER_REDIRECT_URL=https://healthsync-console.loophole.site
     ports:
       - "9004:9000"  # Port 9004 để tránh xung đột
       - "9005:9001"  # Port 9005 để tránh xung đột
@@ -96,11 +99,12 @@ services:
         condition: service_healthy
     networks:
       - healthsync-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    # Healthcheck tạm thời tắt để debug tunnel
+    # healthcheck:
+    #   test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
 
   tunnel-nginx:
     build:
@@ -112,8 +116,7 @@ services:
     volumes:
       - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
-      nginx:
-        condition: service_healthy
+      - nginx
     networks:
       - healthsync-network
 
@@ -124,6 +127,21 @@ services:
     container_name: healthsync-tunnel-minio
     restart: unless-stopped
     command: ["http", "9000", "minio", "--hostname", "healthsync-files"]
+    volumes:
+      - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - healthsync-network
+
+  tunnel-minio-console:
+    build:
+      context: .
+      dockerfile: Dockerfile.loophole
+    container_name: healthsync-tunnel-minio-console
+    restart: unless-stopped
+    command: ["http", "9001", "minio", "--hostname", "healthsync-console"]
     volumes:
       - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:

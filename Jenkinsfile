@@ -284,8 +284,11 @@ pipeline {
                                 echo 'API (Nginx):'
                                 docker logs healthsync-tunnel-nginx 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-nginx'
                                 echo ''
-                                echo 'MinIO (Files):'
+                                echo 'MinIO API (Files):'
                                 docker logs healthsync-tunnel-minio 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-minio'
+                                echo ''
+                                echo 'MinIO Console (Admin UI):'
+                                docker logs healthsync-tunnel-minio-console 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-minio-console'
                                 echo '=========================================='
                                 
                                 # Clean up old images
