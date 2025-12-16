@@ -91,6 +91,9 @@ nginx.conf
 docker-compose*.yml
 generate-certs.*
 
+# Loophole Dockerfile - EXCEPTION: Keep this for tunnel builds
+!Dockerfile.loophole
+
 ## Node / Frontend (if any)
 node_modules/
 
