@@ -272,11 +272,20 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
-                                # 1. Update image tag cho API
+                                # 1. Xóa .dockerignore (để chắc ăn)
+                                rm -f .dockerignore
+                                
+                                # 2. Update image tag cho API
                                 sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
                                 
-                                # 2. Chạy Docker Compose
-                                # Docker sẽ tự pull nginx:1.25-alpine và mount folder certs vào
+                                # 3. BUILD NGINX (Chìa khóa thành công)
+                                # Lệnh này sẽ gói gọn config + certs vào trong image luôn
+                                # Không còn sợ lỗi đường dẫn WSL nữa
+                                echo '>>> Building Nginx Image...'
+                                docker build -f Dockerfile.nginx -t healthsync-nginx-prod .
+                                
+                                # 4. Chạy Docker Compose
+                                # Compose sẽ dùng image 'healthsync-nginx-prod' vừa build xong
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 
