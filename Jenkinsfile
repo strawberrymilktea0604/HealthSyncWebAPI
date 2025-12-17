@@ -427,8 +427,6 @@ pipeline {
         always {
             script {
                 echo "========== POST: Cleanup =========="
-                sh 'docker compose logs > docker-compose.log || true'
-                archiveArtifacts artifacts: 'docker-compose.log', allowEmptyArchive: true
                 cleanWs() // Dọn dẹp workspace để không lộ certs
             }
         }
@@ -452,7 +450,8 @@ pipeline {
         failure {
             script {
                 echo "========== BUILD: FAILURE =========="
-                echo "✗ Pipeline failed"
+                echo "✗ Pipeline failed! Đang in 100 dòng log cuối cùng để debug..."
+                sh 'docker compose -f docker-compose.prod.yml logs --tail=100'
             }
         }
     }
