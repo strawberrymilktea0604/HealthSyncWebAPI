@@ -347,8 +347,8 @@ pipeline {
                                 cd ${PROD_DEPLOY_DIR}
                                 
                                 # Update image tags
-                                sed -i 's|image: healthsync-api:latest|image: \${DOCKER_HUB_REPO_VAR}:latest|g' docker-compose.prod.yml
-                                sed -i 's|image: \${DOCKER_HUB_REPO:-healthsync}-nginx:latest|image: \${DOCKER_HUB_REPO_VAR}-nginx:latest|g' docker-compose.prod.yml
+                                sed -i 's|image: healthsync-api:latest|image: \${DOCKER_HUB_REPO_VAR:-healthsync}:latest|g' docker-compose.prod.yml
+                                sed -i 's|healthsync-nginx|\${DOCKER_HUB_REPO_VAR:-healthsync}-nginx|g' docker-compose.prod.yml
                                 
                                 # Pull & Redeploy
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull
