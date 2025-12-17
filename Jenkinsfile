@@ -392,54 +392,55 @@ pipeline {
                     withCredentials([
                         sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
                     ]) {
-                        // QUAN TRỌNG: Thêm shebang #!/bin/bash +x ngay đầu tiên
-                        // Nó báo cho Jenkins biết là script này KHÔNG ĐƯỢC in dấu vết (-x là in, +x là tắt in)
-                        sh """#!/bin/bash +x
-                            
-                            echo "Checking Health on Production Server..."
-                            
-                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} '
-                                # Bên trong này không cần set +x nữa vì Jenkins đã im lặng từ bên ngoài rồi
-                                # Nhưng để chắc ăn cho remote shell, cứ để cũng được, hoặc bỏ đi cho gọn.
+                        def checkResult = sh(
+                            script: """
+                                echo "Checking Health on Production Server..."
                                 
-                                echo "--- Starting Loop (Max 300s) ---"
-                                MAX_RETRIES=60
-                                COUNT=0
-                                
-                                while [ \$COUNT -lt \$MAX_RETRIES ]; do
-                                    COUNT=\$((COUNT+1))
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" 'bash -s' << 'EOF'
+                                    set +x
                                     
-                                    # Lấy status container
-                                    STATUS=\$(docker inspect --format="{{.State.Health.Status}}" healthsync-nginx-prod 2>/dev/null || echo "not_found")
+                                    MAX_RETRIES=60
+                                    COUNT=0
                                     
-                                    if [ "\$STATUS" = "healthy" ]; then
-                                        # Check API thật sự
-                                        HTTP_CODE=\$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:9443/health)
+                                    while [ \$COUNT -lt \$MAX_RETRIES ]; do
+                                        COUNT=\$((COUNT+1))
                                         
-                                        if [ "\$HTTP_CODE" = "200" ]; then
-                                            echo "✅ [Attempt \$COUNT] SUCCESS: Nginx Healthy & API 200 OK."
-                                            exit 0
+                                        STATUS=\$(docker inspect --format="{{.State.Health.Status}}" healthsync-nginx-prod 2>/dev/null || echo "not_found")
+                                        
+                                        if [ "\$STATUS" = "healthy" ]; then
+                                            HTTP_CODE=\$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:9443/health)
+                                            
+                                            if [ "\$HTTP_CODE" = "200" ]; then
+                                                echo "✅ SUCCESS: Nginx Healthy & API 200 OK (attempt \$COUNT)"
+                                                exit 0
+                                            fi
                                         fi
-                                        # Nếu healthy nhưng API lỗi thì chỉ in log mỗi 5 lần
+                                        
                                         if [ \$((COUNT % 5)) -eq 0 ]; then
-                                             echo "⚠️ [Attempt \$COUNT] Nginx Green but API returned \$HTTP_CODE"
+                                            echo "⏳ Attempt \$COUNT | Container: \$STATUS | HTTP: \${HTTP_CODE:-N/A}"
                                         fi
-                                    else
-                                        # Nếu chưa healthy thì chỉ in log mỗi 5 lần
-                                        if [ \$((COUNT % 5)) -eq 0 ]; then
-                                            echo "⏳ [Attempt \$COUNT] Waiting... Status: \$STATUS"
-                                        fi
-                                    fi
+                                        
+                                        sleep 5
+                                    done
                                     
-                                    sleep 5
-                                done
-                                
-                                echo "❌ TIMEOUT after 5 minutes."
-                                echo ">>> DEBUG LOGS (Last 20 lines):"
-                                docker compose -f ${PROD_DEPLOY_DIR}/docker-compose.prod.yml logs --tail 20 api
-                                exit 1
-                            '
-                        """
+                                    echo "❌ TIMEOUT: Health check failed after 5 minutes"
+                                    echo "Last Status: \$STATUS | Last HTTP Code: \${HTTP_CODE:-N/A}"
+                                    exit 1
+EOF
+                            """,
+                            returnStatus: true
+                        )
+                        
+                        if (checkResult != 0) {
+                            echo "❌ Health check failed — dumping container logs for debugging..."
+                            sh """
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" \
+                                "cd ${PROD_DEPLOY_DIR} && docker compose -f docker-compose.prod.yml logs --tail 30 api"
+                            """
+                            error("Health check failed with exit code ${checkResult}")
+                        }
+                        
+                        echo "✅ Health check passed!"
                     }
                 }
             }
