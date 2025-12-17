@@ -427,7 +427,7 @@ pipeline {
         always {
             script {
                 echo "========== POST: Cleanup =========="
-                cleanWs() // Dọn dẹp workspace để không lộ certs
+                cleanWs() // Dọn dẹp workspace
             }
         }
         success {
@@ -435,7 +435,6 @@ pipeline {
                 echo "========== BUILD: SUCCESS =========="
                 echo "✓ Production pipeline completed successfully"
                 echo "Build: ${BUILD_NUMBER}"
-                echo "Docker Images pushed to Docker Hub"
                 echo ""
                 echo "========== PRODUCTION URLs =========="
                 echo "🌐 API Endpoint (HTTPS): https://healthsync-api.loophole.site"
@@ -450,8 +449,19 @@ pipeline {
         failure {
             script {
                 echo "========== BUILD: FAILURE =========="
-                echo "✗ Pipeline failed! Đang in 100 dòng log cuối cùng để debug..."
-                sh 'docker compose -f docker-compose.prod.yml logs --tail=100'
+                echo "✗ Pipeline failed! Đang kết nối server để lấy 50 dòng log cuối..."
+                
+                // PHẢI nạp lại Credentials vì ta đang ở ngoài stage Deploy
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
+                ]) {
+                    // Dùng SSH để chạy lệnh logs trên server PROD (chứ không phải trên Jenkins)
+                    // Thêm --tail=50 để chỉ lấy 50 dòng cuối, tránh spam log
+                    sh """
+                        ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
+                        "cd ${PROD_DEPLOY_DIR} && docker compose -f docker-compose.prod.yml logs --tail=50"
+                    """
+                }
             }
         }
     }
