@@ -346,11 +346,16 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
-                                # Update image tags
-                                sed -i 's|image: healthsync-api:latest|image: \${DOCKER_HUB_REPO_VAR:-healthsync}:latest|g' docker-compose.prod.yml
-                                sed -i 's|healthsync-nginx|\${DOCKER_HUB_REPO_VAR:-healthsync}-nginx|g' docker-compose.prod.yml
+                                # Export Docker Hub repo as environment variable for compose
+                                export DOCKER_HUB_REPO=\${DOCKER_HUB_REPO_VAR:-healthsync}
                                 
-                                # Pull & Redeploy
+                                # Update API image tag only (keep container_name unchanged)
+                                sed -i 's|image: healthsync-api:latest|image: \${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
+                                
+                                # Update nginx image tag only (NOT container_name)
+                                sed -i 's|image: \\\${DOCKER_HUB_REPO:-healthsync}-nginx:latest|image: \${DOCKER_HUB_REPO}-nginx:latest|g' docker-compose.prod.yml
+                                
+                                # Pull & Redeploy with exported env var
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
