@@ -394,37 +394,56 @@ pipeline {
                     ]) {
                         sh """
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} '
-                                # Tắt in log rác (chống spam)
+                                # 1. TẮT chế độ in log debug của shell (Chữa bệnh ói log)
                                 set +x
                                 
-                                echo "Waiting for nginx to be ready..."
-                                # Dùng seq 1 60 an toàn hơn {1..60} trên mọi loại shell
-                                for i in \$(seq 1 60); do
+                                echo "--- Starting Health Check (Max 300s) ---"
+                                
+                                # Định nghĩa biến đếm
+                                MAX_RETRIES=60
+                                COUNT=0
+                                
+                                while [ \$COUNT -lt \$MAX_RETRIES ]; do
+                                    COUNT=\$((COUNT+1))
+                                    
+                                    # Check trạng thái container Nginx
                                     STATUS=\$(docker inspect --format="{{.State.Health.Status}}" healthsync-nginx-prod 2>/dev/null || echo "not_found")
                                     
                                     if [ "\$STATUS" = "healthy" ]; then
-                                        echo "✅ Attempt \$i: Nginx is healthy."
-                                        
-                                        # Test thử API
-                                        echo "Testing API endpoint..."
-                                        HTTP_CODE=\$(curl -k -o /dev/null -s -w "%{http_code}" https://localhost:9443/health || echo "000")
+                                        # Nginx đã xanh, giờ check API thật
+                                        # Lấy HTTP Code (-w) và huỷ bỏ output (-o /dev/null)
+                                        HTTP_CODE=\$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:9443/health)
                                         
                                         if [ "\$HTTP_CODE" = "200" ]; then
-                                            echo "✅ Production API is responding 200 OK."
+                                            echo "✅ [Attempt \$COUNT] SUCCESS: Nginx is Healthy & API returned 200 OK."
                                             exit 0
                                         else
-                                            echo "⚠️ Nginx healthy but API returned HTTP \$HTTP_CODE"
+                                            # In ra mỗi 5 lần lặp để đỡ rác log
+                                            if [ \$((COUNT % 5)) -eq 0 ]; then
+                                                echo "⚠️ [Attempt \$COUNT] Nginx Ready but API returned HTTP \$HTTP_CODE (Likely 502 Bad Gateway - Backend starting?)"
+                                            fi
                                         fi
                                     else
-                                        echo "⏳ Attempt \$i/60: Container status is [\$STATUS]..."
+                                        if [ "\$STATUS" = "not_found" ]; then
+                                             echo "❌ [Attempt \$COUNT] Container not found! Check deployment."
+                                             exit 1
+                                        fi
+                                        # Chỉ in log trạng thái mỗi 5 lần lặp
+                                        if [ \$((COUNT % 5)) -eq 0 ]; then
+                                            echo "⏳ [Attempt \$COUNT] Waiting for Nginx... Current Status: \$STATUS"
+                                        fi
                                     fi
+                                    
                                     sleep 5
                                 done
                                 
                                 echo "❌ TIMEOUT: Health check failed after 5 minutes."
-                                echo "Last container status: \$STATUS"
-                                echo "Fetching container logs for debugging..."
-                                docker logs --tail 20 healthsync-nginx-prod
+                                echo "--- DEBUG INFO ---"
+                                echo "Last HTTP Code: \$HTTP_CODE"
+                                echo "Last Nginx Status: \$STATUS"
+                                echo ">>> Printing last 20 lines of API logs to see why it failed:"
+                                # Lệnh này quan trọng: Xem tại sao backend không trả lời
+                                docker compose -f ${PROD_DEPLOY_DIR}/docker-compose.prod.yml logs --tail 20 api
                                 exit 1
                             '
                         """
