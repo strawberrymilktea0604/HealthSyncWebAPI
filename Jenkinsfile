@@ -251,6 +251,32 @@ pipeline {
             }
         }
 
+        stage('Build & Push Nginx Image') {
+            steps {
+                script {
+                    echo "========== STAGE: Build & Push Nginx Image =========="
+                    withCredentials([
+                        usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS'),
+                        string(credentialsId: 'docker-hub-repo', variable: 'DOCKER_HUB_REPO_VAR')
+                    ]) {
+                        sh """
+                            # Build nginx image
+                            docker build -f Dockerfile.nginx -t \${DOCKER_HUB_REPO_VAR}-nginx:${DOCKER_IMAGE_TAG} .
+                            docker tag \${DOCKER_HUB_REPO_VAR}-nginx:${DOCKER_IMAGE_TAG} \${DOCKER_HUB_REPO_VAR}-nginx:latest
+                            
+                            # Login & push
+                            echo "\$DOCKER_HUB_PASS" | docker login -u "\$DOCKER_HUB_USER" --password-stdin
+                            docker push \${DOCKER_HUB_REPO_VAR}-nginx:${DOCKER_IMAGE_TAG}
+                            docker push \${DOCKER_HUB_REPO_VAR}-nginx:latest
+                            docker logout
+                            
+                            echo "\u2713 Nginx image built and pushed successfully"
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 script {
