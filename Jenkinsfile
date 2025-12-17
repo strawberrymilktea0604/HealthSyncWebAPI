@@ -393,27 +393,38 @@ pipeline {
                         sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
                     ]) {
                         sh """
-                            echo "Checking Health on Production Server..."
-                            
-                            # SSH vào server để chạy health check từ bên trong
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} '
+                                # Tắt in log rác (chống spam)
+                                set +x
+                                
                                 echo "Waiting for nginx to be ready..."
-                                for i in {1..60}; do
-                                    # Get status into variable (no grep, avoid exit code 1)
+                                # Dùng seq 1 60 an toàn hơn {1..60} trên mọi loại shell
+                                for i in \$(seq 1 60); do
                                     STATUS=\$(docker inspect --format="{{.State.Health.Status}}" healthsync-nginx-prod 2>/dev/null || echo "not_found")
                                     
                                     if [ "\$STATUS" = "healthy" ]; then
-                                        echo "✓ Nginx container is healthy"
-                                        # Double check with actual API call
-                                        if curl -k https://localhost:9443/health 2>/dev/null; then
-                                            echo "✓ Production API is healthy (via nginx)"
+                                        echo "✅ Attempt \$i: Nginx is healthy."
+                                        
+                                        # Test thử API
+                                        echo "Testing API endpoint..."
+                                        HTTP_CODE=\$(curl -k -o /dev/null -s -w "%{http_code}" https://localhost:9443/health || echo "000")
+                                        
+                                        if [ "\$HTTP_CODE" = "200" ]; then
+                                            echo "✅ Production API is responding 200 OK."
                                             exit 0
+                                        else
+                                            echo "⚠️ Nginx healthy but API returned HTTP \$HTTP_CODE"
                                         fi
+                                    else
+                                        echo "⏳ Attempt \$i/60: Container status is [\$STATUS]..."
                                     fi
-                                    echo "Attempt \$i/60 - waiting nginx (Status: \$STATUS)..."
                                     sleep 5
                                 done
-                                echo "✗ Production API health check failed after 5 minutes"
+                                
+                                echo "❌ TIMEOUT: Health check failed after 5 minutes."
+                                echo "Last container status: \$STATUS"
+                                echo "Fetching container logs for debugging..."
+                                docker logs --tail 20 healthsync-nginx-prod
                                 exit 1
                             '
                         """
