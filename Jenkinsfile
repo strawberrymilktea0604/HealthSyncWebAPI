@@ -264,10 +264,6 @@ pipeline {
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 Dockerfile.nginx \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
-                            # Copy thư mục certs (cần thiết cho Dockerfile.nginx)
-                            scp -P 2222 -r -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                certs \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
-                            
                             # Bây giờ copy file env sẽ an toàn
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 \$ENV_FILE_PATH \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
