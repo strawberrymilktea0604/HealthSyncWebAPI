@@ -396,26 +396,26 @@ pipeline {
                             echo "Checking Health on Production Server..."
                             
                             # SSH vào server để chạy health check từ bên trong
-                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
-                                echo 'Waiting for nginx to be ready...'
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} '
+                                echo "Waiting for nginx to be ready..."
                                 for i in {1..60}; do
                                     # Get status into variable (no grep, avoid exit code 1)
-                                    STATUS=\$(docker inspect --format='{{.State.Health.Status}}' healthsync-nginx-prod 2>/dev/null || echo 'not_found')
+                                    STATUS=\$(docker inspect --format="{{.State.Health.Status}}" healthsync-nginx-prod 2>/dev/null || echo "not_found")
                                     
-                                    if [ \"\$STATUS\" = \"healthy\" ]; then
-                                        echo '✓ Nginx container is healthy'
+                                    if [ "\$STATUS" = "healthy" ]; then
+                                        echo "✓ Nginx container is healthy"
                                         # Double check with actual API call
                                         if curl -k https://localhost:9443/health 2>/dev/null; then
-                                            echo '✓ Production API is healthy (via nginx)'
+                                            echo "✓ Production API is healthy (via nginx)"
                                             exit 0
                                         fi
                                     fi
-                                    echo \"Attempt \$i/60 - waiting nginx (Status: \$STATUS)...\"
+                                    echo "Attempt \$i/60 - waiting nginx (Status: \$STATUS)..."
                                     sleep 5
                                 done
-                                echo '✗ Production API health check failed after 5 minutes'
+                                echo "✗ Production API health check failed after 5 minutes"
                                 exit 1
-                            "
+                            '
                         """
                     }
                 }
