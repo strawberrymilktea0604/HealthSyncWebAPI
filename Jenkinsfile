@@ -264,20 +264,21 @@ pipeline {
                                 sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
                                 
                                 # Pull latest image from Docker Hub
+                                echo 'Pulling latest images...'
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull
                                 
-                                # Stop and remove old containers
-                                docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
-                                
-                                # Start new containers (including Loophole tunnels)
+                                # Deploy: Docker Compose will auto replace changed containers, keep volumes
+                                echo 'Deploying containers...'
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 
                                 # Wait for services to start
                                 sleep 20
                                 
                                 # Show running containers
-                                docker compose -f docker-compose.prod.yml --env-file .env.prod ps
-                                
+                                docker compose -f docker-compose.prod.yml --env-file .env.prod ps                                
+                                # Cleanup only dangling images (keep volumes intact)
+                                echo 'Pruning old images...'
+                                docker image prune -f                                
                                 # Show Loophole Tunnel URLs
                                 echo ''
                                 echo '========== Loophole Tunnel URLs =========='
@@ -290,9 +291,6 @@ pipeline {
                                 echo 'MinIO Console (Admin UI):'
                                 docker logs healthsync-tunnel-minio-console 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-minio-console'
                                 echo '=========================================='
-                                
-                                # Clean up old images
-                                docker image prune -f
                             "
                             
                             echo "✓ Production deployment completed"
