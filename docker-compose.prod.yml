@@ -87,7 +87,7 @@ services:
     container_name: healthsync-nginx-prod
     ports:
       - "9180:80"   # Port 9180 để tránh xung đột
-      # - "9543:443"  # Comment out HTTPS port
+      - "9443:443"  # HTTPS port
     restart: unless-stopped
     depends_on:
       api:
@@ -107,7 +107,7 @@ services:
       dockerfile: Dockerfile.loophole
     container_name: healthsync-tunnel-nginx
     restart: unless-stopped
-    command: ["http", "80", "nginx", "--hostname", "healthsync-api"]
+    command: ["http", "443", "nginx", "--hostname", "healthsync-api"]
     volumes:
       - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:

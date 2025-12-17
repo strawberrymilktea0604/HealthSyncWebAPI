@@ -112,7 +112,7 @@ services:
       dockerfile: Dockerfile.loophole
     container_name: healthsync-tunnel-jenkins
     restart: unless-stopped
-    command: ["http", "8080", "jenkins", "--hostname", "healthsync-jenkins-for-dev"]
+    command: ["http", "8080", "jenkins", "--hostname", "hsdev-jenkins"]
     volumes:
       - C:/Users/minhk/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
@@ -126,7 +126,7 @@ services:
       dockerfile: Dockerfile.loophole
     container_name: healthsync-tunnel-sonarqube
     restart: unless-stopped
-    command: ["http", "9000", "sonarqube", "--hostname", "healthsync-sonarqube-for-dev"]
+    command: ["http", "9000", "sonarqube", "--hostname", "hsdev-sonarqube"]
     volumes:
       - C:/Users/minhk/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
