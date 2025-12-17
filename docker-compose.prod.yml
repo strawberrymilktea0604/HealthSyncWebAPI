@@ -81,9 +81,10 @@ services:
       - healthsync-network
 
   nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.nginx
+    image: healthsync-nginx-prod
     container_name: healthsync-nginx-prod
     ports:
       - "9180:80"   # Port 9180 để tránh xung đột

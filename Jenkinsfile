@@ -272,11 +272,19 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
-                                # Update image tag
+                                # 1. Xóa .dockerignore nếu có (để chắc chắn)
+                                rm -f .dockerignore
+                                
+                                # 2. Update image tag cho API
                                 sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
                                 
-                                # Pull & Redeploy
-                                docker compose -f docker-compose.prod.yml --env-file .env.prod pull
+                                # 3. [MỚI] BUILD NGINX BẰNG TAY (Vì lệnh này đã test thành công)
+                                # Chúng ta build và đặt tên trùng với tên trong docker-compose.prod.yml
+                                echo '>>> Building Nginx Manually...'
+                                docker build -f Dockerfile.nginx -t healthsync-nginx-prod .
+                                
+                                # 4. Chạy Docker Compose
+                                # Lúc này Compose thấy image 'healthsync-nginx-prod' đã có sẵn nên sẽ chạy luôn
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 
@@ -307,8 +315,8 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 for i in {1..30}; do
                                     # Curl vào localhost của server prod (container đang chạy ở đó)
-                                    if curl -f http://localhost:9180/health 2>/dev/null; then
-                                        echo '✓ Production API is healthy (port 9180)'
+                                    if curl -k https://localhost:9443/health 2>/dev/null; then
+                                        echo '✓ Production API is healthy (port 9443 HTTPS)'
                                         exit 0
                                     fi
                                     echo 'Attempt \$i/30 - waiting...'
