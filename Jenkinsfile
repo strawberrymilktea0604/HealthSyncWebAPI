@@ -261,6 +261,9 @@ pipeline {
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 Dockerfile.loophole \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
+                            scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                                Dockerfile.nginx \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                            
                             # Bây giờ copy file env sẽ an toàn
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 \$ENV_FILE_PATH \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
