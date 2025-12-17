@@ -272,19 +272,11 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
-                                # 1. Xóa .dockerignore nếu có (để chắc chắn)
-                                rm -f .dockerignore
-                                
-                                # 2. Update image tag cho API
+                                # 1. Update image tag cho API
                                 sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
                                 
-                                # 3. [MỚI] BUILD NGINX BẰNG TAY (Vì lệnh này đã test thành công)
-                                # Chúng ta build và đặt tên trùng với tên trong docker-compose.prod.yml
-                                echo '>>> Building Nginx Manually...'
-                                docker build -f Dockerfile.nginx -t healthsync-nginx-prod .
-                                
-                                # 4. Chạy Docker Compose
-                                # Lúc này Compose thấy image 'healthsync-nginx-prod' đã có sẵn nên sẽ chạy luôn
+                                # 2. Chạy Docker Compose
+                                # Docker sẽ tự pull nginx:1.25-alpine và mount folder certs vào
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 

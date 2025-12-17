@@ -81,14 +81,14 @@ services:
       - healthsync-network
 
   nginx:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.nginx
-    image: healthsync-nginx-prod
+    image: nginx:1.25-alpine
     container_name: healthsync-nginx-prod
     ports:
       - "9180:80"   # Port 9180 để tránh xung đột
       - "9443:443"  # HTTPS port
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
     restart: unless-stopped
     depends_on:
       api:
