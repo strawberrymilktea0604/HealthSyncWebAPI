@@ -356,9 +356,20 @@ pipeline {
                                 echo '=== Checking docker-compose.prod.yml images ==='
                                 grep 'image:' docker-compose.prod.yml | grep -E '(api|nginx)'
                                 
-                                # Pull & Redeploy
+                                # Pull new images
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull
-                                docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
+                                
+                                # Graceful shutdown (check if stack exists first)
+                                echo '=== Shutting down existing stack ==='
+                                if docker compose -f docker-compose.prod.yml --env-file .env.prod ps -q 2>/dev/null | grep -q .; then
+                                    echo 'Existing stack found, shutting down...'
+                                    docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans
+                                else
+                                    echo 'No existing stack found, skipping shutdown'
+                                fi
+                                
+                                # Start new stack
+                                echo '=== Starting new stack ==='
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 
                                 # Wait check
