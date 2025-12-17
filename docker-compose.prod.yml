@@ -81,13 +81,14 @@ services:
       - healthsync-network
 
   nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
+    image: nginx:1.25-alpine
     container_name: healthsync-nginx-prod
     ports:
       - "9180:80"   # Port 9180 để tránh xung đột
-      # - "9543:443"  # Comment out HTTPS port
+      - "9443:443"  # HTTPS port
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
     restart: unless-stopped
     depends_on:
       api:
@@ -107,7 +108,7 @@ services:
       dockerfile: Dockerfile.loophole
     container_name: healthsync-tunnel-nginx
     restart: unless-stopped
-    command: ["http", "80", "nginx", "--hostname", "healthsync-api"]
+    command: ["http", "443", "nginx", "--hostname", "healthsync-api"]
     volumes:
       - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:

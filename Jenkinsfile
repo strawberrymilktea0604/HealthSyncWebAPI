@@ -74,6 +74,31 @@ pipeline {
             }
         }
 
+        stage('Prepare Secrets') {
+            steps {
+                script {
+                    echo "========== STAGE: Prepare Secrets =========="
+                    withCredentials([file(credentialsId: 'prod-certs-archive', variable: 'CERTS_PKG')]) {
+                        echo "--- Đang thiết lập Certificates ---"
+                        
+                        // Jenkins lưu file secret ở thư mục tạm, ta copy nó về workspace hiện tại
+                        // Đổi tên lại thành certs.tar.gz cho dễ xử lý
+                        sh 'cp $CERTS_PKG ./certs.tar.gz'
+                        
+                        // Giải nén file
+                        // Lệnh này sẽ bung thư mục 'certs' ra ngay tại đây
+                        sh 'tar -xzf certs.tar.gz'
+                        
+                        // (Tùy chọn) Xóa file nén đi cho sạch
+                        sh 'rm certs.tar.gz'
+                        
+                        // Kiểm tra xem thư mục đã có chưa (để debug)
+                        sh 'ls -la certs/'
+                    }
+                }
+            }
+        }
+
         stage('Build Solution') {
             steps {
                 script {
@@ -261,10 +286,7 @@ pipeline {
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 Dockerfile.loophole \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
-                            scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                Dockerfile.nginx \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
-                            
-                            # Copy thư mục certs (cần thiết cho Dockerfile.nginx)
+                            # Copy thư mục certs (từ Jenkins workspace sau khi giải nén)
                             scp -P 2222 -r -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 certs \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
@@ -311,8 +333,8 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 for i in {1..30}; do
                                     # Curl vào localhost của server prod (container đang chạy ở đó)
-                                    if curl -f http://localhost:9180/health 2>/dev/null; then
-                                        echo '✓ Production API is healthy (port 9180)'
+                                    if curl -k https://localhost:9443/health 2>/dev/null; then
+                                        echo '✓ Production API is healthy (port 9443 HTTPS)'
                                         exit 0
                                     fi
                                     echo 'Attempt \$i/30 - waiting...'
@@ -334,6 +356,7 @@ pipeline {
                 echo "========== POST: Cleanup =========="
                 sh 'docker-compose logs > docker-compose.log || true'
                 archiveArtifacts artifacts: 'docker-compose.log', allowEmptyArchive: true
+                cleanWs() // Dọn dẹp workspace để không lộ certs
             }
         }
         success {
