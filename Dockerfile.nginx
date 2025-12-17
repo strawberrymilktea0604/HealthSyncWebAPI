@@ -1,8 +1,18 @@
 # Dockerfile.nginx
 FROM nginx:1.25-alpine
 
-# Copy file cấu hình
+# 1. Cài đặt CURL (Bắt buộc để Healthcheck hoạt động ổn định)
+RUN apk add --no-cache curl
+
+# 2. Copy file cấu hình
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
-# Copy thư mục chứng chỉ
+# 3. Copy thư mục chứng chỉ
 COPY nginx/certs /etc/nginx/certs
+
+# 4. Cấu hình Healthcheck "bất tử"
+# -f: Fail nếu server trả về code lỗi (404, 500...)
+# -k: Bỏ qua lỗi chứng chỉ SSL (vì localhost certificate thường không khớp)
+# https://127.0.0.1:443: Trỏ thẳng vào IPv4 và cổng HTTPS
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD curl -f -k https://127.0.0.1:443/health || exit 1
