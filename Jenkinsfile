@@ -264,6 +264,10 @@ pipeline {
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 Dockerfile.nginx \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
+                            # Copy thư mục certs (cần thiết cho Dockerfile.nginx)
+                            scp -P 2222 -r -o StrictHostKeyChecking=no -i \$SSH_KEY \
+                                certs \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                            
                             # Bây giờ copy file env sẽ an toàn
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 \$ENV_FILE_PATH \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
@@ -272,16 +276,12 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
-                                # 1. Set PWD variable để fix volume path trên WSL
-                                echo \"PWD=\$(pwd)\" >> .env.prod
-                                
-                                # 2. Update image tag cho API
+                                # Update image tag
                                 sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
                                 
-                                # 3. Xóa các container cũ (để volume được mount lại mới)
+                                # Pull & Redeploy
+                                docker compose -f docker-compose.prod.yml --env-file .env.prod pull
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
-                                
-                                # 4. Chạy Docker Compose (Dùng Image gốc + Volume)
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 
                                 # Wait check
@@ -311,8 +311,8 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 for i in {1..30}; do
                                     # Curl vào localhost của server prod (container đang chạy ở đó)
-                                    if curl -k https://localhost:9443/health 2>/dev/null; then
-                                        echo '✓ Production API is healthy (port 9443 HTTPS)'
+                                    if curl -f http://localhost:9180/health 2>/dev/null; then
+                                        echo '✓ Production API is healthy (port 9180)'
                                         exit 0
                                     fi
                                     echo 'Attempt \$i/30 - waiting...'
