@@ -346,16 +346,17 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
-                                # Export Docker Hub repo as environment variable for compose
-                                export DOCKER_HUB_REPO=\${DOCKER_HUB_REPO_VAR:-healthsync}
+                                # Update API image tag with actual value (not shell variable)
+                                sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO_VAR}:latest|g' docker-compose.prod.yml
                                 
-                                # Update API image tag only (keep container_name unchanged)
-                                sed -i 's|image: healthsync-api:latest|image: \${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
+                                # Update nginx image tag with actual value (not shell variable)
+                                sed -i 's|image: \\\${DOCKER_HUB_REPO:-healthsync}-nginx:latest|image: ${DOCKER_HUB_REPO_VAR}-nginx:latest|g' docker-compose.prod.yml
                                 
-                                # Update nginx image tag only (NOT container_name)
-                                sed -i 's|image: \\\${DOCKER_HUB_REPO:-healthsync}-nginx:latest|image: \${DOCKER_HUB_REPO}-nginx:latest|g' docker-compose.prod.yml
+                                # Verify replacements
+                                echo '=== Checking docker-compose.prod.yml images ==='
+                                grep 'image:' docker-compose.prod.yml | grep -E '(api|nginx)'
                                 
-                                # Pull & Redeploy with exported env var
+                                # Pull & Redeploy
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
