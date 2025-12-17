@@ -89,12 +89,33 @@ pipeline {
                         // Lệnh này sẽ bung thư mục 'certs' ra ngay tại đây
                         sh 'tar -xzf certs.tar.gz'
                         
+                        // Copy certs vào thư mục nginx để build image
+                        sh 'mkdir -p nginx && cp -r certs nginx/'
+                        
                         // (Tùy chọn) Xóa file nén đi cho sạch
                         sh 'rm certs.tar.gz'
                         
                         // Kiểm tra xem thư mục đã có chưa (để debug)
-                        sh 'ls -la certs/'
+                        sh 'ls -la certs/ && ls -la nginx/certs/'
                     }
+                }
+            }
+        }
+
+        stage('Build Nginx Image') {
+            steps {
+                script {
+                    echo "========== STAGE: Build Nginx Image =========="
+                    echo "Building Nginx Docker image with baked config and certs"
+                    sh """
+                        docker build \\
+                            -t healthsync-nginx:${DOCKER_IMAGE_TAG} \\
+                            -t healthsync-nginx:latest \\
+                            -f Dockerfile.nginx \\
+                            .
+                    """
+                    echo "✓ Nginx Docker image built successfully"
+                    sh "docker images | grep healthsync-nginx"
                 }
             }
         }
@@ -245,11 +266,19 @@ pipeline {
                         docker tag ''' + DOCKER_IMAGE_NAME + ':' + DOCKER_IMAGE_TAG + ''' ''' + DOCKER_HUB_REPO + ':' + DOCKER_IMAGE_TAG + '''
                         docker tag ''' + DOCKER_IMAGE_NAME + ''':latest ''' + DOCKER_HUB_REPO + ''':latest
                         
-                        # Push to Docker Hub
+                        # Tag nginx image
+                        docker tag healthsync-nginx:''' + DOCKER_IMAGE_TAG + ''' ''' + DOCKER_HUB_REPO + '''-nginx:''' + DOCKER_IMAGE_TAG + '''
+                        docker tag healthsync-nginx:latest ''' + DOCKER_HUB_REPO + '''-nginx:latest
+                        
+                        # Push API image to Docker Hub
                         docker push ''' + DOCKER_HUB_REPO + ':' + DOCKER_IMAGE_TAG + '''
                         docker push ''' + DOCKER_HUB_REPO + ''':latest
                         
-                        echo "\u2713 Image pushed successfully"
+                        # Push Nginx image to Docker Hub
+                        docker push ''' + DOCKER_HUB_REPO + '''-nginx:''' + DOCKER_IMAGE_TAG + '''
+                        docker push ''' + DOCKER_HUB_REPO + '''-nginx:latest
+                        
+                        echo "\u2713 Images pushed successfully"
                         
                         # Logout from Docker Hub
                         docker logout
@@ -281,14 +310,7 @@ pipeline {
                                 docker-compose.prod.yml \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                nginx.conf \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
-                            
-                            scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 Dockerfile.loophole \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
-                            
-                            # Copy thư mục certs (từ Jenkins workspace sau khi giải nén)
-                            scp -P 2222 -r -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                certs \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
                             # Bây giờ copy file env sẽ an toàn
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
@@ -298,8 +320,9 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
-                                # Update image tag
+                                # Update image tags
                                 sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
+                                sed -i 's|image: \${DOCKER_HUB_REPO}-nginx:latest|image: ${DOCKER_HUB_REPO}-nginx:latest|g' docker-compose.prod.yml
                                 
                                 # Pull & Redeploy
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull
