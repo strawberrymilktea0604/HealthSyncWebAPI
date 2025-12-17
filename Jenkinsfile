@@ -392,57 +392,50 @@ pipeline {
                     withCredentials([
                         sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
                     ]) {
-                        sh """
+                        // QUAN TRỌNG: Thêm shebang #!/bin/bash +x ngay đầu tiên
+                        // Nó báo cho Jenkins biết là script này KHÔNG ĐƯỢC in dấu vết (-x là in, +x là tắt in)
+                        sh """#!/bin/bash +x
+                            
+                            echo "Checking Health on Production Server..."
+                            
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} '
-                                # 1. TẮT chế độ in log debug của shell (Chữa bệnh ói log)
-                                set +x
+                                # Bên trong này không cần set +x nữa vì Jenkins đã im lặng từ bên ngoài rồi
+                                # Nhưng để chắc ăn cho remote shell, cứ để cũng được, hoặc bỏ đi cho gọn.
                                 
-                                echo "--- Starting Health Check (Max 300s) ---"
-                                
-                                # Định nghĩa biến đếm
+                                echo "--- Starting Loop (Max 300s) ---"
                                 MAX_RETRIES=60
                                 COUNT=0
                                 
                                 while [ \$COUNT -lt \$MAX_RETRIES ]; do
                                     COUNT=\$((COUNT+1))
                                     
-                                    # Check trạng thái container Nginx
+                                    # Lấy status container
                                     STATUS=\$(docker inspect --format="{{.State.Health.Status}}" healthsync-nginx-prod 2>/dev/null || echo "not_found")
                                     
                                     if [ "\$STATUS" = "healthy" ]; then
-                                        # Nginx đã xanh, giờ check API thật
-                                        # Lấy HTTP Code (-w) và huỷ bỏ output (-o /dev/null)
+                                        # Check API thật sự
                                         HTTP_CODE=\$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:9443/health)
                                         
                                         if [ "\$HTTP_CODE" = "200" ]; then
-                                            echo "✅ [Attempt \$COUNT] SUCCESS: Nginx is Healthy & API returned 200 OK."
+                                            echo "✅ [Attempt \$COUNT] SUCCESS: Nginx Healthy & API 200 OK."
                                             exit 0
-                                        else
-                                            # In ra mỗi 5 lần lặp để đỡ rác log
-                                            if [ \$((COUNT % 5)) -eq 0 ]; then
-                                                echo "⚠️ [Attempt \$COUNT] Nginx Ready but API returned HTTP \$HTTP_CODE (Likely 502 Bad Gateway - Backend starting?)"
-                                            fi
+                                        fi
+                                        # Nếu healthy nhưng API lỗi thì chỉ in log mỗi 5 lần
+                                        if [ \$((COUNT % 5)) -eq 0 ]; then
+                                             echo "⚠️ [Attempt \$COUNT] Nginx Green but API returned \$HTTP_CODE"
                                         fi
                                     else
-                                        if [ "\$STATUS" = "not_found" ]; then
-                                             echo "❌ [Attempt \$COUNT] Container not found! Check deployment."
-                                             exit 1
-                                        fi
-                                        # Chỉ in log trạng thái mỗi 5 lần lặp
+                                        # Nếu chưa healthy thì chỉ in log mỗi 5 lần
                                         if [ \$((COUNT % 5)) -eq 0 ]; then
-                                            echo "⏳ [Attempt \$COUNT] Waiting for Nginx... Current Status: \$STATUS"
+                                            echo "⏳ [Attempt \$COUNT] Waiting... Status: \$STATUS"
                                         fi
                                     fi
                                     
                                     sleep 5
                                 done
                                 
-                                echo "❌ TIMEOUT: Health check failed after 5 minutes."
-                                echo "--- DEBUG INFO ---"
-                                echo "Last HTTP Code: \$HTTP_CODE"
-                                echo "Last Nginx Status: \$STATUS"
-                                echo ">>> Printing last 20 lines of API logs to see why it failed:"
-                                # Lệnh này quan trọng: Xem tại sao backend không trả lời
+                                echo "❌ TIMEOUT after 5 minutes."
+                                echo ">>> DEBUG LOGS (Last 20 lines):"
                                 docker compose -f ${PROD_DEPLOY_DIR}/docker-compose.prod.yml logs --tail 20 api
                                 exit 1
                             '
