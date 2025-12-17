@@ -26,10 +26,8 @@ pipeline {
         DOCKER_IMAGE_NAME = 'healthsync-api'
         DOCKER_IMAGE_TAG = "${BUILD_NUMBER}-prod"
         
-        // Docker Hub - Đọc từ Jenkins credentials
-        DOCKER_HUB_USERNAME = credentials('docker-hub-username')
-        DOCKER_HUB_PASSWORD = credentials('docker-hub-password')
-        DOCKER_HUB_REPO = credentials('docker-hub-repo') // VD: username/healthsync-api
+        // Docker Hub - Sẽ được bind trong withCredentials
+        // DOCKER_HUB_REPO sẽ được bind từ credentials
         
         // Production Server (SSH deployment) - Đọc từ Jenkins credentials
         PROD_SERVER_IP = credentials('prod-server-ip')
@@ -257,32 +255,33 @@ pipeline {
             steps {
                 script {
                     echo "========== STAGE: Push Docker Image =========="
-                    echo "Pushing image to Docker Hub: ${DOCKER_HUB_REPO}"
-                    sh '''
-                        # Login to Docker Hub (using single quotes to avoid secret interpolation warning)
-                        echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
-                        
-                        # Tag image with Docker Hub repository name
-                        docker tag ''' + DOCKER_IMAGE_NAME + ':' + DOCKER_IMAGE_TAG + ''' ''' + DOCKER_HUB_REPO + ':' + DOCKER_IMAGE_TAG + '''
-                        docker tag ''' + DOCKER_IMAGE_NAME + ''':latest ''' + DOCKER_HUB_REPO + ''':latest
-                        
-                        # Tag nginx image
-                        docker tag healthsync-nginx:''' + DOCKER_IMAGE_TAG + ''' ''' + DOCKER_HUB_REPO + '''-nginx:''' + DOCKER_IMAGE_TAG + '''
-                        docker tag healthsync-nginx:latest ''' + DOCKER_HUB_REPO + '''-nginx:latest
-                        
-                        # Push API image to Docker Hub
-                        docker push ''' + DOCKER_HUB_REPO + ':' + DOCKER_IMAGE_TAG + '''
-                        docker push ''' + DOCKER_HUB_REPO + ''':latest
-                        
-                        # Push Nginx image to Docker Hub
-                        docker push ''' + DOCKER_HUB_REPO + '''-nginx:''' + DOCKER_IMAGE_TAG + '''
-                        docker push ''' + DOCKER_HUB_REPO + '''-nginx:latest
-                        
-                        echo "\u2713 Images pushed successfully"
-                        
-                        # Logout from Docker Hub
-                        docker logout
-                    '''
+                    withCredentials([
+                        usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS'),
+                        string(credentialsId: 'docker-hub-repo', variable: 'DOCKER_HUB_REPO_VAR')
+                    ]) {
+                        echo "Pushing image to Docker Hub: ${DOCKER_HUB_REPO_VAR}"
+                        sh """
+                            # Login to Docker Hub
+                            echo "\$DOCKER_HUB_PASS" | docker login -u "\$DOCKER_HUB_USER" --password-stdin
+                            
+                            # Tag and push API image
+                            docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \${DOCKER_HUB_REPO_VAR}:${DOCKER_IMAGE_TAG}
+                            docker tag ${DOCKER_IMAGE_NAME}:latest \${DOCKER_HUB_REPO_VAR}:latest
+                            docker push \${DOCKER_HUB_REPO_VAR}:${DOCKER_IMAGE_TAG}
+                            docker push \${DOCKER_HUB_REPO_VAR}:latest
+                            
+                            # Tag and push Nginx image
+                            docker tag healthsync-nginx:${DOCKER_IMAGE_TAG} \${DOCKER_HUB_REPO_VAR}-nginx:${DOCKER_IMAGE_TAG}
+                            docker tag healthsync-nginx:latest \${DOCKER_HUB_REPO_VAR}-nginx:latest
+                            docker push \${DOCKER_HUB_REPO_VAR}-nginx:${DOCKER_IMAGE_TAG}
+                            docker push \${DOCKER_HUB_REPO_VAR}-nginx:latest
+                            
+                            echo "\u2713 Images pushed successfully"
+                            
+                            # Logout from Docker Hub
+                            docker logout
+                        """
+                    }
                 }
             }
         }
@@ -293,7 +292,8 @@ pipeline {
                     echo "========== STAGE: Deploy to Production =========="
                     withCredentials([
                         file(credentialsId: 'prod-env-file-healthsync', variable: 'ENV_FILE_PATH'),
-                        sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
+                        sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER'),
+                        string(credentialsId: 'docker-hub-repo', variable: 'DOCKER_HUB_REPO_VAR')
                     ]) {
                         sh """
                             # 1. Tạo thư mục deploy (nếu chưa có)
@@ -321,8 +321,8 @@ pipeline {
                                 cd ${PROD_DEPLOY_DIR}
                                 
                                 # Update image tags
-                                sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
-                                sed -i 's|image: \${DOCKER_HUB_REPO}-nginx:latest|image: ${DOCKER_HUB_REPO}-nginx:latest|g' docker-compose.prod.yml
+                                sed -i 's|image: healthsync-api:latest|image: \${DOCKER_HUB_REPO_VAR}:latest|g' docker-compose.prod.yml
+                                sed -i 's|image: \${DOCKER_HUB_REPO:-healthsync}-nginx:latest|image: \${DOCKER_HUB_REPO_VAR}-nginx:latest|g' docker-compose.prod.yml
                                 
                                 # Pull & Redeploy
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull
@@ -387,7 +387,7 @@ pipeline {
                 echo "========== BUILD: SUCCESS =========="
                 echo "✓ Production pipeline completed successfully"
                 echo "Build: ${BUILD_NUMBER}"
-                echo "Docker Image: ${DOCKER_HUB_REPO}:latest"
+                echo "Docker Images pushed to Docker Hub"
             }
         }
         failure {
