@@ -256,7 +256,7 @@ pipeline {
                 script {
                     echo "========== STAGE: Push Docker Image =========="
                     withCredentials([
-                        usernamePassword(credentialsId: 'docker-hub-password', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS'),
+                        usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS'),
                         string(credentialsId: 'docker-hub-repo', variable: 'DOCKER_HUB_REPO_VAR')
                     ]) {
                         echo "Pushing image to Docker Hub: ${DOCKER_HUB_REPO_VAR}"
