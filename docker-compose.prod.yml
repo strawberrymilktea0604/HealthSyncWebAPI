@@ -65,14 +65,14 @@ services:
       - MinIO__UseSSL=false
     restart: unless-stopped
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+      - minio
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
     deploy:
       replicas: 2
     volumes:
@@ -88,8 +88,7 @@ services:
       - "9443:443"  # HTTPS port
     restart: unless-stopped
     depends_on:
-      api:
-        condition: service_healthy
+      - api
     networks:
       - healthsync-network
     healthcheck:
