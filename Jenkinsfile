@@ -242,60 +242,48 @@ pipeline {
                         sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
                     ]) {
                         sh """
-                            # Create deployment directory on production server
+                            # 1. Tạo thư mục deploy (nếu chưa có)
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
                                 "mkdir -p ${PROD_DEPLOY_DIR}"
                             
-                            # Copy deployment files to production server
+                            # 2. QUAN TRỌNG: Xóa file .env.prod cũ trước khi copy đè
+                            # Giúp tránh lỗi 'Text file busy' hoặc 'Permission denied' do Docker đang lock file
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
+                                "rm -f ${PROD_DEPLOY_DIR}/.env.prod"
+
+                            # 3. Copy các file cấu hình
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 docker-compose.prod.yml \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                            
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 nginx.conf \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                            
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 Dockerfile.loophole \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                            
+                            # Bây giờ copy file env sẽ an toàn
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 \$ENV_FILE_PATH \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
                             
-                            # Deploy on production server
+                            # 4. Thực hiện Deploy
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
                                 cd ${PROD_DEPLOY_DIR}
                                 
-                                # Update DOCKER_HUB_REPO in docker-compose.prod.yml
+                                # Update image tag
                                 sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO}:latest|g' docker-compose.prod.yml
                                 
-                                # Pull latest image from Docker Hub
+                                # Pull & Redeploy
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull
-                                
-                                # Stop and remove old containers
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod down --remove-orphans || true
-                                
-                                # Start new containers (including Loophole tunnels)
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
                                 
-                                # Wait for services to start
+                                # Wait check
                                 sleep 20
-                                
-                                # Show running containers
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod ps
                                 
-                                # Show Loophole Tunnel URLs
-                                echo ''
-                                echo '========== Loophole Tunnel URLs =========='
-                                echo 'API (Nginx):'
-                                docker logs healthsync-tunnel-nginx 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-nginx'
-                                echo ''
-                                echo 'MinIO API (Files):'
-                                docker logs healthsync-tunnel-minio 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-minio'
-                                echo ''
-                                echo 'MinIO Console (Admin UI):'
-                                docker logs healthsync-tunnel-minio-console 2>&1 | grep -i 'https://' | tail -1 || echo 'Tunnel not ready yet, check: docker logs healthsync-tunnel-minio-console'
-                                echo '=========================================='
-                                
-                                # Clean up old images
+                                # Cleanup images
                                 docker image prune -f
                             "
-                            
-                            echo "✓ Production deployment completed"
                         """
                     }
                 }
