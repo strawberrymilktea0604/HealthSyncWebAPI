@@ -331,16 +331,25 @@ pipeline {
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
                                 "rm -f ${PROD_DEPLOY_DIR}/.env.prod"
 
-                            # 3. Copy các file cấu hình
+                            # 3. Tạo file .env.prod tạm thời từ credential và thêm DOCKER_HUB_REPO
+                            cp \$ENV_FILE_PATH .env.prod.tmp
+                            echo "" >> .env.prod.tmp
+                            echo "# Docker Hub Repository (injected by Jenkins)" >> .env.prod.tmp
+                            echo "DOCKER_HUB_REPO=\${DOCKER_HUB_REPO_VAR}" >> .env.prod.tmp
+                            
+                            # 4. Copy các file cấu hình
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 docker-compose.prod.yml \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 Dockerfile.loophole \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
-                            # Bây giờ copy file env sẽ an toàn
+                            # Copy file .env.prod đã được bổ sung DOCKER_HUB_REPO
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                \$ENV_FILE_PATH \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
+                                .env.prod.tmp \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
+                            
+                            # Xóa file tạm
+                            rm -f .env.prod.tmp
                             
                             # 4. Thực hiện Deploy
                             ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
