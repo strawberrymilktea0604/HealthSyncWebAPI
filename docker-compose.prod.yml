@@ -26,12 +26,6 @@ services:
     container_name: healthsync-minio-prod
     env_file:
       - .env.prod
-    environment:
-      - MINIO_ROOT_USER=minioadminprod
-      - MINIO_ROOT_PASSWORD=minioadminprod
-      # Public URLs cho Loophole tunnels
-      - MINIO_SERVER_URL=https://hs-files.loophole.site
-      - MINIO_BROWSER_REDIRECT_URL=https://hs-console.loophole.site
     ports:
       - "9004:9000"  # Port 9004 để tránh xung đột
       - "9005:9001"  # Port 9005 để tránh xung đột
