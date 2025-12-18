@@ -273,25 +273,39 @@ app.MapControllers();
 // Add root endpoint
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
-// Trong file Program.cs của API
+// ========================================
+// MIGRATION HANDLING
+// ========================================
+// PRODUCTION: Migrations được chạy bởi init container riêng biệt (Dockerfile.migration)
+// Điều này tránh race condition khi chạy nhiều replicas
+// Chỉ verify database connection ở đây, KHÔNG chạy migrations tự động
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        // Tạo database nếu chưa tồn tại
-        context.Database.EnsureCreated();
-        // Chạy migrations
-        context.Database.Migrate(); 
+        
+        // Chỉ kiểm tra kết nối database, KHÔNG chạy migrations
+        // Migrations được xử lý bởi migration init container
+        var canConnect = context.Database.CanConnect();
+        
+        if (canConnect)
+        {
+            logger.LogInformation("✓ Database connection verified successfully");
+        }
+        else
+        {
+            logger.LogWarning("⚠ Cannot connect to database - waiting for migrations to complete");
+        }
     }
     catch (Exception ex)
     {
-        // Log lỗi ra nhưng KHÔNG làm crash app
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
-        
-        // Mẹo: Nếu lỗi "Already exists" thì coi như thành công, cho chạy tiếp
+        // Log lỗi nhưng KHÔNG crash app
+        logger.LogError(ex, "Database connection check failed. App will continue but may not work properly.");
     }
 }
 

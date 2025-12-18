@@ -48,6 +48,29 @@ services:
     networks:
       - healthsync-network
 
+  # ========================================
+  # MIGRATION INIT CONTAINER (Chạy trước API)
+  # ========================================
+  # Container này chỉ chạy migrations một lần duy nhất
+  # Tránh race condition khi có nhiều API replicas
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.migration
+    container_name: healthsync-migrator-prod
+    env_file:
+      - .env.prod
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__HangfireConnection=${ConnectionStrings__HangfireConnection}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - healthsync-network
+    restart: "no" # Chỉ chạy 1 lần, không restart
+
   api:
     image: healthsync-api:latest
     env_file:
@@ -65,8 +88,12 @@ services:
       - MinIO__UseSSL=false
     restart: unless-stopped
     depends_on:
-      - db
-      - minio
+      db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+      minio:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 10s
