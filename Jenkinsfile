@@ -462,6 +462,9 @@ pipeline {
         stage('Get Cloudflare Tunnel URLs') {
             steps {
                 script {
+                    // 1. Tạo biến thời gian bằng Groovy ngay tại đây
+                    def buildTime = new Date().format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("Asia/Ho_Chi_Minh"))
+                    
                     echo "========== STAGE: Get Cloudflare Tunnel URLs =========="
                     withCredentials([
                         sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
@@ -531,7 +534,10 @@ pipeline {
                                 cd ${PROD_DEPLOY_DIR}
                                 echo "┌────────────────────────────────────────────────────────────┐" > tunnel-urls.txt
                                 echo "│ Cloudflare Quick Tunnel URLs - HealthSync Production     │" >> tunnel-urls.txt
-                                echo "│ Build: ${BUILD_NUMBER} - \$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')             │" >> tunnel-urls.txt
+                                
+                                # Dùng biến ${buildTime} của Groovy, không cần gọi lệnh date của Linux nữa
+                                echo "│ Build: ${BUILD_NUMBER} - ${buildTime}              │" >> tunnel-urls.txt
+                                
                                 echo "├────────────────────────────────────────────────────────────┤" >> tunnel-urls.txt
                                 echo "│ API (nginx):      ${apiUrl}" >> tunnel-urls.txt
                                 echo "│ MinIO Files:      ${minioUrl}" >> tunnel-urls.txt
