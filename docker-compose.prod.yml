@@ -7,8 +7,10 @@ services:
     environment:
       - MSSQL_PID=Standard
       - ACCEPT_EULA=Y
+      # Pass SA_PASSWORD trực tiếp từ env file vào biến môi trường
+      - SA_PASSWORD=${SA_PASSWORD} 
     ports:
-      - "1533:1433"  # Port 1533 để tránh xung đột
+      - "1533:1433"
     restart: unless-stopped
     healthcheck:
       test:
@@ -26,9 +28,15 @@ services:
     container_name: healthsync-minio-prod
     env_file:
       - .env.prod
+    # KHAI BÁO RÕ RÀNG ĐỂ TRÁNH NHẬN NHẦM BIẾN CŨ
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_SERVER_URL=${MINIO_SERVER_URL}
+      - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
     ports:
-      - "9004:9000"  # Port 9004 để tránh xung đột
-      - "9005:9001"  # Port 9005 để tránh xung đột
+      - "9004:9000"
+      - "9005:9001"
     volumes:
       - minio_data_prod:/data
     command: server /data --console-address ":9001"
@@ -42,20 +50,18 @@ services:
       - healthsync-network
 
   api:
-    # Pull image from Docker Hub instead of building locally
-    # Image name sẽ được thay thế tự động bởi Jenkins pipeline
     image: healthsync-api:latest
-    # container_name: healthsync-api-prod  # Xóa vì dùng replicas: 2
     env_file:
       - .env.prod
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8080
-      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-Prod_HSync_2025_9d8f7a6c5b4e3d2a1f0e9d8c7b6a5f4e3d2a1f0e9d8c7b6a5f4e3d2a1f0e}
+      # Đã xóa các giá trị mặc định (:-minioadminprod), bắt buộc lấy từ .env
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY}
       - MinIO__Endpoint=minio:9000
-      - MinIO__AccessKey=${MINIO_ACCESS_KEY:-minioadminprod}
-      - MinIO__SecretKey=${MINIO_SECRET_KEY:-minioadminprod}
-      - MinIO__BucketName=${MINIO_BUCKET_NAME:-healthsync-prod-images}
+      - MinIO__AccessKey=${MINIO_ROOT_USER}      # Dùng chung biến Root User cho đồng bộ
+      - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}  # Dùng chung biến Root Pass cho đồng bộ
+      - MinIO__BucketName=${MINIO_BUCKET_NAME}
       - MinIO__UseSSL=false
     restart: unless-stopped
     depends_on:
@@ -75,11 +81,11 @@ services:
       - healthsync-network
 
   nginx:
-    image: ${DOCKER_HUB_REPO:-healthsync}-nginx:latest
+    image: ${DOCKER_HUB_REPO}-nginx:latest # Bỏ hardcode fallback
     container_name: healthsync-nginx-prod
     ports:
-      - "9180:80"   # Port 9180 để tránh xung đột
-      - "9443:443"  # HTTPS port
+      - "9180:80"
+      - "9443:443"
     restart: unless-stopped
     depends_on:
       - api

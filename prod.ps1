@@ -1,4 +1,4 @@
-# Prod Environment Management Script
+﻿# Prod Environment Management Script
 # Usage: .\prod.ps1 [up|down|restart|clean|logs]
 
 param(
@@ -13,17 +13,17 @@ switch ($Action) {
     "up" {
         Write-Host "Starting production environment..." -ForegroundColor Green
         & docker-compose --env-file $envFile -f $composeFile up -d --remove-orphans
-        Write-Host "✓ Services started" -ForegroundColor Green
+        Write-Host "Services started" -ForegroundColor Green
     }
     "down" {
         Write-Host "Stopping production environment..." -ForegroundColor Yellow
         & docker-compose --env-file $envFile -f $composeFile down --remove-orphans
-        Write-Host "✓ Services stopped" -ForegroundColor Green
+        Write-Host "Services stopped" -ForegroundColor Green
     }
     "restart" {
         Write-Host "Restarting production environment..." -ForegroundColor Cyan
         & docker-compose --env-file $envFile -f $composeFile restart
-        Write-Host "✓ Services restarted" -ForegroundColor Green
+        Write-Host "Services restarted" -ForegroundColor Green
     }
     "clean" {
         Write-Host "Cleaning up all healthsync containers..." -ForegroundColor Red
@@ -36,7 +36,7 @@ switch ($Action) {
     }
     default {
         Write-Host "Usage: .\prod.ps1 [up|down|restart|clean|logs]" -ForegroundColor White
-        Write-Host "" 
+        Write-Host ""
         Write-Host "Commands:" -ForegroundColor Cyan
         Write-Host "  up      - Start all services" -ForegroundColor White
         Write-Host "  down    - Stop all services" -ForegroundColor White
