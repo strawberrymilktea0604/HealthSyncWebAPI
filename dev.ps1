@@ -13,6 +13,15 @@ switch ($Action) {
     "up" {
         Write-Host "Starting development environment..." -ForegroundColor Green
         & docker-compose --env-file $envFile -f $composeFile up -d --build
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "`n✅ Services started successfully!" -ForegroundColor Green
+            Write-Host "Waiting for Cloudflare Tunnels to initialize..." -ForegroundColor Yellow
+            Start-Sleep -Seconds 10
+            
+            Write-Host "`nFetching Cloudflare Quick Tunnel URLs..." -ForegroundColor Cyan
+            & .\get-tunnel-urls.ps1 -Environment dev
+        }
     }
     "down" {
         Write-Host "Stopping development environment..." -ForegroundColor Yellow
@@ -29,11 +38,21 @@ switch ($Action) {
         & docker rm -f $(docker ps -aq --filter "name=healthsync") 2>$null
         Write-Host "Clean up completed." -ForegroundColor Green
     }
+    "urls" {
+        Write-Host "Getting Cloudflare Tunnel URLs..." -ForegroundColor Cyan
+        & .\get-tunnel-urls.ps1 -Environment dev
+    }
+    "logs" {
+        Write-Host "Showing logs (Ctrl+C to exit)..." -ForegroundColor Cyan
+        & docker-compose --env-file $envFile -f $composeFile logs -f
+    }
     default {
-        Write-Host "Usage: .\dev.ps1 [up|down|restart|clean]" -ForegroundColor White
+        Write-Host "Usage: .\dev.ps1 [up|down|restart|clean|urls|logs]" -ForegroundColor White
         Write-Host "  up      - Start all services" -ForegroundColor White
         Write-Host "  down    - Stop all services" -ForegroundColor White
         Write-Host "  restart - Restart all services" -ForegroundColor White
         Write-Host "  clean   - Remove all containers and volumes" -ForegroundColor White
+        Write-Host "  urls    - Get Cloudflare Tunnel URLs" -ForegroundColor White
+        Write-Host "  logs    - View logs" -ForegroundColor White
     }
 }

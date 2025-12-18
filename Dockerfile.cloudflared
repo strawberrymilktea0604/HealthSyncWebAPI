@@ -1,0 +1,8 @@
+FROM cloudflare/cloudflared:latest
+
+# Healthcheck để đảm bảo cloudflared đang chạy
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD pgrep cloudflared || exit 1
+
+# Default entrypoint from base image
+ENTRYPOINT ["cloudflared"]

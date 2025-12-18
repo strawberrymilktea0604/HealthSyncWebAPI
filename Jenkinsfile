@@ -458,6 +458,100 @@ pipeline {
                 }
             }
         }
+
+        stage('Get Cloudflare Tunnel URLs') {
+            steps {
+                script {
+                    echo "========== STAGE: Get Cloudflare Tunnel URLs =========="
+                    withCredentials([
+                        sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
+                    ]) {
+                        echo "Waiting for Cloudflare Tunnels to initialize..."
+                        sleep(10)
+                        
+                        // Lấy URLs từ logs
+                        def apiUrl = sh(
+                            script: """
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                    docker logs healthsync-tunnel-nginx 2>&1 | grep -oP "https://[^\\s]+\\.trycloudflare\\.com" | head -1 || echo "NOT_READY"
+                                '
+                            """,
+                            returnStdout: true
+                        ).trim()
+                        
+                        def minioUrl = sh(
+                            script: """
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                    docker logs healthsync-tunnel-minio 2>&1 | grep -oP "https://[^\\s]+\\.trycloudflare\\.com" | head -1 || echo "NOT_READY"
+                                '
+                            """,
+                            returnStdout: true
+                        ).trim()
+                        
+                        def consoleUrl = sh(
+                            script: """
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                    docker logs healthsync-tunnel-minio-console 2>&1 | grep -oP "https://[^\\s]+\\.trycloudflare\\.com" | head -1 || echo "NOT_READY"
+                                '
+                            """,
+                            returnStdout: true
+                        ).trim()
+                        
+                        // Lưu URLs vào environment variables cho post stage
+                        env.TUNNEL_API_URL = apiUrl
+                        env.TUNNEL_MINIO_URL = minioUrl
+                        env.TUNNEL_CONSOLE_URL = consoleUrl
+                        
+                        echo "┌─ CLOUDFLARE QUICK TUNNEL URLS ──────────────────────────┐"
+                        echo "│ API (nginx):      ${apiUrl}"
+                        echo "│ MinIO Files:      ${minioUrl}"
+                        echo "│ MinIO Console:    ${consoleUrl}"
+                        echo "└──────────────────────────────────────────────────────────┘"
+                        
+                        // Test API health qua Tunnel URL
+                        if (apiUrl != "NOT_READY" && !apiUrl.isEmpty()) {
+                            echo "Testing API via Cloudflare Tunnel..."
+                            def healthCheck = sh(
+                                script: "curl -s -o /dev/null -w '%{http_code}' ${apiUrl}/health || echo 'FAILED'",
+                                returnStdout: true
+                            ).trim()
+                            
+                            if (healthCheck == "200") {
+                                echo "✓ API is publicly accessible via Cloudflare Tunnel"
+                            } else {
+                                echo "⚠️  API health check returned: ${healthCheck}"
+                            }
+                        } else {
+                            echo "⚠️  Tunnel URLs not ready yet. May need manual check."
+                        }
+                        
+                        // Ghi URLs vào file trên server
+                        sh """
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                cd ${PROD_DEPLOY_DIR}
+                                echo "┌────────────────────────────────────────────────────────────┐" > tunnel-urls.txt
+                                echo "│ Cloudflare Quick Tunnel URLs - HealthSync Production     │" >> tunnel-urls.txt
+                                echo "│ Build: ${BUILD_NUMBER} - \\$(date +\\'%Y-%m-%d %H:%M:%S\\')             │" >> tunnel-urls.txt
+                                echo "├────────────────────────────────────────────────────────────┤" >> tunnel-urls.txt
+                                echo "│ API (nginx):      ${apiUrl}" >> tunnel-urls.txt
+                                echo "│ MinIO Files:      ${minioUrl}" >> tunnel-urls.txt
+                                echo "│ MinIO Console:    ${consoleUrl}" >> tunnel-urls.txt
+                                echo "├────────────────────────────────────────────────────────────┤" >> tunnel-urls.txt
+                                echo "│ 📊 Health Check:   ${apiUrl}/health" >> tunnel-urls.txt
+                                echo "│ 📖 Swagger UI:     ${apiUrl}/swagger" >> tunnel-urls.txt
+                                echo "│ 🔒 MinIO Console:  ${consoleUrl} (admin/password)" >> tunnel-urls.txt
+                                echo "└────────────────────────────────────────────────────────────┘" >> tunnel-urls.txt
+                                echo "" >> tunnel-urls.txt
+                                echo "⚠️  Note: URLs will change after container restart!" >> tunnel-urls.txt
+                                echo "🔄  To get updated URLs, run: ./get-tunnel-urls.ps1 -Environment prod" >> tunnel-urls.txt
+                                
+                                cat tunnel-urls.txt
+                            '
+                        """
+                    }
+                }
+            }
+        }
     }
 
     post {
@@ -474,19 +568,28 @@ pipeline {
                 echo "Build: ${BUILD_NUMBER}"
                 echo ""
                 
-                // Define hostname variables for easy customization
-                def API_HOSTNAME = 'healthsync-api.loophole.site'
-                def FILES_HOSTNAME = 'healthsync-files.loophole.site'
-                def CONSOLE_HOSTNAME = 'healthsync-console.loophole.site'
-                
-                echo "========== PRODUCTION URLs =========="
-                echo "🌐 API Endpoint (HTTPS): https://${API_HOSTNAME}"
-                echo "🗄️  MinIO Storage:       https://${FILES_HOSTNAME}"
-                echo "🎛️  MinIO Console:       https://${CONSOLE_HOSTNAME}"
-                echo ""
-                echo "📊 Health Check:        https://${API_HOSTNAME}/health"
-                echo "📖 Swagger UI:          https://${API_HOSTNAME}/swagger"
-                echo "======================================"
+                // Hiển thị Cloudflare Quick Tunnel URLs
+                echo "========== CLOUDFLARE QUICK TUNNEL URLS =========="
+                if (env.TUNNEL_API_URL && env.TUNNEL_API_URL != "NOT_READY") {
+                    echo "🌐 API Endpoint:      ${env.TUNNEL_API_URL}"
+                    echo "🗄️  MinIO Storage:     ${env.TUNNEL_MINIO_URL}"
+                    echo "🎛️  MinIO Console:     ${env.TUNNEL_CONSOLE_URL}"
+                    echo ""
+                    echo "📊 Health Check:      ${env.TUNNEL_API_URL}/health"
+                    echo "📖 Swagger UI:        ${env.TUNNEL_API_URL}/swagger"
+                    echo "🔒 Admin Init:        POST ${env.TUNNEL_API_URL}/api/v1/admin/initialize"
+                    echo ""
+                    echo "⚠️  IMPORTANT: These URLs will change after restart!"
+                    echo "📄 URLs saved to: ${PROD_DEPLOY_DIR}/tunnel-urls.txt on server"
+                    echo "🔄 To get updated URLs: ssh into server and run ./get-tunnel-urls.ps1"
+                } else {
+                    echo "⚠️  Cloudflare Tunnel URLs not ready yet."
+                    echo "   Please wait a moment and check logs on server:"
+                    echo "   ssh ${PROD_SERVER_USER}@${PROD_SERVER_IP} -p 2222"
+                    echo "   cd ${PROD_DEPLOY_DIR}"
+                    echo "   docker logs healthsync-tunnel-nginx"
+                }
+                echo "===================================================="
             }
         }
         failure {

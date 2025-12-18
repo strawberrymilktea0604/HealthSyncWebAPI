@@ -30,8 +30,9 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_SERVER_URL: ${MINIO_SERVER_URL}
-      MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL}
+      # Dùng internal URLs trong Docker network - không cần Quick Tunnel URLs
+      MINIO_SERVER_URL: http://minio:9000
+      MINIO_BROWSER_REDIRECT_URL: http://minio:9001
     ports:
       - "9004:9000"
       - "9005:9001"
@@ -56,6 +57,7 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       # Đã xóa các giá trị mặc định (:-minioadminprod), bắt buộc lấy từ .env
       - JwtSettings__SecretKey=${JWT_SECRET_KEY}
+      # API dùng internal MinIO endpoint trong Docker network (không qua Quick Tunnel)
       - MinIO__Endpoint=minio:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER}      # Dùng chung biến Root User cho đồng bộ
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}  # Dùng chung biến Root Pass cho đồng bộ
@@ -99,12 +101,10 @@ services:
   tunnel-nginx:
     build:
       context: .
-      dockerfile: Dockerfile.loophole
+      dockerfile: Dockerfile.cloudflared
     container_name: healthsync-tunnel-nginx
     restart: unless-stopped
-    command: ["http", "80", "nginx", "--hostname", "hs-api"]
-    volumes:
-      - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
+    command: ["tunnel", "--no-autoupdate", "--url", "http://nginx:80"]
     depends_on:
       - nginx
     networks:
@@ -113,12 +113,10 @@ services:
   tunnel-minio:
     build:
       context: .
-      dockerfile: Dockerfile.loophole
+      dockerfile: Dockerfile.cloudflared
     container_name: healthsync-tunnel-minio
     restart: unless-stopped
-    command: ["http", "9000", "minio", "--hostname", "hs-filesarchive"]
-    volumes:
-      - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
+    command: ["tunnel", "--no-autoupdate", "--url", "http://minio:9000"]
     depends_on:
       minio:
         condition: service_healthy
@@ -128,12 +126,10 @@ services:
   tunnel-minio-console:
     build:
       context: .
-      dockerfile: Dockerfile.loophole
+      dockerfile: Dockerfile.cloudflared
     container_name: healthsync-tunnel-minio-console
     restart: unless-stopped
-    command: ["http", "9001", "minio", "--hostname", "hs-consolefiles"]
-    volumes:
-      - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
+    command: ["tunnel", "--no-autoupdate", "--url", "http://minio:9001"]
     depends_on:
       minio:
         condition: service_healthy
