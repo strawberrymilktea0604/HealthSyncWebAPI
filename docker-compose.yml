@@ -2,14 +2,25 @@ services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: healthsync-db
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: YourStrong!Passw0rd
     volumes:
       - sqlserver_data:/var/opt/mssql
     networks:
       - healthsync-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q 'SELECT 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   minio:
     image: minio/minio:latest
     container_name: healthsync-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -19,6 +30,44 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
+      retries: 3
+
+  migration:
+    build:
+      context: .
+      dockerfile: Dockerfile.migration
+    container_name: healthsync-migration
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db;Database=HealthSyncDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
+    networks:
+      - healthsync-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthsync-api
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db;Database=HealthSyncDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "8080:80"
+    networks:
+      - healthsync-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
       retries: 3
 
 volumes:
