@@ -392,55 +392,59 @@ pipeline {
                     withCredentials([
                         sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')
                     ]) {
-                        def checkResult = sh(
-                            script: """
-                                echo "Checking Health on Production Server..."
-                                
-                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" 'bash -s' << 'EOF'
-                                    set +x
-                                    
-                                    MAX_RETRIES=60
-                                    COUNT=0
-                                    
-                                    while [ \$COUNT -lt \$MAX_RETRIES ]; do
-                                        COUNT=\$((COUNT+1))
-                                        
+                        // Tách riêng thành các bước nhỏ, dễ debug
+                        def maxRetries = 60
+                        def success = false
+                        
+                        for (int i = 1; i <= maxRetries; i++) {
+                            def checkResult = sh(
+                                script: """
+                                    ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
                                         STATUS=\$(docker inspect --format="{{.State.Health.Status}}" healthsync-nginx-prod 2>/dev/null || echo "not_found")
-                                        
                                         if [ "\$STATUS" = "healthy" ]; then
                                             HTTP_CODE=\$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:9443/health)
-                                            
                                             if [ "\$HTTP_CODE" = "200" ]; then
-                                                echo "✅ SUCCESS: Nginx Healthy & API 200 OK (attempt \$COUNT)"
+                                                echo "HEALTHY"
                                                 exit 0
                                             fi
                                         fi
-                                        
-                                        if [ \$((COUNT % 5)) -eq 0 ]; then
-                                            echo "⏳ Attempt \$COUNT | Container: \$STATUS | HTTP: \${HTTP_CODE:-N/A}"
-                                        fi
-                                        
-                                        sleep 5
-                                    done
-                                    
-                                    echo "❌ TIMEOUT: Health check failed after 5 minutes"
-                                    echo "Last Status: \$STATUS | Last HTTP Code: \${HTTP_CODE:-N/A}"
-                                    exit 1
-EOF
-                            """,
-                            returnStatus: true
-                        )
-                        
-                        if (checkResult != 0) {
-                            echo "❌ Health check failed — dumping container logs for debugging..."
-                            sh """
-                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" \
-                                "cd ${PROD_DEPLOY_DIR} && docker compose -f docker-compose.prod.yml logs --tail 30 api"
-                            """
-                            error("Health check failed with exit code ${checkResult}")
+                                        echo "STATUS:\$STATUS"
+                                        exit 1
+                                    '
+                                """,
+                                returnStatus: true
+                            )
+                            
+                            if (checkResult == 0) {
+                                echo "Health check passed on attempt ${i}"
+                                success = true
+                                break
+                            }
+                            
+                            if (i % 5 == 0) {
+                                echo "Attempt ${i}/${maxRetries} - still waiting..."
+                            }
+                            
+                            sleep(5)
                         }
                         
-                        echo "✅ Health check passed!"
+                        if (!success) {
+                            echo "Health check failed after ${maxRetries} attempts"
+                            
+                            // Dump logs để debug
+                            sh """
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                    echo "=== Container Status ==="
+                                    docker ps -a | grep healthsync || true
+                                    echo "=== Nginx Logs (last 20) ==="
+                                    docker logs --tail 20 healthsync-nginx-prod 2>&1 || true
+                                    echo "=== API Logs (last 20) ==="
+                                    docker logs --tail 20 healthsync-api-prod 2>&1 || true
+                                '
+                            """
+                            
+                            error("Health check timeout!")
+                        }
                     }
                 }
             }
