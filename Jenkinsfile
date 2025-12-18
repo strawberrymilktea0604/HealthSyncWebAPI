@@ -277,6 +277,32 @@ pipeline {
             }
         }
 
+        stage('Build & Push Migrator Image') {
+            steps {
+                script {
+                    echo "========== STAGE: Build & Push Migrator Image =========="
+                    withCredentials([
+                        usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS'),
+                        string(credentialsId: 'docker-hub-repo', variable: 'DOCKER_HUB_REPO_VAR')
+                    ]) {
+                        sh """
+                            # Build migrator image
+                            docker build -f Dockerfile.migration -t \${DOCKER_HUB_REPO_VAR}-migrator:${DOCKER_IMAGE_TAG} .
+                            docker tag \${DOCKER_HUB_REPO_VAR}-migrator:${DOCKER_IMAGE_TAG} \${DOCKER_HUB_REPO_VAR}-migrator:latest
+                            
+                            # Login & push
+                            echo "\$DOCKER_HUB_PASS" | docker login -u "\$DOCKER_HUB_USER" --password-stdin
+                            docker push \${DOCKER_HUB_REPO_VAR}-migrator:${DOCKER_IMAGE_TAG}
+                            docker push \${DOCKER_HUB_REPO_VAR}-migrator:latest
+                            docker logout
+                            
+                            echo "✓ Migrator image built and pushed successfully"
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 script {
@@ -361,9 +387,12 @@ pipeline {
                                 # Update nginx image tag with actual value (not shell variable)
                                 sed -i 's|image: \\\${DOCKER_HUB_REPO:-healthsync}-nginx:latest|image: ${DOCKER_HUB_REPO_VAR}-nginx:latest|g' docker-compose.prod.yml
                                 
+                                # Update migrator image tag with actual value (not shell variable)
+                                sed -i 's|image: healthsync-migrator:latest|image: ${DOCKER_HUB_REPO_VAR}-migrator:latest|g' docker-compose.prod.yml
+                                
                                 # Verify replacements
                                 echo '=== Checking docker-compose.prod.yml images ==='
-                                grep 'image:' docker-compose.prod.yml | grep -E '(api|nginx)'
+                                grep 'image:' docker-compose.prod.yml | grep -E '(api|nginx|migrator)'
                                 
                                 # Pull new images
                                 docker compose -f docker-compose.prod.yml --env-file .env.prod pull

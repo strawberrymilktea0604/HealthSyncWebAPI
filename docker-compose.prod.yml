@@ -53,10 +53,9 @@ services:
   # ========================================
   # Container này chỉ chạy migrations một lần duy nhất
   # Tránh race condition khi có nhiều API replicas
+  # Image được build sẵn trong Jenkins và push lên Docker Hub
   migrator:
-    build:
-      context: .
-      dockerfile: Dockerfile.migration
+    image: healthsync-migrator:latest  # Sẽ được sed thay thế bằng ${DOCKER_HUB_REPO}-migrator:latest
     container_name: healthsync-migrator-prod
     env_file:
       - .env.prod
