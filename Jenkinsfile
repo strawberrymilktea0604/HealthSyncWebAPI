@@ -342,7 +342,7 @@ pipeline {
                                 docker-compose.prod.yml \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                Dockerfile.loophole \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                                Dockerfile.cloudflared \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
                             
                             # Copy file .env.prod đã được bổ sung DOCKER_HUB_REPO
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
