@@ -104,7 +104,7 @@ services:
       dockerfile: Dockerfile.loophole
     container_name: healthsync-tunnel-nginx
     restart: unless-stopped
-    command: ["http", "443", "nginx", "--hostname", "healthsync-api"]
+    command: ["http", "80", "nginx", "--hostname", "healthsync-api"]
     volumes:
       - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
@@ -118,7 +118,7 @@ services:
       dockerfile: Dockerfile.loophole
     container_name: healthsync-tunnel-minio
     restart: unless-stopped
-    command: ["http", "9000", "minio", "--hostname", "healthsync-files"]
+    command: ["http", "9001", "minio", "--hostname", "healthsync-files"]
     volumes:
       - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
