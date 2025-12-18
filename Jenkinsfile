@@ -473,13 +473,19 @@ pipeline {
                 echo "✓ Production pipeline completed successfully"
                 echo "Build: ${BUILD_NUMBER}"
                 echo ""
+                
+                // Define hostname variables for easy customization
+                def API_HOSTNAME = 'healthsync-api.loophole.site'
+                def FILES_HOSTNAME = 'healthsync-files.loophole.site'
+                def CONSOLE_HOSTNAME = 'healthsync-console.loophole.site'
+                
                 echo "========== PRODUCTION URLs =========="
-                echo "🌐 API Endpoint (HTTPS): https://healthsync-api.loophole.site"
-                echo "🗄️  MinIO Storage:       https://healthsync-files.loophole.site"
-                echo "🎛️  MinIO Console:       https://healthsync-console.loophole.site"
+                echo "🌐 API Endpoint (HTTPS): https://${API_HOSTNAME}"
+                echo "🗄️  MinIO Storage:       https://${FILES_HOSTNAME}"
+                echo "🎛️  MinIO Console:       https://${CONSOLE_HOSTNAME}"
                 echo ""
-                echo "📊 Health Check:        https://healthsync-api.loophole.site/health"
-                echo "📖 Swagger UI:          https://healthsync-api.loophole.site/swagger"
+                echo "📊 Health Check:        https://${API_HOSTNAME}/health"
+                echo "📖 Swagger UI:          https://${API_HOSTNAME}/swagger"
                 echo "======================================"
             }
         }

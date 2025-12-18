@@ -116,7 +116,7 @@ services:
       dockerfile: Dockerfile.loophole
     container_name: healthsync-tunnel-minio
     restart: unless-stopped
-    command: ["http", "9000", "minio", "--hostname", "hs-files"]
+    command: ["http", "9000", "minio", "--hostname", "hs-filesarchive"]
     volumes:
       - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
@@ -131,7 +131,7 @@ services:
       dockerfile: Dockerfile.loophole
     container_name: healthsync-tunnel-minio-console
     restart: unless-stopped
-    command: ["http", "9001", "minio", "--hostname", "hs-console"]
+    command: ["http", "9001", "minio", "--hostname", "hs-consolefiles"]
     volumes:
       - /home/lakhanh/.loophole/tokens.json:/root/.loophole/tokens.json
     depends_on:
