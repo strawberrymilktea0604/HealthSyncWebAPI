@@ -1,19 +1,114 @@
-# Use the official .NET 8.0 SDK image to run migrations
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS migration
+# ========================================
+# STAGE 1: Build và tạo EF Core Bundle
+# ========================================
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy the project files and restore dependencies
+# Install EF Core tools
+RUN dotnet tool install --global dotnet-ef --version 9.0.0
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Copy project files và restore
 COPY ["HealthSync.WebApi/HealthSync.WebApi.csproj", "HealthSync.WebApi/"]
 COPY ["HealthSync.Application/HealthSync.Application.csproj", "HealthSync.Application/"]
 COPY ["HealthSync.Domain/HealthSync.Domain.csproj", "HealthSync.Domain/"]
 COPY ["HealthSync.Infrastructure/HealthSync.Infrastructure.csproj", "HealthSync.Infrastructure/"]
 RUN dotnet restore "HealthSync.WebApi/HealthSync.WebApi.csproj"
 
-# Copy the entire source code
+# Copy toàn bộ source code
 COPY . .
 
-# Set the working directory to the Infrastructure project for EF tools
-WORKDIR "/src/HealthSync.Infrastructure"
+# Build project
+WORKDIR "/src/HealthSync.WebApi"
+RUN dotnet build "HealthSync.WebApi.csproj" -c Release -o /app/build
 
-# Run the migration command
-CMD ["dotnet", "ef", "database", "update", "--startup-project", "../HealthSync.WebApi"]
+# Publish application
+RUN dotnet publish "HealthSync.WebApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Tạo EF Core Migration Bundle (standalone executable)
+WORKDIR "/src/HealthSync.Infrastructure"
+RUN dotnet ef migrations bundle \
+    --startup-project ../HealthSync.WebApi/HealthSync.WebApi.csproj \
+    --project HealthSync.Infrastructure.csproj \
+    --configuration Release \
+    --output /app/efbundle \
+    --self-contained \
+    --force
+
+# ========================================
+# STAGE 2: Runtime - chỉ chạy migrations
+# ========================================
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Install dependencies cho wait script
+RUN apt-get update && apt-get install -y \
+    netcat-openbsd \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy EF Bundle từ build stage
+COPY --from=build /app/efbundle /app/efbundle
+
+# Copy script để wait for database và chạy migrations
+COPY <<'EOF' /app/migrate.sh
+#!/bin/bash
+set -e
+
+echo "=========================================="
+echo "HealthSync Migration Init Container"
+echo "=========================================="
+
+# Extract DB host from connection string
+DB_HOST=$(echo "$ConnectionStrings__DefaultConnection" | grep -oP '(?<=Server=)[^;]+' || echo "db")
+DB_PORT=1433
+
+echo "Waiting for SQL Server at ${DB_HOST}:${DB_PORT}..."
+
+# Wait for database (max 60 seconds)
+MAX_RETRIES=60
+RETRY_COUNT=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if nc -z -w 3 "$DB_HOST" "$DB_PORT" 2>/dev/null; then
+        echo "✓ SQL Server is ready!"
+        break
+    fi
+    
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    echo "Waiting... (attempt $RETRY_COUNT/$MAX_RETRIES)"
+    sleep 2
+done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "✗ ERROR: SQL Server not ready after ${MAX_RETRIES} attempts"
+    exit 1
+fi
+
+echo ""
+echo "Running EF Core migrations..."
+echo "Connection: ${ConnectionStrings__DefaultConnection}"
+echo ""
+
+# Execute EF Core Bundle
+/app/efbundle --connection "$ConnectionStrings__DefaultConnection" --verbose
+
+if [ $? -eq 0 ]; then
+    echo ""
+    echo "=========================================="
+    echo "✓ Migrations completed successfully!"
+    echo "=========================================="
+    exit 0
+else
+    echo ""
+    echo "=========================================="
+    echo "✗ Migration failed!"
+    echo "=========================================="
+    exit 1
+fi
+EOF
+
+RUN chmod +x /app/migrate.sh
+
+# Set entrypoint
+ENTRYPOINT ["/app/migrate.sh"]
