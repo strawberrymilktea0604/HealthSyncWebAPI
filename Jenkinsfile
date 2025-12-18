@@ -531,7 +531,7 @@ pipeline {
                                 cd ${PROD_DEPLOY_DIR}
                                 echo "┌────────────────────────────────────────────────────────────┐" > tunnel-urls.txt
                                 echo "│ Cloudflare Quick Tunnel URLs - HealthSync Production     │" >> tunnel-urls.txt
-                                echo "│ Build: ${BUILD_NUMBER} - \\$(date +\\'%Y-%m-%d %H:%M:%S\\')             │" >> tunnel-urls.txt
+                                echo "│ Build: ${BUILD_NUMBER} - \$(date +'"'"'%Y-%m-%d %H:%M:%S'"'"')             │" >> tunnel-urls.txt
                                 echo "├────────────────────────────────────────────────────────────┤" >> tunnel-urls.txt
                                 echo "│ API (nginx):      ${apiUrl}" >> tunnel-urls.txt
                                 echo "│ MinIO Files:      ${minioUrl}" >> tunnel-urls.txt
