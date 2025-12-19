@@ -110,8 +110,8 @@ EOF
 
 RUN chmod +x /app/migrate.sh
 
-# Fix line endings for Linux
-RUN sed -i 's/\r$//' /app/migrate.sh
+# Fix line endings for Linux (remove all \r characters)
+RUN sed -i 's/\r//g' /app/migrate.sh
 
 # Switch to non-root user for security
 USER app
