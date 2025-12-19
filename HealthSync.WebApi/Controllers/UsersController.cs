@@ -87,7 +87,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> UploadAvatar(IFormFile file)
+    public async Task<IActionResult> UploadAvatar(IFormFile? file)
     {
         if (file == null || file.Length == 0)
             return BadRequest(new { success = false, message = "No file uploaded" });
