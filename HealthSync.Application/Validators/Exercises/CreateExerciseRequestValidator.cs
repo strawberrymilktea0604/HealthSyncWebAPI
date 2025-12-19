@@ -43,22 +43,22 @@ public class CreateExerciseRequestValidator : AbstractValidator<CreateExerciseRe
             .When(x => x.CaloriesPerMinute.HasValue);
     }
 
-    private bool BeValidMuscleGroup(string muscleGroup)
+    private static bool BeValidMuscleGroup(string muscleGroup)
     {
         return Enum.TryParse<MuscleGroup>(muscleGroup, true, out _);
     }
 
-    private bool BeValidDifficulty(string difficulty)
+    private static bool BeValidDifficulty(string difficulty)
     {
         return Enum.TryParse<DifficultyLevel>(difficulty, true, out _);
     }
 
-    private bool BeValidEquipment(string? equipment)
+    private static bool BeValidEquipment(string? equipment)
     {
         return Enum.TryParse<Equipment>(equipment, true, out _);
     }
 
-    private bool BeValidUrl(string? url)
+    private static bool BeValidUrl(string? url)
     {
         return Uri.TryCreate(url, UriKind.Absolute, out _);
     }

@@ -9,42 +9,17 @@ namespace HealthSync.WebApi.Controllers.Admin;
 [ApiController]
 [Route("api/v1/admin/users")]
 [Authorize(Roles = "Admin")]
-public class UserModerationController : ControllerBase
+public class UserRankController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
     private readonly IUserService _userService;
 
-    public UserModerationController(IUserRepository userRepository, ILeaderboardRepository leaderboardRepository, IUserService userService)
+    public UserRankController(IUserRepository userRepository, ILeaderboardRepository leaderboardRepository, IUserService userService)
     {
         _userRepository = userRepository;
         _leaderboardRepository = leaderboardRepository;
         _userService = userService;
-    }
-
-    [HttpPut("{id}/status")]
-    public async Task<IActionResult> SetUserStatus([FromRoute] int id, [FromBody] SetActiveRequest request)
-    {
-        var user = await _userRepository.GetByIdAsync(id);
-        if (user == null)
-            return NotFound(new { message = "User not found" });
-
-        await _userRepository.SetActiveStatusAsync(id, request.IsActive);
-
-        return NoContent();
-    }
-
-    [HttpPut("{id}/role")]
-    public async Task<IActionResult> SetUserRole(int id, [FromBody] SetRoleRequest request)
-    {
-        var user = await _userRepository.GetByIdAsync(id);
-        if (user == null)
-            return NotFound(new { success = false, message = "User not found" });
-
-        user.Role = request.Role;
-        await _userRepository.UpdateAsync(user);
-
-        return Ok(new { success = true, message = "User role updated successfully" });
     }
 
     [HttpPut("{id}/rank-title")]

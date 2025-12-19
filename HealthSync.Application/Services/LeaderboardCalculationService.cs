@@ -111,7 +111,7 @@ public class LeaderboardCalculationService : ILeaderboardCalculationService
     /// <summary>
     /// Update rank positions for top users (optional)
     /// </summary>
-    private Task UpdateRankPositionsAsync()
+    private static Task UpdateRankPositionsAsync()
     {
         // This could be implemented to set rank_position in Leaderboard table
         // For now, it's optional as per requirements

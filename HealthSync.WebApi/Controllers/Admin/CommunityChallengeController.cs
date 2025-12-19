@@ -18,6 +18,8 @@ public class CommunityChallengeController : ControllerBase
     private readonly IChallengeAdminService _challengeAdminService;
     private readonly ILogger<CommunityChallengeController> _logger;
 
+    private const string InvalidAdminIdMessage = "Invalid admin ID";
+
     public CommunityChallengeController(
         IChallengeAdminService challengeAdminService,
         ILogger<CommunityChallengeController> logger)
@@ -44,7 +46,7 @@ public class CommunityChallengeController : ControllerBase
             var adminId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0;
 
             if (adminId == 0)
-                return Unauthorized(new { success = false, message = "Invalid admin ID" });
+                return Unauthorized(new { success = false, message = InvalidAdminIdMessage });
 
             if (!ModelState.IsValid)
                 return BadRequest(new { success = false, message = "Invalid input data", errors = ModelState.Values.SelectMany(v => v.Errors) });
@@ -151,7 +153,7 @@ public class CommunityChallengeController : ControllerBase
             var adminId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0;
 
             if (adminId == 0)
-                return Unauthorized(new { success = false, message = "Invalid admin ID" });
+                return Unauthorized(new { success = false, message = InvalidAdminIdMessage });
 
             _logger.LogInformation("Admin {AdminId} updating challenge {ChallengeId}", adminId, id);
 
@@ -190,7 +192,7 @@ public class CommunityChallengeController : ControllerBase
             var adminId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0;
 
             if (adminId == 0)
-                return Unauthorized(new { success = false, message = "Invalid admin ID" });
+                return Unauthorized(new { success = false, message = InvalidAdminIdMessage });
 
             _logger.LogInformation("Admin {AdminId} deleting challenge {ChallengeId}", adminId, id);
 
@@ -258,7 +260,7 @@ public class CommunityChallengeController : ControllerBase
             var adminId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0;
 
             if (adminId == 0)
-                return Unauthorized(new { success = false, message = "Invalid admin ID" });
+                return Unauthorized(new { success = false, message = InvalidAdminIdMessage });
 
             _logger.LogInformation("Admin {AdminId} reviewing participation {ParticipationId}", adminId, participationId);
 
@@ -360,7 +362,7 @@ public class CommunityChallengeController : ControllerBase
             var adminId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0;
 
             if (adminId == 0)
-                return Unauthorized(new { success = false, message = "Invalid admin ID" });
+                return Unauthorized(new { success = false, message = InvalidAdminIdMessage });
 
             _logger.LogInformation("Admin {AdminId} approving participation {SubmissionId}", adminId, submissionId);
 
@@ -409,7 +411,7 @@ public class CommunityChallengeController : ControllerBase
             var adminId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId) ? parsedId : 0;
 
             if (adminId == 0)
-                return Unauthorized(new { success = false, message = "Invalid admin ID" });
+                return Unauthorized(new { success = false, message = InvalidAdminIdMessage });
 
             _logger.LogInformation("Admin {AdminId} rejecting participation {SubmissionId}", adminId, submissionId);
 

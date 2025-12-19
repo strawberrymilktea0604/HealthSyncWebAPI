@@ -22,6 +22,9 @@ public class AuthService : IAuthService
     private readonly IJwtService _jwtService;
     private readonly IConfiguration _configuration;
 
+    private const string GoogleCallbackPath = "/api/v1/auth/google/callback";
+    private const string GoogleTokenEndpoint = "https://oauth2.googleapis.com/token";
+
     public AuthService(
         IUserRepository userRepository,
         IUserProfileRepository userProfileRepository,
@@ -390,7 +393,7 @@ public class AuthService : IAuthService
         var httpUrl = urls?.FirstOrDefault(u => u.StartsWith("http://"));
         var defaultBaseUrl = _configuration["DefaultBaseUrl"] ?? "https://localhost:7144";
         var baseUrl = httpsUrl ?? httpUrl ?? defaultBaseUrl;
-        var redirectUri = $"{baseUrl}/api/v1/auth/google/callback";
+        var redirectUri = $"{baseUrl}{GoogleCallbackPath}";
         
         var requestBody = new
         {
@@ -401,7 +404,7 @@ public class AuthService : IAuthService
             grant_type = "authorization_code"
         };
 
-        var response = await client.PostAsJsonAsync("https://oauth2.googleapis.com/token", requestBody);
+        var response = await client.PostAsJsonAsync(GoogleTokenEndpoint, requestBody);
         response.EnsureSuccessStatusCode();
         
         var tokenResponse = await response.Content.ReadFromJsonAsync<GoogleTokenResponse>();

@@ -15,6 +15,8 @@ public class ExercisesController : ControllerBase
     private readonly IExerciseService _exerciseService;
     private readonly ILogger<ExercisesController> _logger;
 
+    private const string InternalServerErrorMessage = "Internal server error";
+
     public ExercisesController(IExerciseService exerciseService, ILogger<ExercisesController> logger)
     {
         _exerciseService = exerciseService;
@@ -50,7 +52,7 @@ public class ExercisesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving exercises with filters");
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -76,7 +78,7 @@ public class ExercisesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving exercise with ID {ExerciseId}", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -108,7 +110,7 @@ public class ExercisesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating exercise");
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -145,7 +147,7 @@ public class ExercisesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating exercise with ID {ExerciseId}", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -191,7 +193,7 @@ public class ExercisesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading image for exercise with ID {ExerciseId}", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -222,7 +224,7 @@ public class ExercisesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting exercise with ID {ExerciseId}", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 }

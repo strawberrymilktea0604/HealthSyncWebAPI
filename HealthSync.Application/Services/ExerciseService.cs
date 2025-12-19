@@ -45,8 +45,6 @@ public class ExerciseService : IExerciseService
 
         var (exercises, totalItems) = await _exerciseRepository.GetFilteredAsync(muscleGroup, difficulty, equipment, pageNumber, pageSize);
 
-        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-
         var items = exercises
             .OrderBy(e => e.Name)
             .Skip((pageNumber - 1) * pageSize)

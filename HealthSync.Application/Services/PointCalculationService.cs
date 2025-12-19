@@ -107,33 +107,33 @@ public class PointCalculationService : IPointCalculationService
             _logger.LogInformation("[PointCalculationService] Starting to calculate and update points for all users");
 
             // Get all users
-            var users = await _userRepository.GetAllAsync();
+            var userIds = (await _userRepository.GetAllAsync()).Select(user => user.UserId).ToList();
             var updatedCount = 0;
             var errorCount = 0;
 
-            foreach (var user in users)
+            foreach (var userId in userIds)
             {
                 try
                 {
                     // Calculate points for this user
-                    var calculatedPoints = await CalculateUserPointsAsync(user.UserId);
+                    var calculatedPoints = await CalculateUserPointsAsync(userId);
 
                     // Get or create leaderboard entry
-                    var leaderboardEntry = await _leaderboardRepository.GetByUserIdAsync(user.UserId);
+                    var leaderboardEntry = await _leaderboardRepository.GetByUserIdAsync(userId);
 
                     if (leaderboardEntry == null)
                     {
                         // Create new leaderboard entry
                         leaderboardEntry = new Leaderboard
                         {
-                            UserId = user.UserId,
+                            UserId = userId,
                             TotalPoints = calculatedPoints,
                             UpdatedAt = DateTime.UtcNow
                         };
                         await _leaderboardRepository.AddAsync(leaderboardEntry);
                         _logger.LogInformation(
                             "[PointCalculationService] Created new leaderboard entry for UserId {UserId} with {Points} points",
-                            user.UserId, calculatedPoints);
+                            userId, calculatedPoints);
                     }
                     else if (leaderboardEntry.TotalPoints != calculatedPoints)
                     {
@@ -144,20 +144,20 @@ public class PointCalculationService : IPointCalculationService
                         await _leaderboardRepository.UpdateAsync(leaderboardEntry);
                         _logger.LogInformation(
                             "[PointCalculationService] Updated UserId {UserId}: {OldPoints} → {NewPoints} points",
-                            user.UserId, oldPoints, calculatedPoints);
+                            userId, oldPoints, calculatedPoints);
                     }
                     else
                     {
                         _logger.LogDebug(
                             "[PointCalculationService] No change for UserId {UserId}: {Points} points",
-                            user.UserId, calculatedPoints);
+                            userId, calculatedPoints);
                     }
 
                     updatedCount++;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "[PointCalculationService] Error updating UserId: {UserId}", user.UserId);
+                    _logger.LogError(ex, "[PointCalculationService] Error updating UserId: {UserId}", userId);
                     errorCount++;
                 }
             }
@@ -166,7 +166,7 @@ public class PointCalculationService : IPointCalculationService
 
             _logger.LogInformation(
                 "[PointCalculationService] Completed. Updated: {UpdatedCount}, Errors: {ErrorCount}, Total users: {TotalCount}",
-                updatedCount, errorCount, users.Count());
+                updatedCount, errorCount, userIds.Count);
 
             return updatedCount;
         }

@@ -50,7 +50,7 @@ public class CreateGoalValidator : AbstractValidator<CreateGoalRequest>
         });
     }
 
-    private bool HaveReasonableDuration(CreateGoalRequest request)
+    private static bool HaveReasonableDuration(CreateGoalRequest request)
     {
         var duration = request.EndDate - request.StartDate;
         return duration.TotalDays >= 7 && duration.TotalDays <= 365;

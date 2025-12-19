@@ -10,6 +10,8 @@ public class GoalService : IGoalService
     private readonly IGoalRepository _goalRepository;
     private readonly IUserProfileRepository _userProfileRepository;
 
+    private const string GoalNotFoundMessage = "Goal not found";
+
     public GoalService(IGoalRepository goalRepository, IUserProfileRepository userProfileRepository)
     {
         _goalRepository = goalRepository;
@@ -55,7 +57,7 @@ public class GoalService : IGoalService
     {
         var goal = await _goalRepository.GetByIdAsync(goalId);
         if (goal == null || goal.UserId != userId)
-            throw new ValidationException("Goal not found");
+            throw new ValidationException(GoalNotFoundMessage);
 
         return MapToDto(goal);
     }
@@ -70,7 +72,7 @@ public class GoalService : IGoalService
     {
         var goal = await _goalRepository.GetByIdAsync(goalId);
         if (goal == null || goal.UserId != userId)
-            throw new ValidationException("Goal not found");
+            throw new ValidationException(GoalNotFoundMessage);
 
         if (goal.Status != GoalStatus.InProgress)
             throw new ValidationException("Cannot update completed or cancelled goals");
@@ -99,7 +101,7 @@ public class GoalService : IGoalService
     {
         var goal = await _goalRepository.GetByIdAsync(goalId);
         if (goal == null || goal.UserId != userId)
-            throw new ValidationException("Goal not found");
+            throw new ValidationException(GoalNotFoundMessage);
 
         // Delete associated progress records first
         var progressRecords = await _goalRepository.GetProgressRecordsByGoalIdAsync(goalId);
@@ -115,7 +117,7 @@ public class GoalService : IGoalService
     {
         var goal = await _goalRepository.GetByIdAsync(request.GoalId);
         if (goal == null || goal.UserId != userId)
-            throw new ValidationException("Goal not found");
+            throw new ValidationException(GoalNotFoundMessage);
 
         if (goal.Status != GoalStatus.InProgress)
             throw new ValidationException("Cannot record progress for completed or cancelled goals");
@@ -203,7 +205,7 @@ public class GoalService : IGoalService
     {
         var goal = await _goalRepository.GetByIdAsync(goalId);
         if (goal == null || goal.UserId != userId)
-            throw new ValidationException("Goal not found");
+            throw new ValidationException(GoalNotFoundMessage);
 
         var records = await _goalRepository.GetProgressRecordsByGoalIdAsync(goalId);
         var progressPercent = CalculateProgressPercent(goal, records);
@@ -221,7 +223,7 @@ public class GoalService : IGoalService
         };
     }
 
-    private decimal GetInitialValue(GoalType goalType, UserProfile? userProfile)
+    private static decimal GetInitialValue(GoalType goalType, UserProfile? userProfile)
     {
         return goalType switch
         {
@@ -232,7 +234,7 @@ public class GoalService : IGoalService
         };
     }
 
-    private bool IsGoalCompleted(Goal goal, decimal currentValue)
+    private static bool IsGoalCompleted(Goal goal, decimal currentValue)
     {
         return goal.GoalType switch
         {
@@ -244,7 +246,7 @@ public class GoalService : IGoalService
         };
     }
 
-    private decimal CalculateProgressPercent(Goal goal, IEnumerable<ProgressRecord> records)
+    private static decimal CalculateProgressPercent(Goal goal, IEnumerable<ProgressRecord> records)
     {
         if (!records.Any()) return 0;
 
@@ -280,7 +282,7 @@ public class GoalService : IGoalService
     {
         var goal = await _goalRepository.GetByIdAsync(goalId);
         if (goal == null || goal.UserId != userId)
-            throw new KeyNotFoundException("Goal not found");
+            throw new KeyNotFoundException(GoalNotFoundMessage);
 
         var records = await _goalRepository.GetProgressRecordsByGoalIdAsync(goalId);
         return records.Select(MapToProgressDto);

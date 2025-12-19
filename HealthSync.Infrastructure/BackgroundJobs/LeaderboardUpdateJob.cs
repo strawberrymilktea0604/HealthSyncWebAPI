@@ -42,12 +42,11 @@ public class LeaderboardUpdateJob : ILeaderboardUpdateJob
 
             // Step 1: Calculate and update points in Leaderboard for all users
             var updatedCount = await _pointCalculationService.CalculateAndUpdateAllUserPointsAsync();
-            _logger.LogInformation("[LeaderboardUpdateJob] Point calculation completed for {Count} users", updatedCount);
-
+            
             // Step 2: Sync Leaderboard points to UserProfile
             await SyncLeaderboardToUserProfilesAsync();
 
-            _logger.LogInformation("[LeaderboardUpdateJob] Complete update process finished successfully");
+            _logger.LogInformation("[LeaderboardUpdateJob] Complete update process finished successfully for {Count} users", updatedCount);
         }
         catch (Exception ex)
         {

@@ -14,6 +14,8 @@ public class ForumCategoriesController : ControllerBase
     private readonly IForumCategoryService _forumCategoryService;
     private readonly ILogger<ForumCategoriesController> _logger;
 
+    private const string InternalServerErrorMessage = "Internal server error";
+
     public ForumCategoriesController(
         IForumCategoryService forumCategoryService,
         ILogger<ForumCategoriesController> logger)
@@ -38,7 +40,7 @@ public class ForumCategoriesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving forum categories");
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -64,7 +66,7 @@ public class ForumCategoriesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving forum category with ID {CategoryId}", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -90,7 +92,7 @@ public class ForumCategoriesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving forum category details with ID {CategoryId}", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -125,7 +127,7 @@ public class ForumCategoriesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating forum category");
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -166,7 +168,7 @@ public class ForumCategoriesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating forum category with ID {CategoryId}", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -198,7 +200,7 @@ public class ForumCategoriesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting forum category with ID {CategoryId}", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -219,7 +221,7 @@ public class ForumCategoriesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking if forum category with ID {CategoryId} exists", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 
@@ -240,7 +242,7 @@ public class ForumCategoriesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking if forum category with ID {CategoryId} has posts", id);
-            return StatusCode(500, "Internal server error");
+            return StatusCode(500, InternalServerErrorMessage);
         }
     }
 }

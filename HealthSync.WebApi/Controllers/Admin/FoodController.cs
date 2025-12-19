@@ -197,7 +197,7 @@ public class FoodController : ControllerBase
                 ImageUrl = imageUrl
             };
 
-            var updated = await _foodItemService.UpdateAsync(id, updateRequest);
+            await _foodItemService.UpdateAsync(id, updateRequest);
             return Ok(new { imageUrl = imageUrl });
         }
         catch (Exception ex)

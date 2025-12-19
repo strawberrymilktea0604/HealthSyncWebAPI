@@ -16,6 +16,8 @@ public class ForumModerationController : ControllerBase
     private readonly IForumAdminService _forumAdminService;
     private readonly ILogger<ForumModerationController> _logger;
 
+    private const string InvalidAdminUserMessage = "Invalid admin user";
+
     public ForumModerationController(
         IForumAdminService forumAdminService,
         ILogger<ForumModerationController> logger)
@@ -40,7 +42,7 @@ public class ForumModerationController : ControllerBase
             var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(adminIdClaim, out var adminId) || adminId <= 0)
             {
-                return Unauthorized(new { message = "Invalid admin user" });
+                return Unauthorized(new { message = InvalidAdminUserMessage });
             }
 
             var (success, message) = await _forumAdminService.PinPostAsync(id, adminId);
@@ -79,7 +81,7 @@ public class ForumModerationController : ControllerBase
             var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(adminIdClaim, out var adminId) || adminId <= 0)
             {
-                return Unauthorized(new { message = "Invalid admin user" });
+                return Unauthorized(new { message = InvalidAdminUserMessage });
             }
 
             var (success, message) = await _forumAdminService.LockPostAsync(id, adminId);
@@ -116,7 +118,7 @@ public class ForumModerationController : ControllerBase
             var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(adminIdClaim, out var adminId) || adminId <= 0)
             {
-                return Unauthorized(new { message = "Invalid admin user" });
+                return Unauthorized(new { message = InvalidAdminUserMessage });
             }
 
             var (success, message) = await _forumAdminService.DeletePostAsync(id, adminId);
@@ -153,7 +155,7 @@ public class ForumModerationController : ControllerBase
             var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(adminIdClaim, out var adminId) || adminId <= 0)
             {
-                return Unauthorized(new { message = "Invalid admin user" });
+                return Unauthorized(new { message = InvalidAdminUserMessage });
             }
 
             var (success, message) = await _forumAdminService.HideReplyAsync(id, adminId);
@@ -190,7 +192,7 @@ public class ForumModerationController : ControllerBase
             var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(adminIdClaim, out var adminId) || adminId <= 0)
             {
-                return Unauthorized(new { message = "Invalid admin user" });
+                return Unauthorized(new { message = InvalidAdminUserMessage });
             }
 
             var (success, message) = await _forumAdminService.DeleteReplyAsync(id, adminId);
