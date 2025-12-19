@@ -42,7 +42,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
 # Install dependencies cho wait script
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat-openbsd \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -109,6 +109,9 @@ fi
 EOF
 
 RUN chmod +x /app/migrate.sh
+
+# Switch to non-root user for security
+USER app
 
 # Set entrypoint
 ENTRYPOINT ["/app/migrate.sh"]

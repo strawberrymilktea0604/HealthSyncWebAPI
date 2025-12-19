@@ -21,13 +21,17 @@ RUN dotnet publish "HealthSync.WebApi.csproj" -c Release -o /app/publish /p:UseA
 # Use the official .NET 9.0 ASP.NET Core runtime image to run the application
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:8080
 COPY --from=publish /app/publish .
 
 # Install curl for health checks
-RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
 
 # Expose port 80
 EXPOSE 80
+
+# Switch to non-root user for security
+USER app
 
 # Set the entry point
 ENTRYPOINT ["dotnet", "HealthSync.WebApi.dll"]

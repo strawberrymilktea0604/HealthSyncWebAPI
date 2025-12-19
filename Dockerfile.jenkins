@@ -4,7 +4,7 @@ USER root
 
 # Install dependencies for .NET and Docker CLI
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         wget \
         unzip \
         ca-certificates \
@@ -17,7 +17,7 @@ RUN apt-get update && \
     chmod a+r /etc/apt/keyrings/docker.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
     apt-get update && \
-    apt-get install -y docker-ce-cli && \
+    apt-get install -y --no-install-recommends docker-ce-cli && \
     rm -rf /var/lib/apt/lists/*
 
 # Install .NET 8.0 SDK via Microsoft package repository
@@ -25,7 +25,7 @@ RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod
     dpkg -i packages-microsoft-prod.deb && \
     rm packages-microsoft-prod.deb && \
     apt-get update && \
-    apt-get install -y dotnet-sdk-8.0 && \
+    apt-get install -y --no-install-recommends dotnet-sdk-8.0 && \
     rm -rf /var/lib/apt/lists/*
 
 # Install SonarScanner CLI

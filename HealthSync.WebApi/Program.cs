@@ -68,9 +68,6 @@ foreach (var envFile in envFiles)
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure URLs for Docker
-builder.WebHost.UseUrls("http://0.0.0.0:8080");
-
 // Override appsettings.json with environment variables if they exist
 var adminKeyFromEnv = Environment.GetEnvironmentVariable("ADMIN_INITIALIZATION_KEY");
 if (!string.IsNullOrEmpty(adminKeyFromEnv))

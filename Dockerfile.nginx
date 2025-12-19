@@ -16,3 +16,6 @@ COPY nginx/certs /etc/nginx/certs
 # https://127.0.0.1:443: Trỏ thẳng vào IPv4 và cổng HTTPS
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD curl -f -k https://127.0.0.1:443/health || exit 1
+
+# Switch to non-root user for security
+USER nginx

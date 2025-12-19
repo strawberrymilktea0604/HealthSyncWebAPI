@@ -4,5 +4,8 @@ FROM cloudflare/cloudflared:latest
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD pgrep cloudflared || exit 1
 
+# Switch to non-root user for security
+USER 1000
+
 # Default entrypoint from base image
 ENTRYPOINT ["cloudflared"]
