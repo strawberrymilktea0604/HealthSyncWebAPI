@@ -4,6 +4,7 @@ namespace HealthSync.Application.Services;
 
 public class ForumAdminService : IForumAdminService
 {
+    private const string PostNotFoundMessage = "Post not found";
     private readonly IForumPostRepository _forumPostRepository;
     private readonly IForumReplyRepository _forumReplyRepository;
 
@@ -21,7 +22,7 @@ public class ForumAdminService : IForumAdminService
         {
             var postExists = await _forumPostRepository.ExistsAsync(postId);
             if (!postExists)
-                return (false, "Post not found");
+                return (false, PostNotFoundMessage);
 
             await _forumPostRepository.DeleteAsync(postId);
             await _forumPostRepository.SaveChangesAsync();
@@ -60,7 +61,7 @@ public class ForumAdminService : IForumAdminService
         {
             var post = await _forumPostRepository.GetByIdAsync(postId);
             if (post is null)
-                return (false, "Post not found", false);
+                return (false, PostNotFoundMessage, false);
 
             post.IsPinned = !post.IsPinned;
             post.UpdatedAt = DateTime.UtcNow;
@@ -81,7 +82,7 @@ public class ForumAdminService : IForumAdminService
         {
             var post = await _forumPostRepository.GetByIdAsync(postId);
             if (post is null)
-                return (false, "Post not found");
+                return (false, PostNotFoundMessage);
 
             post.IsLocked = true;
             post.UpdatedAt = DateTime.UtcNow;
@@ -101,7 +102,7 @@ public class ForumAdminService : IForumAdminService
         {
             var post = await _forumPostRepository.GetByIdAsync(postId);
             if (post is null)
-                return (false, "Post not found");
+                return (false, PostNotFoundMessage);
 
             post.IsLocked = false;
             post.UpdatedAt = DateTime.UtcNow;

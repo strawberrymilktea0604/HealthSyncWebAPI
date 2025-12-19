@@ -111,19 +111,13 @@ public class DashboardAdminService : IDashboardAdminService
             var allUsers = await _dependencies.User.UserRepository.GetAllAsync();
             var totalActiveUsers = allUsers.Count(u => u.IsActive);
 
-            _logger.LogInformation("Total active users: {TotalActiveUsers}", totalActiveUsers);
-
             // Metric 2: New users this month
             var today = DateTime.UtcNow;
             var firstDayOfMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var newUsersThisMonth = allUsers.Count(u => u.CreatedAt >= firstDayOfMonth);
 
-            _logger.LogInformation("New users this month: {NewUsersThisMonth}", newUsersThisMonth);
-
             // Metric 3: Workouts logged today
             var workoutLogsToday = await _dependencies.Workout.WorkoutLogRepository.CountWorkoutLogsTodayAsync();
-
-            _logger.LogInformation("Workout logs today: {WorkoutLogsToday}", workoutLogsToday);
 
             var stats = new DashboardStatsDto
             {
@@ -297,7 +291,7 @@ public class DashboardAdminService : IDashboardAdminService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("[DashboardAdminService] Error getting top exercises: {Message}", ex.Message);
+                _logger.LogWarning(ex, "[DashboardAdminService] Error getting top exercises: {Message}", ex.Message);
             }
 
             // Get top 5 forum categories (by activity: posts + replies)
@@ -335,7 +329,7 @@ public class DashboardAdminService : IDashboardAdminService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("[DashboardAdminService] Error getting top forum categories: {Message}", ex.Message);
+                _logger.LogWarning(ex, "[DashboardAdminService] Error getting top forum categories: {Message}", ex.Message);
             }
 
             var topContent = new TopContentDto

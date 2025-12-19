@@ -16,7 +16,7 @@ public class HangfireDashboardAuthorizationFilter : IDashboardAuthorizationFilte
     }
 
     // Extracted for testing
-    public bool AuthorizeUser(ClaimsPrincipal user)
+    public static bool AuthorizeUser(ClaimsPrincipal user)
     {
         // Check if user is authenticated
         if (user.Identity?.IsAuthenticated != true)

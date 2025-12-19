@@ -16,7 +16,6 @@ namespace HealthSync.WebApi.Tests.Controllers;
 public class ChallengesControllerTests : IDisposable
 {
     private readonly ApplicationDbContext _db;
-    private readonly Mock<IChallengeParticipationService> _mockParticipationService;
     private readonly ChallengesController _controller;
 
     public ChallengesControllerTests()
@@ -31,11 +30,8 @@ public class ChallengesControllerTests : IDisposable
         // Seed test data
         SeedTestData();
 
-        // Setup mocks
-        _mockParticipationService = new Mock<IChallengeParticipationService>();
-
         // Create controller
-        _controller = new ChallengesController(_db, _mockParticipationService.Object);
+        _controller = new ChallengesController(_db);
 
         // Setup authenticated user
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
@@ -165,89 +161,5 @@ public class ChallengesControllerTests : IDisposable
         var root = doc.RootElement;
         root.GetProperty("success").GetBoolean().Should().BeFalse();
         root.GetProperty("message").GetString().Should().Be("Challenge not found");
-    }
-
-    [Fact]
-    public async Task SubmitChallengeResult_ShouldReturnOk_WhenSubmissionSuccessful()
-    {
-        // Arrange
-        var challengeId = 1;
-        var userId = 1;
-
-        var request = new SubmitChallengeRequest
-        {
-            SubmissionText = "Completed 100km running challenge"
-        };
-
-        var expectedParticipation = new ParticipationDto
-        {
-            ParticipationId = 1,
-            ChallengeId = challengeId,
-            UserId = userId,
-            JoinedDate = DateTime.UtcNow,
-            Status = ParticipationStatus.PendingApproval,
-            SubmissionText = "Completed 100km running challenge",
-            SubmittedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        _mockParticipationService
-            .Setup(s => s.SubmitChallengeResultAsync(challengeId, userId, request))
-            .ReturnsAsync(expectedParticipation);
-
-        // Act
-        var result = await _controller.SubmitChallenge(challengeId, request);
-
-        // Assert
-        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-        var json = JsonSerializer.Serialize(okResult.Value);
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        root.GetProperty("success").GetBoolean().Should().BeTrue();
-        root.GetProperty("message").GetString().Should().Be("Challenge submission successful, waiting for admin approval");
-        var data = root.GetProperty("data");
-        data.GetProperty("Status").GetInt32().Should().Be((int)ParticipationStatus.PendingApproval);
-        data.GetProperty("SubmissionText").GetString().Should().Be("Completed 100km running challenge");
-    }
-
-    [Fact]
-    public async Task GetMyParticipations_ShouldReturnOk_WhenParticipationsRetrieved()
-    {
-        // Arrange
-        var userId = 1;
-
-        var participations = new List<ParticipationDto>
-        {
-            new ParticipationDto
-            {
-                ParticipationId = 1,
-                ChallengeId = 1,
-                UserId = userId,
-                JoinedDate = DateTime.UtcNow.AddDays(-10),
-                Status = ParticipationStatus.PendingApproval,
-                SubmissionText = "Completed challenge",
-                SubmittedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
-            }
-        };
-
-        _mockParticipationService
-            .Setup(s => s.GetUserParticipationsAsync(userId))
-            .ReturnsAsync(participations);
-
-        // Act
-        var result = await _controller.GetMyParticipations();
-
-        // Assert
-        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-        var json = JsonSerializer.Serialize(okResult.Value);
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        root.GetProperty("success").GetBoolean().Should().BeTrue();
-        var data = root.GetProperty("data");
-        data.EnumerateArray().Should().HaveCount(1);
-        var firstParticipation = data.EnumerateArray().First();
-        firstParticipation.GetProperty("Status").GetInt32().Should().Be((int)ParticipationStatus.PendingApproval);
-        firstParticipation.GetProperty("ChallengeId").GetInt32().Should().Be(1);
     }
 }

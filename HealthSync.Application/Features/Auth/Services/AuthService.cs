@@ -247,7 +247,7 @@ public class AuthService : IAuthService
         }
     }
 
-    private string HashPassword(string password)
+    private static string HashPassword(string password)
     {
         byte[] salt = new byte[128 / 8];
         using (var rng = RandomNumberGenerator.Create())
@@ -265,7 +265,7 @@ public class AuthService : IAuthService
         return $"{Convert.ToBase64String(salt)}.{hashed}";
     }
 
-    private bool VerifyPassword(string password, string passwordHash)
+    private static bool VerifyPassword(string password, string passwordHash)
     {
         try
         {
@@ -388,7 +388,8 @@ public class AuthService : IAuthService
         var urls = _configuration["ASPNETCORE_URLS"]?.Split(';');
         var httpsUrl = urls?.FirstOrDefault(u => u.StartsWith("https://"));
         var httpUrl = urls?.FirstOrDefault(u => u.StartsWith("http://"));
-        var baseUrl = httpsUrl ?? httpUrl ?? "https://localhost:7144";
+        var defaultBaseUrl = _configuration["DefaultBaseUrl"] ?? "https://localhost:7144";
+        var baseUrl = httpsUrl ?? httpUrl ?? defaultBaseUrl;
         var redirectUri = $"{baseUrl}/api/v1/auth/google/callback";
         
         var requestBody = new

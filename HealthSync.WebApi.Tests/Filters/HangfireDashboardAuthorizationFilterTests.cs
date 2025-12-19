@@ -7,13 +7,6 @@ namespace HealthSync.WebApi.Tests.Filters;
 
 public class HangfireDashboardAuthorizationFilterTests
 {
-    private readonly HangfireDashboardAuthorizationFilter _filter;
-
-    public HangfireDashboardAuthorizationFilterTests()
-    {
-        _filter = new HangfireDashboardAuthorizationFilter();
-    }
-
     [Fact]
     public void Authorize_ShouldReturnFalse_WhenUserIsNotAuthenticated()
     {
@@ -22,7 +15,7 @@ public class HangfireDashboardAuthorizationFilterTests
         var principal = new ClaimsPrincipal(identity);
 
         // Act
-        var result = _filter.AuthorizeUser(principal);
+        var result = HangfireDashboardAuthorizationFilter.AuthorizeUser(principal);
 
         // Assert
         Assert.False(result);
@@ -41,7 +34,7 @@ public class HangfireDashboardAuthorizationFilterTests
         var principal = new ClaimsPrincipal(identity);
 
         // Act
-        var result = _filter.AuthorizeUser(principal);
+        var result = HangfireDashboardAuthorizationFilter.AuthorizeUser(principal);
 
         // Assert
         Assert.False(result);
@@ -60,7 +53,7 @@ public class HangfireDashboardAuthorizationFilterTests
         var principal = new ClaimsPrincipal(identity);
 
         // Act
-        var result = _filter.AuthorizeUser(principal);
+        var result = HangfireDashboardAuthorizationFilter.AuthorizeUser(principal);
 
         // Assert
         Assert.True(result);

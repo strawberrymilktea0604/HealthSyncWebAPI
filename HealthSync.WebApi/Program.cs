@@ -84,7 +84,7 @@ static void LoadEnvironmentFromFile(string envFilePath)
         var trimmedLine = line.Trim();
 
         // Skip empty lines and comments
-        if (string.IsNullOrWhiteSpace(trimmedLine) || trimmedLine.StartsWith("#"))
+        if (string.IsNullOrWhiteSpace(trimmedLine) || trimmedLine.StartsWith('#'))
             continue;
 
         var parts = trimmedLine.Split('=', 2);
