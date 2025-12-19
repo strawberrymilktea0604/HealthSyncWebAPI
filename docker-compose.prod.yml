@@ -68,7 +68,7 @@ services:
         condition: service_healthy
     networks:
       - healthsync-network
-    restart: "no" # Chỉ chạy 1 lần, không restart
+    restart: on-failure # Restart if migration fails, allowing more time for slow servers
 
   api:
     image: healthsync-api:latest

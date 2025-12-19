@@ -65,8 +65,8 @@ DB_PORT=1433
 
 echo "Waiting for SQL Server at ${DB_HOST}:${DB_PORT}..."
 
-# Wait for database (max 60 seconds)
-MAX_RETRIES=60
+# Wait for database (max 120 seconds - increased for slow servers)
+MAX_RETRIES=120
 RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
