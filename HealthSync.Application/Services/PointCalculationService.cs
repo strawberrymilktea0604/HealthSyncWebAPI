@@ -93,7 +93,7 @@ public class PointCalculationService : IPointCalculationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "[PointCalculationService] Error calculating points for UserId: {UserId}", userId);
-            throw;
+            throw new InvalidOperationException($"Error calculating points for UserId {userId}", ex);
         }
     }
 
@@ -173,7 +173,7 @@ public class PointCalculationService : IPointCalculationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "[PointCalculationService] Fatal error in CalculateAndUpdateAllUserPointsAsync");
-            throw;
+            throw new InvalidOperationException("Fatal error in calculating and updating all user points", ex);
         }
     }
 

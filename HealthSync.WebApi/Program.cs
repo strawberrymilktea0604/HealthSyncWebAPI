@@ -73,23 +73,28 @@ static void LoadEnvironmentFile(string envFile)
 
     if (File.Exists(envFilePath))
     {
-        foreach (var line in File.ReadAllLines(envFilePath))
+        LoadEnvironmentFromFile(envFilePath);
+    }
+}
+
+static void LoadEnvironmentFromFile(string envFilePath)
+{
+    foreach (var line in File.ReadAllLines(envFilePath))
+    {
+        var trimmedLine = line.Trim();
+
+        // Skip empty lines and comments
+        if (string.IsNullOrWhiteSpace(trimmedLine) || trimmedLine.StartsWith("#"))
+            continue;
+
+        var parts = trimmedLine.Split('=', 2);
+        if (parts.Length == 2)
         {
-            var trimmedLine = line.Trim();
+            var key = parts[0].Trim();
+            var value = parts[1].Trim();
 
-            // Skip empty lines and comments
-            if (string.IsNullOrWhiteSpace(trimmedLine) || trimmedLine.StartsWith("#"))
-                continue;
-
-            var parts = trimmedLine.Split('=', 2);
-            if (parts.Length == 2)
-            {
-                var key = parts[0].Trim();
-                var value = parts[1].Trim();
-
-                // Set environment variable (force override for later files)
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-            }
+            // Set environment variable (force override for later files)
+            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
         }
     }
 }

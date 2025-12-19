@@ -88,7 +88,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[AdminController] Error setting user rank title: {ex.Message}");
+            _logger.LogError(ex, "[AdminController] Error setting user rank title: {Message}", ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while updating user rank title", error = ex.Message });
         }
     }

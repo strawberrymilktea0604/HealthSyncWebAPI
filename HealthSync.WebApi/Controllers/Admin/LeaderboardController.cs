@@ -53,7 +53,7 @@ public class LeaderboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error executing leaderboard update job: {ex.Message}");
+            _logger.LogError(ex, "Error executing leaderboard update job: {Message}", ex.Message);
             return StatusCode(500, new
             {
                 success = false,
@@ -100,7 +100,7 @@ public class LeaderboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error executing leaderboard update job for UserId {userId}: {ex.Message}");
+            _logger.LogError(ex, "Error executing leaderboard update job for UserId {UserId}: {Message}", userId, ex.Message);
             return StatusCode(500, new
             {
                 success = false,

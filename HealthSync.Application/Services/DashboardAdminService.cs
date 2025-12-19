@@ -105,7 +105,7 @@ public class DashboardAdminService : IDashboardAdminService
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[DashboardAdminService] Error calculating dashboard stats: {ex.Message}");
+            _logger.LogError(ex, "[DashboardAdminService] Error calculating dashboard stats: {Message}", ex.Message);
             return (false, null, $"Error calculating dashboard statistics: {ex.Message}");
         }
     }
@@ -211,7 +211,7 @@ public class DashboardAdminService : IDashboardAdminService
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[DashboardAdminService] Error calculating detailed stats: {ex.Message}");
+            _logger.LogError(ex, "[DashboardAdminService] Error calculating detailed stats: {Message}", ex.Message);
             return (false, null, $"Error calculating statistics: {ex.Message}");
         }
     }
@@ -317,7 +317,7 @@ public class DashboardAdminService : IDashboardAdminService
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[DashboardAdminService] Error calculating top content: {ex.Message}");
+            _logger.LogError(ex, "[DashboardAdminService] Error calculating top content: {Message}", ex.Message);
             return (false, null, $"Error calculating top content: {ex.Message}");
         }
     }
@@ -361,7 +361,7 @@ public class DashboardAdminService : IDashboardAdminService
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[DashboardAdminService] Error getting users by contribution points: {ex.Message}");
+            _logger.LogError(ex, "[DashboardAdminService] Error getting users by contribution points: {Message}", ex.Message);
             return (false, null, $"Error getting users by contribution points: {ex.Message}");
         }
     }

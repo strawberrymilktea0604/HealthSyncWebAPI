@@ -52,7 +52,7 @@ public class LeaderboardUpdateJob : ILeaderboardUpdateJob
         catch (Exception ex)
         {
             _logger.LogError(ex, "[LeaderboardUpdateJob] Fatal error in update process");
-            throw;
+            throw new InvalidOperationException("Fatal error in leaderboard update process", ex);
         }
     }
 
@@ -115,7 +115,7 @@ public class LeaderboardUpdateJob : ILeaderboardUpdateJob
         catch (Exception ex)
         {
             _logger.LogError(ex, "[LeaderboardUpdateJob] Error updating UserId {UserId}", userId);
-            throw;
+            throw new InvalidOperationException($"Error updating contribution points for UserId {userId}", ex);
         }
     }
 
@@ -172,7 +172,7 @@ public class LeaderboardUpdateJob : ILeaderboardUpdateJob
         catch (Exception ex)
         {
             _logger.LogError(ex, "[LeaderboardUpdateJob] Fatal error in sync process");
-            throw;
+            throw new InvalidOperationException("Fatal error in syncing leaderboard to user profiles", ex);
         }
     }
 }

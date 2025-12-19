@@ -29,22 +29,19 @@ public class ExerciseRepository : IExerciseRepository
         var query = _context.Exercises.AsQueryable();
 
         // Apply filters if provided - Convert string to enum and compare
-        if (!string.IsNullOrWhiteSpace(muscleGroup))
+        if (!string.IsNullOrWhiteSpace(muscleGroup) && Enum.TryParse<MuscleGroup>(muscleGroup, true, out var muscleGroupEnum))
         {
-            if (Enum.TryParse<MuscleGroup>(muscleGroup, true, out var muscleGroupEnum))
-                query = query.Where(e => e.MuscleGroup == muscleGroupEnum);
+            query = query.Where(e => e.MuscleGroup == muscleGroupEnum);
         }
         
-        if (!string.IsNullOrWhiteSpace(difficulty))
+        if (!string.IsNullOrWhiteSpace(difficulty) && Enum.TryParse<DifficultyLevel>(difficulty, true, out var difficultyEnum))
         {
-            if (Enum.TryParse<DifficultyLevel>(difficulty, true, out var difficultyEnum))
-                query = query.Where(e => e.DifficultyLevel == difficultyEnum);
+            query = query.Where(e => e.DifficultyLevel == difficultyEnum);
         }
         
-        if (!string.IsNullOrWhiteSpace(equipment))
+        if (!string.IsNullOrWhiteSpace(equipment) && Enum.TryParse<Equipment>(equipment, true, out var equipmentEnum))
         {
-            if (Enum.TryParse<Equipment>(equipment, true, out var equipmentEnum))
-                query = query.Where(e => e.Equipment.HasValue && e.Equipment.Value == equipmentEnum);
+            query = query.Where(e => e.Equipment.HasValue && e.Equipment.Value == equipmentEnum);
         }
 
         // Get total count

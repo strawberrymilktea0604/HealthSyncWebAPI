@@ -65,7 +65,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error creating challenge: {ex.Message}");
+            _logger.LogError(ex, "Error creating challenge: {Message}", ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while creating the challenge" });
         }
     }
@@ -96,7 +96,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving challenge {id}: {ex.Message}");
+            _logger.LogError(ex, "Error retrieving challenge {Id}: {Message}", id, ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving the challenge" });
         }
     }
@@ -127,7 +127,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving challenges: {ex.Message}");
+            _logger.LogError(ex, "Error retrieving challenges: {Message}", ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving challenges" });
         }
     }
@@ -168,7 +168,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating challenge {id}: {ex.Message}");
+            _logger.LogError(ex, "Error updating challenge {Id}: {Message}", id, ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while updating the challenge" });
         }
     }
@@ -207,7 +207,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting challenge {id}: {ex.Message}");
+            _logger.LogError(ex, "Error deleting challenge {Id}: {Message}", id, ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while deleting the challenge" });
         }
     }
@@ -234,7 +234,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving pending approvals for challenge {challengeId}: {ex.Message}");
+            _logger.LogError(ex, "Error retrieving pending approvals for challenge {ChallengeId}: {Message}", challengeId, ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving pending approvals" });
         }
     }
@@ -275,7 +275,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error reviewing participation {participationId}: {ex.Message}");
+            _logger.LogError(ex, "Error reviewing participation {ParticipationId}: {Message}", participationId, ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while reviewing the participation" });
         }
     }
@@ -308,7 +308,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving pending approvals: {ex.Message}");
+            _logger.LogError(ex, "Error retrieving pending approvals: {Message}", ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving pending approvals" });
         }
     }
@@ -335,7 +335,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving participants for challenge {challengeId}: {ex.Message}");
+            _logger.LogError(ex, "Error retrieving participants for challenge {ChallengeId}: {Message}", challengeId, ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while retrieving participants" });
         }
     }
@@ -384,7 +384,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error approving participation {submissionId}: {ex.Message}");
+            _logger.LogError(ex, "Error approving participation {SubmissionId}: {Message}", submissionId, ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while approving the participation" });
         }
     }
@@ -429,7 +429,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error rejecting participation {submissionId}: {ex.Message}");
+            _logger.LogError(ex, "Error rejecting participation {SubmissionId}: {Message}", submissionId, ex.Message);
             return StatusCode(500, new { success = false, message = "An error occurred while rejecting the participation" });
         }
     }
