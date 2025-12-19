@@ -165,12 +165,28 @@ pipeline {
                         rm -rf test-results || true
                         mkdir -p test-results
 
-                        # Run tests for the entire solution
-                        echo "Running tests for the entire solution..."
-                        dotnet test HealthSyncWebAPI.sln -c Release \
-                            --collect:"XPlat Code Coverage;Format=opencover" \
-                            --results-directory ./test-results \
-                            --logger "junit;LogFileName=test-results/TEST-HealthSyncWebAPI.xml" || true
+                        # find test projects (adjust glob if your tests live in different folders)
+                        TEST_PROJECTS=$(find . -type f -name '*Tests*.csproj' -o -name '*Test*.csproj' || true)
+                        if [ -z "$TEST_PROJECTS" ]; then
+                            echo "No test project files found by pattern '*Tests*' or '*Test*' - aborting tests"
+                            exit 0
+                        fi
+
+                        echo "Found test projects:"
+                        echo "$TEST_PROJECTS"
+
+                        # loop over projects -> run dotnet test for each and write a distinct JUnit XML
+                        for p in $TEST_PROJECTS; do
+                            # derive short name for file
+                            pname=$(basename "$p" .csproj | sed 's/[^a-zA-Z0-9._-]/_/g')
+                            logfile="test-results/TEST-${pname}.xml"
+                            echo "Running tests for [$p] -> $logfile"
+                            # Note: NO --no-build to be safe; remove newline escaping if you embed in pipeline groovy string
+                            dotnet test "$p" -c Release \
+                                --collect:"XPlat Code Coverage;Format=opencover" \
+                                --results-directory ./test-results \
+                                --logger "junit;LogFileName=${logfile}" || true
+                        done
 
                         echo "List generated test results:"
                         ls -la test-results || true
