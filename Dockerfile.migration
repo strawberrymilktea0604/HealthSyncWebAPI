@@ -51,7 +51,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=build /app/efbundle /app/efbundle
 
 # Copy script để wait for database và chạy migrations
-COPY <<'EOF' /app/migrate.sh
+RUN cat > /app/migrate.sh << 'EOF'
 #!/bin/bash
 set -e
 
