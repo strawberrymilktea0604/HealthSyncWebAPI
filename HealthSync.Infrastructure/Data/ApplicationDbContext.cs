@@ -29,11 +29,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<Reply> Replies { get; set; }
     public DbSet<Notification> Notifications { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(builder);
+        base.OnModelCreating(modelBuilder);
 
         // Configure entities
-        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 }

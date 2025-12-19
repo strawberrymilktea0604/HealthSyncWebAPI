@@ -365,26 +365,33 @@ public class GoalService : IGoalService
         // Validate target value based on goal type
         if (request.GoalType == GoalType.WeightLoss || request.GoalType == GoalType.WeightGain)
         {
-            userProfile = await _userProfileRepository.GetByUserIdAsync(userId);
-            if (userProfile == null)
-                throw new ValidationException("User profile not found. Please complete your profile first.");
-
-            var currentWeight = userProfile.CurrentWeightKg;
-            if (!currentWeight.HasValue)
-                throw new ValidationException("Current weight not set in profile");
-
-            var maxChange = currentWeight.Value * 0.3m; // Max 30% change
-
-            if (request.GoalType == GoalType.WeightLoss && request.TargetValue >= currentWeight.Value)
-                throw new ValidationException("Target weight must be less than current weight for weight loss");
-
-            if (request.GoalType == GoalType.WeightGain && request.TargetValue <= currentWeight.Value)
-                throw new ValidationException("Target weight must be greater than current weight for weight gain");
-
-            var weightDifference = Math.Abs(request.TargetValue - currentWeight.Value);
-            if (weightDifference > maxChange)
-                throw new ValidationException("Target weight change cannot exceed 30% of current weight");
+            userProfile = await ValidateWeightGoalAsync(request, userId);
         }
+
+        return userProfile;
+    }
+
+    private async Task<UserProfile> ValidateWeightGoalAsync(CreateGoalRequest request, int userId)
+    {
+        var userProfile = await _userProfileRepository.GetByUserIdAsync(userId);
+        if (userProfile == null)
+            throw new ValidationException("User profile not found. Please complete your profile first.");
+
+        var currentWeight = userProfile.CurrentWeightKg;
+        if (!currentWeight.HasValue)
+            throw new ValidationException("Current weight not set in profile");
+
+        var maxChange = currentWeight.Value * 0.3m; // Max 30% change
+
+        if (request.GoalType == GoalType.WeightLoss && request.TargetValue >= currentWeight.Value)
+            throw new ValidationException("Target weight must be less than current weight for weight loss");
+
+        if (request.GoalType == GoalType.WeightGain && request.TargetValue <= currentWeight.Value)
+            throw new ValidationException("Target weight must be greater than current weight for weight gain");
+
+        var weightDifference = Math.Abs(request.TargetValue - currentWeight.Value);
+        if (weightDifference > maxChange)
+            throw new ValidationException("Target weight change cannot exceed 30% of current weight");
 
         return userProfile;
     }

@@ -65,7 +65,7 @@ public class UserRepository : IUserRepository
         }
     }
 
-    public async Task<PaginatedResult<ApplicationUser>> GetUsersAsync(int page, int size, string? search, string? role)
+    public async Task<PaginatedResult<ApplicationUser>> GetUsersAsync(int page, int pageSize, string? search, string? role)
     {
         var query = _context.ApplicationUsers
             .Include(u => u.UserProfile)
@@ -85,17 +85,17 @@ public class UserRepository : IUserRepository
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderBy(u => u.UserId)
-            .Skip((page - 1) * size)
-            .Take(size)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        var totalPages = (int)Math.Ceiling(totalItems / (double)size);
+        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
         return new PaginatedResult<ApplicationUser>
         {
             Items = items,
             CurrentPage = page,
-            PageSize = size,
+            PageSize = pageSize,
             TotalItems = totalItems,
             TotalPages = totalPages
         };

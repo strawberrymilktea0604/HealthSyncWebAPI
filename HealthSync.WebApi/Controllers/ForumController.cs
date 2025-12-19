@@ -329,8 +329,8 @@ public class ForumController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
                 return Unauthorized(new { success = false, message = "Invalid user" });
             }
@@ -348,49 +348,23 @@ public class ForumController : ControllerBase
             }
 
             // Validate at least one field is being updated
-            if (string.IsNullOrWhiteSpace(request.Title) && string.IsNullOrWhiteSpace(request.Content) && request.Image == null)
+            if (!IsUpdateRequestValid(request))
             {
                 return BadRequest(new { success = false, message = "At least one field (title, content, or image) must be provided" });
             }
 
-            // Update title if provided
-            if (!string.IsNullOrWhiteSpace(request.Title))
-            {
-                post.Title = request.Title.Trim();
-            }
-
-            // Update content if provided
-            if (!string.IsNullOrWhiteSpace(request.Content))
-            {
-                post.Content = request.Content.Trim();
-            }
+            // Update fields
+            UpdatePostFields(post, request);
 
             // Handle image update
             if (request.Image != null && request.Image.Length > 0)
             {
-                // Validate image: MIME type whitelist (JPEG, PNG, GIF, WebP)
-                var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
-                if (!allowedMimeTypes.Contains(request.Image.ContentType))
+                var imageResult = await HandleImageUpdateAsync(request.Image);
+                if (imageResult is not OkResult)
                 {
-                    return BadRequest(new { success = false, message = "Invalid image format. Allowed: JPEG, PNG, GIF, WebP" });
+                    return imageResult;
                 }
-
-                // Validate size: max 5MB
-                const long maxFileSize = 5 * 1024 * 1024;
-                if (request.Image.Length > maxFileSize)
-                {
-                    return BadRequest(new { success = false, message = "Image size must not exceed 5MB" });
-                }
-
-                try
-                {
-                    var newImageUrl = await _storageService.UploadAsync(request.Image, "forum-posts");
-                    post.ImageUrl = newImageUrl;
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, new { success = false, message = "Failed to upload image", error = ex.Message });
-                }
+                post.ImageUrl = ((OkObjectResult)imageResult).Value as string;
             }
 
             // Update the UpdatedAt timestamp
@@ -413,6 +387,63 @@ public class ForumController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+        }
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            return null;
+        }
+        return userId;
+    }
+
+    private bool IsUpdateRequestValid(UpdatePostRequest request)
+    {
+        return !string.IsNullOrWhiteSpace(request.Title) || 
+               !string.IsNullOrWhiteSpace(request.Content) || 
+               request.Image != null;
+    }
+
+    private void UpdatePostFields(Post post, UpdatePostRequest request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.Title))
+        {
+            post.Title = request.Title.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Content))
+        {
+            post.Content = request.Content.Trim();
+        }
+    }
+
+    private async Task<IActionResult> HandleImageUpdateAsync(IFormFile image)
+    {
+        // Validate image: MIME type whitelist (JPEG, PNG, GIF, WebP)
+        var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
+        if (!allowedMimeTypes.Contains(image.ContentType))
+        {
+            return BadRequest(new { success = false, message = "Invalid image format. Allowed: JPEG, PNG, GIF, WebP" });
+        }
+
+        // Validate size: max 5MB
+        const long maxFileSize = 5 * 1024 * 1024;
+        if (image.Length > maxFileSize)
+        {
+            return BadRequest(new { success = false, message = "Image size must not exceed 5MB" });
+        }
+
+        try
+        {
+            var newImageUrl = await _storageService.UploadAsync(image, "forum-posts");
+            return Ok(newImageUrl);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "Failed to upload image", error = ex.Message });
         }
     }
 

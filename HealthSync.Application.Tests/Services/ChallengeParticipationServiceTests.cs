@@ -14,7 +14,6 @@ public class ChallengeParticipationServiceTests
 {
     private readonly Mock<IChallengeParticipationRepository> _participationRepositoryMock;
     private readonly Mock<IChallengeRepository> _challengeRepositoryMock;
-    private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly Mock<IStorageService> _storageServiceMock;
     private readonly Mock<ILogger<ChallengeParticipationService>> _loggerMock;
     private readonly ChallengeParticipationService _service;
@@ -23,14 +22,12 @@ public class ChallengeParticipationServiceTests
     {
         _participationRepositoryMock = new Mock<IChallengeParticipationRepository>();
         _challengeRepositoryMock = new Mock<IChallengeRepository>();
-        _userRepositoryMock = new Mock<IUserRepository>();
         _storageServiceMock = new Mock<IStorageService>();
         _loggerMock = new Mock<ILogger<ChallengeParticipationService>>();
 
         _service = new ChallengeParticipationService(
             _participationRepositoryMock.Object,
             _challengeRepositoryMock.Object,
-            _userRepositoryMock.Object,
             _storageServiceMock.Object);
     }
 

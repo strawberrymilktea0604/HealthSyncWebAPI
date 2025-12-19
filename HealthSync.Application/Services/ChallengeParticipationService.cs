@@ -8,18 +8,15 @@ public class ChallengeParticipationService : IChallengeParticipationService
 {
     private readonly IChallengeParticipationRepository _participationRepository;
     private readonly IChallengeRepository _challengeRepository;
-    private readonly IUserRepository _userRepository;
     private readonly IStorageService _storageService;
 
     public ChallengeParticipationService(
         IChallengeParticipationRepository participationRepository,
         IChallengeRepository challengeRepository,
-        IUserRepository userRepository,
         IStorageService storageService)
     {
         _participationRepository = participationRepository;
         _challengeRepository = challengeRepository;
-        _userRepository = userRepository;
         _storageService = storageService;
     }
 
