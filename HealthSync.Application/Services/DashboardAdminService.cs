@@ -5,24 +5,23 @@ using Microsoft.Extensions.Logging;
 namespace HealthSync.Application.Services;
 
 /// <summary>
-/// Service for providing admin dashboard statistics and analytics
+/// Dependencies container for DashboardAdminService to reduce constructor parameters
 /// </summary>
-public class DashboardAdminService : IDashboardAdminService
+public class DashboardDependencies
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IWorkoutLogRepository _workoutLogRepository;
-    private readonly INutritionLogRepository _nutritionLogRepository;
-    private readonly IForumPostRepository _forumPostRepository;
-    private readonly IForumReplyRepository _forumReplyRepository;
-    private readonly IChallengeRepository _challengeRepository;
-    private readonly IChallengeParticipationRepository _participationRepository;
-    private readonly IExerciseRepository _exerciseRepository;
-    private readonly IForumCategoryRepository _forumCategoryRepository;
-    private readonly IExerciseSessionRepository _exerciseSessionRepository;
-    private readonly IUserProfileRepository _userProfileRepository;
-    private readonly ILogger<DashboardAdminService> _logger;
+    public IUserRepository UserRepository { get; }
+    public IWorkoutLogRepository WorkoutLogRepository { get; }
+    public INutritionLogRepository NutritionLogRepository { get; }
+    public IForumPostRepository ForumPostRepository { get; }
+    public IForumReplyRepository ForumReplyRepository { get; }
+    public IChallengeRepository ChallengeRepository { get; }
+    public IChallengeParticipationRepository ParticipationRepository { get; }
+    public IExerciseRepository ExerciseRepository { get; }
+    public IForumCategoryRepository ForumCategoryRepository { get; }
+    public IExerciseSessionRepository ExerciseSessionRepository { get; }
+    public IUserProfileRepository UserProfileRepository { get; }
 
-    public DashboardAdminService(
+    public DashboardDependencies(
         IUserRepository userRepository,
         IWorkoutLogRepository workoutLogRepository,
         INutritionLogRepository nutritionLogRepository,
@@ -33,20 +32,35 @@ public class DashboardAdminService : IDashboardAdminService
         IExerciseRepository exerciseRepository,
         IForumCategoryRepository forumCategoryRepository,
         IExerciseSessionRepository exerciseSessionRepository,
-        IUserProfileRepository userProfileRepository,
+        IUserProfileRepository userProfileRepository)
+    {
+        UserRepository = userRepository;
+        WorkoutLogRepository = workoutLogRepository;
+        NutritionLogRepository = nutritionLogRepository;
+        ForumPostRepository = forumPostRepository;
+        ForumReplyRepository = forumReplyRepository;
+        ChallengeRepository = challengeRepository;
+        ParticipationRepository = participationRepository;
+        ExerciseRepository = exerciseRepository;
+        ForumCategoryRepository = forumCategoryRepository;
+        ExerciseSessionRepository = exerciseSessionRepository;
+        UserProfileRepository = userProfileRepository;
+    }
+}
+
+/// <summary>
+/// Service for providing admin dashboard statistics and analytics
+/// </summary>
+public class DashboardAdminService : IDashboardAdminService
+{
+    private readonly DashboardDependencies _dependencies;
+    private readonly ILogger<DashboardAdminService> _logger;
+
+    public DashboardAdminService(
+        DashboardDependencies dependencies,
         ILogger<DashboardAdminService> logger)
     {
-        _userRepository = userRepository;
-        _workoutLogRepository = workoutLogRepository;
-        _nutritionLogRepository = nutritionLogRepository;
-        _forumPostRepository = forumPostRepository;
-        _forumReplyRepository = forumReplyRepository;
-        _challengeRepository = challengeRepository;
-        _participationRepository = participationRepository;
-        _exerciseRepository = exerciseRepository;
-        _forumCategoryRepository = forumCategoryRepository;
-        _exerciseSessionRepository = exerciseSessionRepository;
-        _userProfileRepository = userProfileRepository;
+        _dependencies = dependencies;
         _logger = logger;
     }
 
@@ -60,22 +74,22 @@ public class DashboardAdminService : IDashboardAdminService
             _logger.LogInformation("[DashboardAdminService] Calculating dashboard statistics");
 
             // Metric 1: Total active users
-            var allUsers = await _userRepository.GetAllAsync();
+            var allUsers = await _dependencies.UserRepository.GetAllAsync();
             var totalActiveUsers = allUsers.Count(u => u.IsActive);
 
-            _logger.LogInformation($"[DashboardAdminService] Total active users: {totalActiveUsers}");
+            _logger.LogInformation("Total active users: {TotalActiveUsers}", totalActiveUsers);
 
             // Metric 2: New users this month
             var today = DateTime.UtcNow;
-            var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
+            var firstDayOfMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var newUsersThisMonth = allUsers.Count(u => u.CreatedAt >= firstDayOfMonth);
 
-            _logger.LogInformation($"[DashboardAdminService] New users this month: {newUsersThisMonth}");
+            _logger.LogInformation("New users this month: {NewUsersThisMonth}", newUsersThisMonth);
 
             // Metric 3: Workouts logged today
-            var workoutLogsToday = await _workoutLogRepository.CountWorkoutLogsTodayAsync();
+            var workoutLogsToday = await _dependencies.WorkoutLogRepository.CountWorkoutLogsTodayAsync();
 
-            _logger.LogInformation($"[DashboardAdminService] Workout logs today: {workoutLogsToday}");
+            _logger.LogInformation("Workout logs today: {WorkoutLogsToday}", workoutLogsToday);
 
             var stats = new DashboardStatsDto
             {
@@ -103,65 +117,80 @@ public class DashboardAdminService : IDashboardAdminService
     {
         try
         {
-            _logger.LogInformation("[DashboardAdminService] Calculating detailed statistics");
+            _logger.LogInformation("Calculating detailed statistics");
 
             var today = DateTime.UtcNow;
-            var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
+            var firstDayOfMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
             // Get all users
-            var allUsers = await _userRepository.GetAllAsync();
+            var allUsers = await _dependencies.UserRepository.GetAllAsync();
             var totalActiveUsers = allUsers.Count(u => u.IsActive);
 
             // New users this month
             var newUsersThisMonth = allUsers.Count(u => u.CreatedAt >= firstDayOfMonth);
 
             // Workouts today
-            var workoutLogsToday = await _workoutLogRepository.CountWorkoutLogsTodayAsync();
+            var workoutLogsToday = await _dependencies.WorkoutLogRepository.CountWorkoutLogsTodayAsync();
 
             // Nutrition logs today
             var nutritionLogsToday = 0;
             try
             {
-                var allNutritionLogs = await _nutritionLogRepository.GetAllAsync();
+                var allNutritionLogs = await _dependencies.NutritionLogRepository.GetAllAsync();
                 nutritionLogsToday = allNutritionLogs.Count(nl => nl.LogDate.Date == today.Date);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get nutrition logs count");
+            }
 
             // Forum posts this month
             var forumPostsThisMonth = 0;
             try
             {
-                var allPosts = await _forumPostRepository.GetAllPostsAsync();
+                var allPosts = await _dependencies.ForumPostRepository.GetAllPostsAsync();
                 forumPostsThisMonth = allPosts.Count(p => p.CreatedAt >= firstDayOfMonth);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get forum posts count");
+            }
 
             // Forum replies this month
             var forumRepliesThisMonth = 0;
             try
             {
-                var allReplies = await _forumReplyRepository.GetAllAsync();
+                var allReplies = await _dependencies.ForumReplyRepository.GetAllAsync();
                 forumRepliesThisMonth = allReplies.Count(r => r.CreatedAt >= firstDayOfMonth);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get forum replies count");
+            }
 
             // Open challenges
             var openChallenges = 0;
             try
             {
-                var (challenges, _) = await _challengeRepository.GetAllAsync(1, int.MaxValue);
+                var (challenges, _) = await _dependencies.ChallengeRepository.GetAllAsync(1, int.MaxValue);
                 openChallenges = challenges.Count(c => c.Status.ToString() == "Open");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get open challenges count");
+            }
 
             // Pending challenge submissions
             var pendingSubmissions = 0;
             try
             {
-                var allParticipations = await _participationRepository.GetAllAsync();
+                var allParticipations = await _dependencies.ParticipationRepository.GetAllAsync();
                 pendingSubmissions = allParticipations.Count(p => p.Status.ToString() == "PendingApproval");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get pending submissions count");
+            }
 
             var stats = new DetailedDashboardStatsDto
             {
@@ -200,8 +229,8 @@ public class DashboardAdminService : IDashboardAdminService
             var topExercises = new List<TopExerciseDto>();
             try
             {
-                var allExercises = await _exerciseRepository.GetAllAsync();
-                var allSessions = await _exerciseSessionRepository.GetAllAsync();
+                var allExercises = await _dependencies.ExerciseRepository.GetAllAsync();
+                var allSessions = await _dependencies.ExerciseSessionRepository.GetAllAsync();
 
                 var exerciseUsage = allSessions
                     .GroupBy(s => s.ExerciseId)
@@ -241,9 +270,9 @@ public class DashboardAdminService : IDashboardAdminService
             var topForumCategories = new List<TopForumCategoryDto>();
             try
             {
-                var allCategories = await _forumCategoryRepository.GetAllAsync();
-                var allPosts = await _forumPostRepository.GetAllPostsAsync();
-                var allReplies = await _forumReplyRepository.GetAllAsync();
+                var allCategories = await _dependencies.ForumCategoryRepository.GetAllAsync();
+                var allPosts = await _dependencies.ForumPostRepository.GetAllPostsAsync();
+                var allReplies = await _dependencies.ForumReplyRepository.GetAllAsync();
 
                 var categoryActivity = allCategories
                     .Select(c => new TopForumCategoryDto
@@ -302,14 +331,14 @@ public class DashboardAdminService : IDashboardAdminService
         {
             _logger.LogInformation("[DashboardAdminService] Getting users by contribution points");
 
-            var userProfiles = await _userProfileRepository.GetAllUsersByContributionPointsAsync();
+            var userProfiles = await _dependencies.UserProfileRepository.GetAllUsersByContributionPointsAsync();
 
             var userContributions = new List<UserContributionDto>();
             int rank = 1;
 
             foreach (var profile in userProfiles)
             {
-                var user = await _userRepository.GetByIdAsync(profile.UserId);
+                var user = await _dependencies.UserRepository.GetByIdAsync(profile.UserId);
                 if (user != null)
                 {
                     userContributions.Add(new UserContributionDto

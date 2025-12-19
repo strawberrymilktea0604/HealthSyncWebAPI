@@ -404,7 +404,7 @@ public class AuthService : IAuthService
         response.EnsureSuccessStatusCode();
         
         var tokenResponse = await response.Content.ReadFromJsonAsync<GoogleTokenResponse>();
-        return tokenResponse?.id_token ?? throw new Exception("Failed to get ID token");
+        return tokenResponse?.id_token ?? throw new InvalidOperationException("Failed to get ID token from Google OAuth response");
     }
 }
 

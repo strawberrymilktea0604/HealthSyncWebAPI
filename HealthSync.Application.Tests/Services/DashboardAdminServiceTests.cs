@@ -40,7 +40,7 @@ public class DashboardAdminServiceTests
         _userProfileRepositoryMock = new Mock<IUserProfileRepository>();
         _loggerMock = new Mock<ILogger<DashboardAdminService>>();
 
-        _service = new DashboardAdminService(
+        var dependencies = new DashboardDependencies(
             _userRepositoryMock.Object,
             _workoutLogRepositoryMock.Object,
             _nutritionLogRepositoryMock.Object,
@@ -51,8 +51,9 @@ public class DashboardAdminServiceTests
             _exerciseRepositoryMock.Object,
             _forumCategoryRepositoryMock.Object,
             _exerciseSessionRepositoryMock.Object,
-            _userProfileRepositoryMock.Object,
-            _loggerMock.Object);
+            _userProfileRepositoryMock.Object);
+
+        _service = new DashboardAdminService(dependencies, _loggerMock.Object);
     }
 
     [Fact]
