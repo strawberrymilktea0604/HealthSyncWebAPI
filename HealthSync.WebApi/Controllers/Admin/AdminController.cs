@@ -11,16 +11,13 @@ namespace HealthSync.WebApi.Controllers.Admin;
 public class AdminController : ControllerBase
 {
     private readonly IUserService _userService;
-    private readonly IDashboardAdminService _dashboardService;
     private readonly ILogger<AdminController> _logger;
 
     public AdminController(
         IUserService userService,
-        IDashboardAdminService dashboardService,
         ILogger<AdminController> logger)
     {
         _userService = userService;
-        _dashboardService = dashboardService;
         _logger = logger;
     }
 

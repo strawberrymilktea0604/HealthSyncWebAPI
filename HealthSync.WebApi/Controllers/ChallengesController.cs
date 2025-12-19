@@ -15,16 +15,13 @@ namespace HealthSync.WebApi.Controllers;
 public class ChallengesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IStorageService _storageService;
     private readonly IChallengeParticipationService _participationService;
 
     public ChallengesController(
         ApplicationDbContext context, 
-        IStorageService storageService,
         IChallengeParticipationService participationService)
     {
         _context = context;
-        _storageService = storageService;
         _participationService = participationService;
     }
 

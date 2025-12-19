@@ -70,12 +70,18 @@ public class FileStorageService : IFileStorageService
         return url;
     }
 
-    public async Task DeleteFileAsync(string objectName)
+    public async Task DeleteFileAsync(string fileUrl)
     {
-        if (string.IsNullOrEmpty(objectName)) return;
+        if (string.IsNullOrEmpty(fileUrl)) return;
 
         try
         {
+            // Extract object name from URL (assuming format: scheme://endpoint/bucket/objectName)
+            var uri = new Uri(fileUrl);
+            var pathParts = uri.AbsolutePath.TrimStart('/').Split('/');
+            if (pathParts.Length < 2) return; // Invalid URL format
+
+            var objectName = string.Join("/", pathParts.Skip(1)); // Skip bucket name
             await _client.RemoveObjectAsync(new RemoveObjectArgs().WithBucket(_bucket).WithObject(objectName));
         }
         catch (MinioException)
@@ -84,10 +90,16 @@ public class FileStorageService : IFileStorageService
         }
     }
 
-    public async Task<bool> FileExistsAsync(string objectName)
+    public async Task<bool> FileExistsAsync(string fileUrl)
     {
         try
         {
+            // Extract object name from URL (assuming format: scheme://endpoint/bucket/objectName)
+            var uri = new Uri(fileUrl);
+            var pathParts = uri.AbsolutePath.TrimStart('/').Split('/');
+            if (pathParts.Length < 2) return false; // Invalid URL format
+
+            var objectName = string.Join("/", pathParts.Skip(1)); // Skip bucket name
             await _client.StatObjectAsync(new StatObjectArgs().WithBucket(_bucket).WithObject(objectName));
             return true;
         }

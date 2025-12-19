@@ -18,38 +18,8 @@ public class GoalService : IGoalService
 
     public async Task<GoalDto> CreateGoalAsync(CreateGoalRequest request, int userId)
     {
-        UserProfile? userProfile = null;
-
         // Validate business rules
-        if (request.EndDate <= request.StartDate)
-            throw new ValidationException("End date must be after start date");
-
-        if (request.StartDate < DateTime.UtcNow.Date)
-            throw new ValidationException("Start date cannot be in the past");
-
-        // Validate target value based on goal type
-        if (request.GoalType == GoalType.WeightLoss || request.GoalType == GoalType.WeightGain)
-        {
-            userProfile = await _userProfileRepository.GetByUserIdAsync(userId);
-            if (userProfile == null)
-                throw new ValidationException("User profile not found. Please complete your profile first.");
-
-            var currentWeight = userProfile.CurrentWeightKg;
-            if (!currentWeight.HasValue)
-                throw new ValidationException("Current weight not set in profile");
-
-            var maxChange = currentWeight.Value * 0.3m; // Max 30% change
-
-            if (request.GoalType == GoalType.WeightLoss && request.TargetValue >= currentWeight.Value)
-                throw new ValidationException("Target weight must be less than current weight for weight loss");
-
-            if (request.GoalType == GoalType.WeightGain && request.TargetValue <= currentWeight.Value)
-                throw new ValidationException("Target weight must be greater than current weight for weight gain");
-
-            var weightDifference = Math.Abs(request.TargetValue - currentWeight.Value);
-            if (weightDifference > maxChange)
-                throw new ValidationException("Target weight change cannot exceed 30% of current weight");
-        }
+        var userProfile = await ValidateCreateGoalRequestAsync(request, userId);
 
         // Create goal
         var goal = new Goal
@@ -379,5 +349,43 @@ public class GoalService : IGoalService
             CreatedAt = record.CreatedAt,
             UpdatedAt = record.UpdatedAt
         };
+    }
+
+    private async Task<UserProfile?> ValidateCreateGoalRequestAsync(CreateGoalRequest request, int userId)
+    {
+        // Validate business rules
+        if (request.EndDate <= request.StartDate)
+            throw new ValidationException("End date must be after start date");
+
+        if (request.StartDate < DateTime.UtcNow.Date)
+            throw new ValidationException("Start date cannot be in the past");
+
+        UserProfile? userProfile = null;
+
+        // Validate target value based on goal type
+        if (request.GoalType == GoalType.WeightLoss || request.GoalType == GoalType.WeightGain)
+        {
+            userProfile = await _userProfileRepository.GetByUserIdAsync(userId);
+            if (userProfile == null)
+                throw new ValidationException("User profile not found. Please complete your profile first.");
+
+            var currentWeight = userProfile.CurrentWeightKg;
+            if (!currentWeight.HasValue)
+                throw new ValidationException("Current weight not set in profile");
+
+            var maxChange = currentWeight.Value * 0.3m; // Max 30% change
+
+            if (request.GoalType == GoalType.WeightLoss && request.TargetValue >= currentWeight.Value)
+                throw new ValidationException("Target weight must be less than current weight for weight loss");
+
+            if (request.GoalType == GoalType.WeightGain && request.TargetValue <= currentWeight.Value)
+                throw new ValidationException("Target weight must be greater than current weight for weight gain");
+
+            var weightDifference = Math.Abs(request.TargetValue - currentWeight.Value);
+            if (weightDifference > maxChange)
+                throw new ValidationException("Target weight change cannot exceed 30% of current weight");
+        }
+
+        return userProfile;
     }
 }

@@ -18,39 +18,8 @@ public class WorkoutLogService : IWorkoutLogService
 
     public async Task<WorkoutLogResponse> CreateWorkoutLogAsync(int userId, CreateWorkoutLogRequest request)
     {
-        // Validate workout date
-        if (request.WorkoutDate > DateTime.UtcNow.Date)
-        {
-            throw new ArgumentException("Workout date cannot be in the future");
-        }
-
-        // Validate exercise sessions
-        foreach (var sessionRequest in request.ExerciseSessions)
-        {
-            var exercise = await _exerciseRepository.GetByIdAsync(sessionRequest.ExerciseId);
-            if (exercise == null)
-            {
-                throw new ArgumentException($"Exercise ID {sessionRequest.ExerciseId} not found");
-            }
-
-            // Business rules validation
-            if (sessionRequest.Sets <= 0)
-            {
-                throw new ArgumentException("Sets must be greater than 0");
-            }
-            if (sessionRequest.Reps <= 0)
-            {
-                throw new ArgumentException("Reps must be greater than 0");
-            }
-            if (sessionRequest.WeightKg < 0)
-            {
-                throw new ArgumentException("Weight cannot be negative");
-            }
-            if (sessionRequest.Rpe.HasValue && (sessionRequest.Rpe < 1 || sessionRequest.Rpe > 10))
-            {
-                throw new ArgumentException("RPE must be between 1 and 10");
-            }
-        }
+        // Validate request
+        await ValidateCreateWorkoutLogRequestAsync(request);
 
         // Create WorkoutLog
         var workoutLog = new WorkoutLog
@@ -266,5 +235,42 @@ public class WorkoutLogService : IWorkoutLogService
         }).ToList();
 
         return new PaginatedResult<WorkoutLogResponse>(items, result.TotalItems, result.CurrentPage, result.PageSize);
+    }
+
+    private async Task ValidateCreateWorkoutLogRequestAsync(CreateWorkoutLogRequest request)
+    {
+        // Validate workout date
+        if (request.WorkoutDate > DateTime.UtcNow.Date)
+        {
+            throw new ArgumentException("Workout date cannot be in the future");
+        }
+
+        // Validate exercise sessions
+        foreach (var sessionRequest in request.ExerciseSessions)
+        {
+            var exercise = await _exerciseRepository.GetByIdAsync(sessionRequest.ExerciseId);
+            if (exercise == null)
+            {
+                throw new ArgumentException($"Exercise ID {sessionRequest.ExerciseId} not found");
+            }
+
+            // Business rules validation
+            if (sessionRequest.Sets <= 0)
+            {
+                throw new ArgumentException("Sets must be greater than 0");
+            }
+            if (sessionRequest.Reps <= 0)
+            {
+                throw new ArgumentException("Reps must be greater than 0");
+            }
+            if (sessionRequest.WeightKg < 0)
+            {
+                throw new ArgumentException("Weight cannot be negative");
+            }
+            if (sessionRequest.Rpe.HasValue && (sessionRequest.Rpe < 1 || sessionRequest.Rpe > 10))
+            {
+                throw new ArgumentException("RPE must be between 1 and 10");
+            }
+        }
     }
 }

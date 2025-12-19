@@ -16,7 +16,6 @@ namespace HealthSync.WebApi.Tests.Controllers;
 public class ChallengesControllerTests : IDisposable
 {
     private readonly ApplicationDbContext _db;
-    private readonly Mock<IStorageService> _mockStorageService;
     private readonly Mock<IChallengeParticipationService> _mockParticipationService;
     private readonly ChallengesController _controller;
 
@@ -33,11 +32,10 @@ public class ChallengesControllerTests : IDisposable
         SeedTestData();
 
         // Setup mocks
-        _mockStorageService = new Mock<IStorageService>();
         _mockParticipationService = new Mock<IChallengeParticipationService>();
 
         // Create controller
-        _controller = new ChallengesController(_db, _mockStorageService.Object, _mockParticipationService.Object);
+        _controller = new ChallengesController(_db, _mockParticipationService.Object);
 
         // Setup authenticated user
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
