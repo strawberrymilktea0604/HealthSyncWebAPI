@@ -109,6 +109,7 @@ services:
   nginx:
     image: ${DOCKER_HUB_REPO}-nginx:latest # Bỏ hardcode fallback
     container_name: healthsync-nginx-prod
+    user: root  # Thêm để fix permission denied
     ports:
       - "9180:80"
       - "9443:443"
