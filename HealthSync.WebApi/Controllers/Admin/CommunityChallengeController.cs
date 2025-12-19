@@ -49,17 +49,17 @@ public class CommunityChallengeController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(new { success = false, message = "Invalid input data", errors = ModelState.Values.SelectMany(v => v.Errors) });
 
-            _logger.LogInformation($"Admin {adminId} creating new challenge: {request.Title}");
+            _logger.LogInformation("Admin {AdminId} creating new challenge: {Title}", adminId, request.Title);
 
             var (success, data, message) = await _challengeAdminService.CreateChallengeAsync(request, adminId);
 
             if (!success)
             {
-                _logger.LogWarning($"Failed to create challenge: {message}");
+                _logger.LogWarning("Failed to create challenge: {Message}", message);
                 return BadRequest(new { success = false, message });
             }
 
-            _logger.LogInformation($"Challenge created successfully by admin {adminId}");
+            _logger.LogInformation("Challenge created successfully by admin {AdminId}", adminId);
             return CreatedAtAction(nameof(GetChallenge), new { id = data?.ChallengeId }, 
                 new { success = true, data, message });
         }
@@ -88,7 +88,7 @@ public class CommunityChallengeController : ControllerBase
 
             if (!success)
             {
-                _logger.LogWarning($"Challenge {id} not found");
+                _logger.LogWarning("Challenge {ChallengeId} not found", id);
                 return NotFound(new { success = false, message });
             }
 
@@ -153,17 +153,17 @@ public class CommunityChallengeController : ControllerBase
             if (adminId == 0)
                 return Unauthorized(new { success = false, message = "Invalid admin ID" });
 
-            _logger.LogInformation($"Admin {adminId} updating challenge {id}");
+            _logger.LogInformation("Admin {AdminId} updating challenge {ChallengeId}", adminId, id);
 
             var (success, data, message) = await _challengeAdminService.UpdateChallengeAsync(id, request, adminId);
 
             if (!success)
             {
-                _logger.LogWarning($"Failed to update challenge {id}: {message}");
+                _logger.LogWarning("Failed to update challenge {ChallengeId}: {Message}", id, message);
                 return NotFound(new { success = false, message });
             }
 
-            _logger.LogInformation($"Challenge {id} updated successfully by admin {adminId}");
+            _logger.LogInformation("Challenge {ChallengeId} updated successfully by admin {AdminId}", id, adminId);
             return Ok(new { success = true, data, message });
         }
         catch (Exception ex)
@@ -192,17 +192,17 @@ public class CommunityChallengeController : ControllerBase
             if (adminId == 0)
                 return Unauthorized(new { success = false, message = "Invalid admin ID" });
 
-            _logger.LogInformation($"Admin {adminId} deleting challenge {id}");
+            _logger.LogInformation("Admin {AdminId} deleting challenge {ChallengeId}", adminId, id);
 
             var (success, message) = await _challengeAdminService.DeleteChallengeAsync(id, adminId);
 
             if (!success)
             {
-                _logger.LogWarning($"Failed to delete challenge {id}: {message}");
+                _logger.LogWarning("Failed to delete challenge {ChallengeId}: {Message}", id, message);
                 return NotFound(new { success = false, message });
             }
 
-            _logger.LogInformation($"Challenge {id} deleted successfully by admin {adminId}");
+            _logger.LogInformation("Challenge {ChallengeId} deleted successfully by admin {AdminId}", id, adminId);
             return NoContent();
         }
         catch (Exception ex)
@@ -260,17 +260,17 @@ public class CommunityChallengeController : ControllerBase
             if (adminId == 0)
                 return Unauthorized(new { success = false, message = "Invalid admin ID" });
 
-            _logger.LogInformation($"Admin {adminId} reviewing participation {participationId}");
+            _logger.LogInformation("Admin {AdminId} reviewing participation {ParticipationId}", adminId, participationId);
 
             var (success, data, message) = await _challengeAdminService.ReviewParticipationAsync(participationId, request, adminId);
 
             if (!success)
             {
-                _logger.LogWarning($"Failed to review participation {participationId}: {message}");
+                _logger.LogWarning("Failed to review participation {ParticipationId}: {Message}", participationId, message);
                 return NotFound(new { success = false, message });
             }
 
-            _logger.LogInformation($"Participation {participationId} reviewed successfully by admin {adminId}");
+            _logger.LogInformation("Participation {ParticipationId} reviewed successfully by admin {AdminId}", participationId, adminId);
             return Ok(new { success = true, data, message });
         }
         catch (Exception ex)
@@ -297,7 +297,7 @@ public class CommunityChallengeController : ControllerBase
             if (page < 1) page = 1;
             if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
-            _logger.LogInformation($"Retrieving pending approvals - Page: {page}, PageSize: {pageSize}");
+            _logger.LogInformation("Retrieving pending approvals - Page: {Page}, PageSize: {PageSize}", page, pageSize);
 
             var (success, data, message) = await _challengeAdminService.GetAllPendingApprovalsAsync(page, pageSize);
 
@@ -362,7 +362,7 @@ public class CommunityChallengeController : ControllerBase
             if (adminId == 0)
                 return Unauthorized(new { success = false, message = "Invalid admin ID" });
 
-            _logger.LogInformation($"Admin {adminId} approving participation {submissionId}");
+            _logger.LogInformation("Admin {AdminId} approving participation {SubmissionId}", adminId, submissionId);
 
             // Create approval request with Approved = true
             var approvalRequest = new ReviewParticipationRequest
@@ -375,11 +375,11 @@ public class CommunityChallengeController : ControllerBase
 
             if (!success)
             {
-                _logger.LogWarning($"Failed to approve participation {submissionId}: {message}");
+                _logger.LogWarning("Failed to approve participation {SubmissionId}: {Message}", submissionId, message);
                 return NotFound(new { success = false, message });
             }
 
-            _logger.LogInformation($"Participation {submissionId} approved successfully by admin {adminId}");
+            _logger.LogInformation("Participation {SubmissionId} approved successfully by admin {AdminId}", submissionId, adminId);
             return Ok(new { success = true, data, message });
         }
         catch (Exception ex)
@@ -411,7 +411,7 @@ public class CommunityChallengeController : ControllerBase
             if (adminId == 0)
                 return Unauthorized(new { success = false, message = "Invalid admin ID" });
 
-            _logger.LogInformation($"Admin {adminId} rejecting participation {submissionId}");
+            _logger.LogInformation("Admin {AdminId} rejecting participation {SubmissionId}", adminId, submissionId);
 
             // Set Approved to false for rejection
             request.Approved = false;
@@ -420,11 +420,11 @@ public class CommunityChallengeController : ControllerBase
 
             if (!success)
             {
-                _logger.LogWarning($"Failed to reject participation {submissionId}: {message}");
+                _logger.LogWarning("Failed to reject participation {SubmissionId}: {Message}", submissionId, message);
                 return NotFound(new { success = false, message });
             }
 
-            _logger.LogInformation($"Participation {submissionId} rejected successfully by admin {adminId}");
+            _logger.LogInformation("Participation {SubmissionId} rejected successfully by admin {AdminId}", submissionId, adminId);
             return Ok(new { success = true, data, message });
         }
         catch (Exception ex)

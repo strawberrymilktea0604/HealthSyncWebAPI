@@ -73,17 +73,17 @@ public class AdminController : ControllerBase
     {
         try
         {
-            _logger.LogInformation($"[AdminController] Setting rank title for user {id} to '{request.RankTitle}'");
+            _logger.LogInformation("[AdminController] Setting rank title for user {UserId} to '{RankTitle}'", id, request.RankTitle);
 
             var result = await _userService.SetUserRankTitleAsync(id, request.RankTitle);
 
             if (result is null)
             {
-                _logger.LogWarning($"[AdminController] User {id} not found for rank title update");
+                _logger.LogWarning("[AdminController] User {UserId} not found for rank title update", id);
                 return NotFound(new { success = false, message = "User not found" });
             }
 
-            _logger.LogInformation($"[AdminController] Rank title updated successfully for user {id}");
+            _logger.LogInformation("[AdminController] Rank title updated successfully for user {UserId}", id);
             return Ok(new { success = true, data = result, message = "User rank title updated successfully" });
         }
         catch (Exception ex)

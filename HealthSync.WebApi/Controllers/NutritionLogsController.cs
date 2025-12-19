@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using HealthSync.Application.DTOs;
@@ -37,7 +38,7 @@ public class NutritionLogsController : ControllerBase
     {
         try
         {
-            if (!DateTime.TryParse(date, out var logDate))
+            if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var logDate))
             {
                 return BadRequest(new { success = false, message = "Invalid date format. Use YYYY-MM-DD." });
             }
@@ -73,7 +74,7 @@ public class NutritionLogsController : ControllerBase
     {
         try
         {
-            if (!DateTime.TryParse(date, out var logDate))
+            if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var logDate))
             {
                 return BadRequest(new { success = false, message = "Invalid date format. Use YYYY-MM-DD." });
             }

@@ -107,9 +107,7 @@ public class FoodItemRepository : IFoodItemRepository
 
     public async Task<FoodItem> AddAsync(FoodItem foodItem)
     {
-        _context.FoodItems.Add(foodItem);
-        await _context.SaveChangesAsync();
-        return foodItem;
+        return await CreateAsync(foodItem);
     }
 
     public async Task<FoodItem?> UpdateAsync(int id, FoodItem foodItem)

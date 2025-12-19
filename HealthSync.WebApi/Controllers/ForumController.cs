@@ -48,7 +48,7 @@ public class ForumController : ControllerBase
                     DisplayOrder = c.DisplayOrder,
                     CreatedAt = c.CreatedAt,
                     UpdatedAt = c.UpdatedAt,
-                    PostCount = c.Posts.Count()
+                    PostCount = c.Posts.Count
                 })
                 .ToListAsync();
 
@@ -107,7 +107,7 @@ public class ForumController : ControllerBase
                     Excerpt = p.Content.Length > 200 ? p.Content.Substring(0, 200) : p.Content,
                     IsPinned = p.IsPinned,
                     IsLocked = p.IsLocked,
-                    ReplyCount = p.Replies.Count(),
+                    ReplyCount = p.Replies.Count,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt
                 })
@@ -619,7 +619,7 @@ public class ForumController : ControllerBase
                     Excerpt = p.Content.Length > 200 ? p.Content.Substring(0, 200) : p.Content,
                     IsPinned = p.IsPinned,
                     IsLocked = p.IsLocked,
-                    ReplyCount = p.Replies.Count(),
+                    ReplyCount = p.Replies.Count,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt
                 })

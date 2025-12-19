@@ -40,11 +40,11 @@ public class LeaderboardController : ControllerBase
             if (adminId == 0)
                 return Unauthorized(new { success = false, message = "Invalid admin ID" });
 
-            _logger.LogInformation($"[Admin {adminId}] Triggering leaderboard update job for all users");
+            _logger.LogInformation("[Admin {AdminId}] Triggering leaderboard update job for all users", adminId);
 
             await _leaderboardUpdateJob.UpdateUserContributionPointsAsync();
 
-            _logger.LogInformation($"[Admin {adminId}] Leaderboard update job completed successfully");
+            _logger.LogInformation("[Admin {AdminId}] Leaderboard update job completed successfully", adminId);
             return Ok(new
             {
                 success = true,
@@ -87,11 +87,11 @@ public class LeaderboardController : ControllerBase
             if (adminId == 0)
                 return Unauthorized(new { success = false, message = "Invalid admin ID" });
 
-            _logger.LogInformation($"[Admin {adminId}] Triggering leaderboard update job for UserId {userId}");
+            _logger.LogInformation("[Admin {AdminId}] Triggering leaderboard update job for UserId {UserId}", adminId, userId);
 
             await _leaderboardUpdateJob.UpdateUserContributionPointsAsync(userId);
 
-            _logger.LogInformation($"[Admin {adminId}] Leaderboard update job for UserId {userId} completed successfully");
+            _logger.LogInformation("[Admin {AdminId}] Leaderboard update job for UserId {UserId} completed successfully", adminId, userId);
             return Ok(new
             {
                 success = true,

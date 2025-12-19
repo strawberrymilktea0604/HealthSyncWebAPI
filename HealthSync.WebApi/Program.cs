@@ -32,7 +32,7 @@ var app = builder.Build();
 ConfigureMiddleware(app);
 ConfigureEndpoints(app);
 
-app.Run();
+await app.RunAsync();
 
 static void LoadEnvironmentVariables()
 {
@@ -225,18 +225,30 @@ static void RegisterApplicationServices(IServiceCollection services)
     services.AddScoped<HealthSync.Application.Interfaces.IChallengeAdminService, HealthSync.Application.Services.ChallengeAdminService>();
     services.AddScoped<HealthSync.Application.Interfaces.IChallengeParticipationService, HealthSync.Application.Services.ChallengeParticipationService>();
     services.AddScoped<HealthSync.Application.Interfaces.IDashboardAdminService, HealthSync.Application.Services.DashboardAdminService>();
-    services.AddScoped<HealthSync.Application.Services.DashboardDependencies>(sp => new HealthSync.Application.Services.DashboardDependencies(
+    services.AddScoped<HealthSync.Application.Services.UserDependencies>(sp => new HealthSync.Application.Services.UserDependencies(
         sp.GetRequiredService<HealthSync.Application.Interfaces.IUserRepository>(),
+        sp.GetRequiredService<HealthSync.Application.Interfaces.IUserProfileRepository>()
+    ));
+    services.AddScoped<HealthSync.Application.Services.WorkoutDependencies>(sp => new HealthSync.Application.Services.WorkoutDependencies(
         sp.GetRequiredService<HealthSync.Application.Interfaces.IWorkoutLogRepository>(),
-        sp.GetRequiredService<HealthSync.Application.Interfaces.INutritionLogRepository>(),
+        sp.GetRequiredService<HealthSync.Application.Interfaces.IExerciseRepository>(),
+        sp.GetRequiredService<HealthSync.Application.Interfaces.IExerciseSessionRepository>()
+    ));
+    services.AddScoped<HealthSync.Application.Services.ForumDependencies>(sp => new HealthSync.Application.Services.ForumDependencies(
         sp.GetRequiredService<HealthSync.Application.Interfaces.IForumPostRepository>(),
         sp.GetRequiredService<HealthSync.Application.Interfaces.IForumReplyRepository>(),
+        sp.GetRequiredService<HealthSync.Application.Interfaces.IForumCategoryRepository>()
+    ));
+    services.AddScoped<HealthSync.Application.Services.ChallengeDependencies>(sp => new HealthSync.Application.Services.ChallengeDependencies(
         sp.GetRequiredService<HealthSync.Application.Interfaces.IChallengeRepository>(),
-        sp.GetRequiredService<HealthSync.Application.Interfaces.IChallengeParticipationRepository>(),
-        sp.GetRequiredService<HealthSync.Application.Interfaces.IExerciseRepository>(),
-        sp.GetRequiredService<HealthSync.Application.Interfaces.IForumCategoryRepository>(),
-        sp.GetRequiredService<HealthSync.Application.Interfaces.IExerciseSessionRepository>(),
-        sp.GetRequiredService<HealthSync.Application.Interfaces.IUserProfileRepository>()
+        sp.GetRequiredService<HealthSync.Application.Interfaces.IChallengeParticipationRepository>()
+    ));
+    services.AddScoped<HealthSync.Application.Services.DashboardDependencies>(sp => new HealthSync.Application.Services.DashboardDependencies(
+        sp.GetRequiredService<HealthSync.Application.Services.UserDependencies>(),
+        sp.GetRequiredService<HealthSync.Application.Services.WorkoutDependencies>(),
+        sp.GetRequiredService<HealthSync.Application.Interfaces.INutritionLogRepository>(),
+        sp.GetRequiredService<HealthSync.Application.Services.ForumDependencies>(),
+        sp.GetRequiredService<HealthSync.Application.Services.ChallengeDependencies>()
     ));
     services.AddScoped<HealthSync.Application.Interfaces.IExerciseSessionRepository, HealthSync.Infrastructure.Repositories.ExerciseSessionRepository>();
 
@@ -377,7 +389,10 @@ static void ConfigureEndpoints(WebApplication app)
         });
 }
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+namespace HealthSync.WebApi
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+    {
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
 }
