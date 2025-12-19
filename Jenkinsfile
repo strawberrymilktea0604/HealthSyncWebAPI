@@ -349,46 +349,46 @@ pipeline {
                     ]) {
                         sh """
                             # 1. Tạo thư mục deploy (nếu chưa có)
-                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
-                                "mkdir -p ${PROD_DEPLOY_DIR}"
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@\$PROD_SERVER_IP \
+                                "mkdir -p \$PROD_DEPLOY_DIR"
                             
                             # 2. QUAN TRỌNG: Xóa file .env.prod cũ trước khi copy đè
                             # Giúp tránh lỗi 'Text file busy' hoặc 'Permission denied' do Docker đang lock file
-                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
-                                "rm -f ${PROD_DEPLOY_DIR}/.env.prod"
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@\$PROD_SERVER_IP \
+                                "rm -f \$PROD_DEPLOY_DIR/.env.prod"
 
                             # 3. Tạo file .env.prod tạm thời từ credential và thêm DOCKER_HUB_REPO
                             cp \$ENV_FILE_PATH .env.prod.tmp
                             echo "" >> .env.prod.tmp
                             echo "# Docker Hub Repository (injected by Jenkins)" >> .env.prod.tmp
-                            echo "DOCKER_HUB_REPO=\${DOCKER_HUB_REPO_VAR}" >> .env.prod.tmp
+                            echo "DOCKER_HUB_REPO=\$DOCKER_HUB_REPO_VAR" >> .env.prod.tmp
                             
                             # 4. Copy các file cấu hình
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                docker-compose.prod.yml \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                                docker-compose.prod.yml \$SSH_USER@\$PROD_SERVER_IP:\$PROD_DEPLOY_DIR/
                             
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                Dockerfile.cloudflared \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/
+                                Dockerfile.cloudflared \$SSH_USER@\$PROD_SERVER_IP:\$PROD_DEPLOY_DIR/
                             
                             # Copy file .env.prod đã được bổ sung DOCKER_HUB_REPO
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
-                                .env.prod.tmp \$SSH_USER@${PROD_SERVER_IP}:${PROD_DEPLOY_DIR}/.env.prod
+                                .env.prod.tmp \$SSH_USER@\$PROD_SERVER_IP:\$PROD_DEPLOY_DIR/.env.prod
                             
                             # Xóa file tạm
                             rm -f .env.prod.tmp
                             
                             # 4. Thực hiện Deploy
-                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} "
-                                cd ${PROD_DEPLOY_DIR}
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@\$PROD_SERVER_IP "
+                                cd \$PROD_DEPLOY_DIR
                                 
                                 # Update API image tag with actual value (not shell variable)
-                                sed -i 's|image: healthsync-api:latest|image: ${DOCKER_HUB_REPO_VAR}:latest|g' docker-compose.prod.yml
+                                sed -i 's|image: healthsync-api:latest|image: '\$DOCKER_HUB_REPO_VAR':latest|g' docker-compose.prod.yml
                                 
                                 # Update nginx image tag with actual value (not shell variable)
-                                sed -i 's|image: \\\${DOCKER_HUB_REPO:-healthsync}-nginx:latest|image: ${DOCKER_HUB_REPO_VAR}-nginx:latest|g' docker-compose.prod.yml
+                                sed -i 's|image: \\\${DOCKER_HUB_REPO:-healthsync}-nginx:latest|image: '\$DOCKER_HUB_REPO_VAR'-nginx:latest|g' docker-compose.prod.yml
                                 
                                 # Update migrator image tag with actual value (not shell variable)
-                                sed -i 's|image: healthsync-migrator:latest|image: ${DOCKER_HUB_REPO_VAR}-migrator:latest|g' docker-compose.prod.yml
+                                sed -i 's|image: healthsync-migrator:latest|image: '\$DOCKER_HUB_REPO_VAR'-migrator:latest|g' docker-compose.prod.yml
                                 
                                 # Verify replacements
                                 echo '=== Checking docker-compose.prod.yml images ==='
@@ -437,7 +437,7 @@ pipeline {
                         for (int i = 1; i <= maxRetries; i++) {
                             def checkResult = sh(
                                 script: """
-                                    ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                    ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@\$PROD_SERVER_IP" '
                                         STATUS=\$(docker inspect --format="{{.State.Health.Status}}" healthsync-nginx-prod 2>/dev/null || echo "not_found")
                                         if [ "\$STATUS" = "healthy" ]; then
                                             HTTP_CODE=\$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:9443/health)
@@ -471,7 +471,7 @@ pipeline {
                             
                             // Dump logs để debug
                             sh """
-                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@\$PROD_SERVER_IP" '
                                     echo "=== Container Status ==="
                                     docker ps -a | grep healthsync || true
                                     echo "=== Nginx Logs (last 20) ==="
@@ -504,7 +504,7 @@ pipeline {
                         // Lấy URLs từ logs
                         def apiUrl = sh(
                             script: """
-                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@\$PROD_SERVER_IP" '
                                     docker logs healthsync-tunnel-nginx 2>&1 | grep -oP "https://[^\\s]+\\.trycloudflare\\.com" | head -1 || echo "NOT_READY"
                                 '
                             """,
@@ -513,7 +513,7 @@ pipeline {
                         
                         def minioUrl = sh(
                             script: """
-                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@\$PROD_SERVER_IP" '
                                     docker logs healthsync-tunnel-minio 2>&1 | grep -oP "https://[^\\s]+\\.trycloudflare\\.com" | head -1 || echo "NOT_READY"
                                 '
                             """,
@@ -522,7 +522,7 @@ pipeline {
                         
                         def consoleUrl = sh(
                             script: """
-                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
+                                ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@\$PROD_SERVER_IP" '
                                     docker logs healthsync-tunnel-minio-console 2>&1 | grep -oP "https://[^\\s]+\\.trycloudflare\\.com" | head -1 || echo "NOT_READY"
                                 '
                             """,
@@ -559,8 +559,8 @@ pipeline {
                         
                         // Ghi URLs vào file trên server
                         sh """
-                            ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@${PROD_SERVER_IP}" '
-                                cd ${PROD_DEPLOY_DIR}
+                            ssh -p 2222 -o StrictHostKeyChecking=no -i "\$SSH_KEY" "\$SSH_USER@\$PROD_SERVER_IP" '
+                                cd \$PROD_DEPLOY_DIR
                                 echo "┌────────────────────────────────────────────────────────────┐" > tunnel-urls.txt
                                 echo "│ Cloudflare Quick Tunnel URLs - HealthSync Production     │" >> tunnel-urls.txt
                                 
@@ -615,13 +615,13 @@ pipeline {
                     echo "🔒 Admin Init:        POST ${env.TUNNEL_API_URL}/api/v1/admin/initialize"
                     echo ""
                     echo "⚠️  IMPORTANT: These URLs will change after restart!"
-                    echo "📄 URLs saved to: ${PROD_DEPLOY_DIR}/tunnel-urls.txt on server"
+                    echo "📄 URLs saved to: \${PROD_DEPLOY_DIR}/tunnel-urls.txt on server"
                     echo "🔄 To get updated URLs: ssh into server and run ./get-tunnel-urls.ps1"
                 } else {
                     echo "⚠️  Cloudflare Tunnel URLs not ready yet."
                     echo "   Please wait a moment and check logs on server:"
-                    echo "   ssh ${PROD_SERVER_USER}@${PROD_SERVER_IP} -p 2222"
-                    echo "   cd ${PROD_DEPLOY_DIR}"
+                    echo "   ssh \${PROD_SERVER_USER}@\${PROD_SERVER_IP} -p 2222"
+                    echo "   cd \${PROD_DEPLOY_DIR}"
                     echo "   docker logs healthsync-tunnel-nginx"
                 }
                 echo "===================================================="
@@ -639,8 +639,8 @@ pipeline {
                     // Dùng SSH để chạy lệnh logs trên server PROD (chứ không phải trên Jenkins)
                     // Thêm --tail=50 để chỉ lấy 50 dòng cuối, tránh spam log
                     sh """
-                        ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${PROD_SERVER_IP} \
-                        "cd ${PROD_DEPLOY_DIR} && docker compose -f docker-compose.prod.yml logs --tail=50"
+                        ssh -p 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@\$PROD_SERVER_IP \
+                        "cd \$PROD_DEPLOY_DIR && docker compose -f docker-compose.prod.yml logs --tail=50"
                     """
                 }
             }
