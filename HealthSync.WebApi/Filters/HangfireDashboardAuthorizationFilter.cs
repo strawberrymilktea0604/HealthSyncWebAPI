@@ -1,4 +1,5 @@
 using Hangfire.Dashboard;
+using System.Security.Claims;
 
 namespace HealthSync.WebApi.Filters;
 
@@ -11,11 +12,20 @@ public class HangfireDashboardAuthorizationFilter : IDashboardAuthorizationFilte
     public bool Authorize(DashboardContext context)
     {
         var httpContext = context.GetHttpContext();
+        return AuthorizeUser(httpContext.User);
+    }
 
-        // Allow all authenticated users in development
-        // In production, you should implement proper authorization
-        // For now, we'll allow all requests to access the dashboard
-        // TODO: Implement Admin-only access in production
-        return true;
+    // Extracted for testing
+    public bool AuthorizeUser(ClaimsPrincipal user)
+    {
+        // Check if user is authenticated
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            return false;
+        }
+
+        // Check if user has Admin role
+        var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
+        return roleClaim == "Admin";
     }
 }

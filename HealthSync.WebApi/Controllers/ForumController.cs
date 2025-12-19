@@ -7,6 +7,7 @@ using HealthSync.Application.DTOs;
 using HealthSync.Domain.Entities;
 using HealthSync.Application.Interfaces;
 using System.Security.Claims;
+using Hangfire;
 
 namespace HealthSync.WebApi.Controllers;
 
@@ -18,12 +19,14 @@ public class ForumController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IFileStorageService _storageService;
     private readonly IForumPostRepository _postRepository;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
-    public ForumController(ApplicationDbContext db, IFileStorageService storageService, IForumPostRepository postRepository)
+    public ForumController(ApplicationDbContext db, IFileStorageService storageService, IForumPostRepository postRepository, IBackgroundJobClient backgroundJobClient)
     {
         _db = db;
         _storageService = storageService;
         _postRepository = postRepository;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     /// <summary>
@@ -250,7 +253,8 @@ public class ForumController : ControllerBase
 
             await _postRepository.AddAsync(post);
 
-            // TODO: Trigger background job to update user points (+2 for post)
+            // Trigger background job to update user points (+2 for post)
+            _backgroundJobClient.Enqueue<ILeaderboardUpdateJob>(job => job.UpdateUserContributionPointsAsync(userId));
 
             return CreatedAtAction(nameof(GetPostDetails), new { postId = post.PostId },
                 new { success = true, data = new { postId = post.PostId, imageUrl = imageUrl }, message = "Post created successfully" });
@@ -304,7 +308,8 @@ public class ForumController : ControllerBase
             _db.Replies.Add(reply);
             await _db.SaveChangesAsync();
 
-            // TODO: Trigger background job to update user points (+1 for reply)
+            // Trigger background job to update user points (+1 for reply)
+            _backgroundJobClient.Enqueue<ILeaderboardUpdateJob>(job => job.UpdateUserContributionPointsAsync(userId));
 
             return CreatedAtAction(nameof(GetPostDetails), new { postId = postId },
                 new { success = true, data = new { replyId = reply.ReplyId }, message = "Reply created successfully" });
