@@ -157,7 +157,12 @@ static void ConfigureServices(WebApplicationBuilder builder)
     builder.Services.AddHangfireServer();
 
     // Add Authentication (JWT only, no Identity)
-    Console.WriteLine($"[JWT DEBUG] SecretKey: {builder.Configuration["JwtSettings:SecretKey"]?.Substring(0, 20)}...");
+    var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"];
+    if (string.IsNullOrEmpty(jwtSecretKey))
+    {
+        throw new InvalidOperationException("JWT Secret Key is not configured. Please set it via User Secrets (development) or JWT_SECRET_KEY environment variable (production).");
+    }
+    Console.WriteLine($"[JWT DEBUG] SecretKey configured: {jwtSecretKey.Substring(0, 10)}...");
     Console.WriteLine($"[JWT DEBUG] Issuer: {builder.Configuration["JwtSettings:Issuer"]}");
     Console.WriteLine($"[JWT DEBUG] Audience: {builder.Configuration["JwtSettings:Audience"]}");
 
@@ -167,7 +172,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"] ?? "default-secret-key")),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
                 ValidateIssuer = true,
                 ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
                 ValidateAudience = true,

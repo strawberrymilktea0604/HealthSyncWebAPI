@@ -21,16 +21,16 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install .NET 8.0 SDK via Microsoft package repository
-ADD https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb packages-microsoft-prod.deb
-RUN dpkg -i packages-microsoft-prod.deb && \
+RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
     rm packages-microsoft-prod.deb && \
     apt-get update && \
     apt-get install -y --no-install-recommends dotnet-sdk-8.0 && \
     rm -rf /var/lib/apt/lists/*
 
 # Install SonarScanner CLI
-RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip -O sonar-scanner.zip && \
-    unzip sonar-scanner.zip && \
+ADD https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip sonar-scanner.zip
+RUN unzip sonar-scanner.zip && \
     mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner && \
     rm sonar-scanner.zip
 

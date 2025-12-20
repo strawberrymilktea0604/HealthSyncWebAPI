@@ -153,7 +153,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            var idToken = await _authService.ExchangeGoogleCodeAsync(code);
+            await _authService.ExchangeGoogleCodeAsync(code);
             return Content($@"
 <html>
 <body>
