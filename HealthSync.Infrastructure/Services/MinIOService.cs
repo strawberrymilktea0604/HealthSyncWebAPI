@@ -19,7 +19,7 @@ public class MinioService : IStorageService, IFileStorageService
         var accessKey = configuration["MinIO:AccessKey"] ?? "minioadmin";
         var secretKey = configuration["MinIO:SecretKey"] ?? "minioadmin";
         _bucket = configuration["MinIO:BucketName"] ?? "healthsync-images";
-        _useSsl = bool.TryParse(configuration["MinIO:UseSSL"], out var useSsl) ? useSsl : false;
+        bool.TryParse(configuration["MinIO:UseSSL"], out _useSsl);
 
         // Minio client accepts endpoint without scheme
         _client = new MinioClient()
