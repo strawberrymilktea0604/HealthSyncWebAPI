@@ -86,6 +86,7 @@ jenkins_data/
 *.http
 *.ps1
 *.sh
+!migrate.sh
 Jenkinsfile
 nginx.conf
 docker-compose*.yml
