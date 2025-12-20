@@ -1,0 +1,227 @@
+Summary
+  Generated on: 12/20/2025 - 8:21:51 AM
+  Coverage date: 12/20/2025 - 8:21:25 AM - 12/20/2025 - 8:21:35 AM
+  Parser: MultiReport (3x Cobertura)
+  Assemblies: 4
+  Classes: 199
+  Files: 188
+  Line coverage: 22.5%
+  Covered lines: 3224
+  Uncovered lines: 11052
+  Coverable lines: 14276
+  Total lines: 21032
+  Branch coverage: 27% (401 of 1484)
+  Covered branches: 401
+  Total branches: 1484
+  Method coverage: 60% (763 of 1271)
+  Full method coverage: 54.9% (698 of 1271)
+  Covered methods: 763
+  Fully covered methods: 698
+  Total methods: 1271
+
+HealthSync.Application                                                                    63.6%
+  HealthSync.Application.DTOs.Auth.AuthResponse                                            100%
+  HealthSync.Application.DTOs.Auth.GoogleLoginRequest                                      100%
+  HealthSync.Application.DTOs.Auth.InitializeAdminRequest                                    0%
+  HealthSync.Application.DTOs.Auth.LoginRequest                                            100%
+  HealthSync.Application.DTOs.Auth.RefreshTokenRequest                                     100%
+  HealthSync.Application.DTOs.Auth.RegisterRequest                                         100%
+  HealthSync.Application.DTOs.Challenges.ChallengeDto                                      100%
+  HealthSync.Application.DTOs.Challenges.CreateChallengeRequest                            100%
+  HealthSync.Application.DTOs.Challenges.ParticipationDto                                  100%
+  HealthSync.Application.DTOs.Challenges.ReviewParticipationRequest                        100%
+  HealthSync.Application.DTOs.Challenges.SubmitChallengeRequest                            100%
+  HealthSync.Application.DTOs.Challenges.UpdateChallengeRequest                            100%
+  HealthSync.Application.DTOs.Dashboard.DashboardStatsDto                                  100%
+  HealthSync.Application.DTOs.Dashboard.DetailedDashboardStatsDto                          100%
+  HealthSync.Application.DTOs.Dashboard.TopContentDto                                      100%
+  HealthSync.Application.DTOs.Dashboard.TopExerciseDto                                     100%
+  HealthSync.Application.DTOs.Dashboard.TopForumCategoryDto                                100%
+  HealthSync.Application.DTOs.Dashboard.UserContributionDto                                100%
+  HealthSync.Application.DTOs.Exercises.CreateExerciseRequest                             66.6%
+  HealthSync.Application.DTOs.Exercises.ExerciseDto                                        100%
+  HealthSync.Application.DTOs.Exercises.ExerciseResponse                                     0%
+  HealthSync.Application.DTOs.Exercises.UpdateExerciseRequest                             66.6%
+  HealthSync.Application.DTOs.FoodItems.CreateFoodItemRequest                              100%
+  HealthSync.Application.DTOs.FoodItems.FoodItemDto                                       81.2%
+  HealthSync.Application.DTOs.FoodItems.UpdateFoodItemRequest                              100%
+  HealthSync.Application.DTOs.Forum.CategoryDto                                            100%
+  HealthSync.Application.DTOs.Forum.CreatePostRequest                                        0%
+  HealthSync.Application.DTOs.Forum.CreatePostWithImageRequest                             100%
+  HealthSync.Application.DTOs.Forum.CreateReplyRequest                                     100%
+  HealthSync.Application.DTOs.Forum.PostDetailDto                                            0%
+  HealthSync.Application.DTOs.Forum.PostSummaryDto                                         100%
+  HealthSync.Application.DTOs.Forum.ReplyDto                                                 0%
+  HealthSync.Application.DTOs.Forum.UpdatePostRequest                                        0%
+  HealthSync.Application.DTOs.Forum.UpdateReplyRequest                                       0%
+  HealthSync.Application.DTOs.ForumCategories.CreateForumCategoryRequest                   100%
+  HealthSync.Application.DTOs.ForumCategories.ForumCategoryDto                             100%
+  HealthSync.Application.DTOs.ForumCategories.UpdateForumCategoryRequest                   100%
+  HealthSync.Application.DTOs.Goals.ChartDataDto                                           100%
+  HealthSync.Application.DTOs.Goals.CreateGoalRequest                                      100%
+  HealthSync.Application.DTOs.Goals.CreateProgressRecordRequest                              0%
+  HealthSync.Application.DTOs.Goals.GoalDto                                                100%
+  HealthSync.Application.DTOs.Goals.GoalResponse                                             0%
+  HealthSync.Application.DTOs.Goals.ProgressPointDto                                         0%
+  HealthSync.Application.DTOs.Goals.ProgressRecordDto                                      100%
+  HealthSync.Application.DTOs.Goals.RecordProgressRequest                                  100%
+  HealthSync.Application.DTOs.Goals.UpdateGoalRequest                                        0%
+  HealthSync.Application.DTOs.Goals.UpdateProgressRequest                                    0%
+  HealthSync.Application.DTOs.Goals.UserProgressChartDto                                     0%
+  HealthSync.Application.DTOs.Leaderboard.LeaderboardEntryDto                              100%
+  HealthSync.Application.DTOs.Leaderboard.LeaderboardUserDto                               100%
+  HealthSync.Application.DTOs.Leaderboard.UserRankDto                                      100%
+  HealthSync.Application.DTOs.Nutrition.CreateFoodEntryRequest                             100%
+  HealthSync.Application.DTOs.Nutrition.CreateNutritionLogRequest                            0%
+  HealthSync.Application.DTOs.Nutrition.FoodEntryResponse                                  100%
+  HealthSync.Application.DTOs.Nutrition.FoodItemResponse                                   100%
+  HealthSync.Application.DTOs.Nutrition.MacroBreakdownDto                                  100%
+  HealthSync.Application.DTOs.Nutrition.NutritionLogResponse                               100%
+  HealthSync.Application.DTOs.Nutrition.NutritionSummaryDto                                100%
+  HealthSync.Application.DTOs.Nutrition.UpdateNutritionLogNotesRequest                       0%
+  HealthSync.Application.DTOs.PaginatedResult<T>                                           100%
+  HealthSync.Application.DTOs.Users.AdminUserDetailsDto                                      0%
+  HealthSync.Application.DTOs.Users.AdminUserDto                                             0%
+  HealthSync.Application.DTOs.Users.CreateUserProfileRequest                                 0%
+  HealthSync.Application.DTOs.Users.LockUserRequest                                          0%
+  HealthSync.Application.DTOs.Users.SetActiveRequest                                         0%
+  HealthSync.Application.DTOs.Users.SetRankTitleRequest                                      0%
+  HealthSync.Application.DTOs.Users.SetRoleRequest                                           0%
+  HealthSync.Application.DTOs.Users.SetUserRankTitleRequest                                  0%
+  HealthSync.Application.DTOs.Users.UpdateUserProfileRequest                              22.2%
+  HealthSync.Application.DTOs.Users.UpdateUserRoleRequest                                    0%
+  HealthSync.Application.DTOs.Users.UpdateUserStatusRequest                                  0%
+  HealthSync.Application.DTOs.Users.UserProfileDto                                         100%
+  HealthSync.Application.DTOs.Users.UserProfileResponse                                    100%
+  HealthSync.Application.DTOs.Users.UserRankTitleDto                                       100%
+  HealthSync.Application.DTOs.Users.UserStatsDto                                           100%
+  HealthSync.Application.DTOs.WorkoutLogs.CreateExerciseSessionRequest                     100%
+  HealthSync.Application.DTOs.WorkoutLogs.CreateWorkoutLogRequest                          100%
+  HealthSync.Application.DTOs.WorkoutLogs.ExerciseSessionDto                               100%
+  HealthSync.Application.DTOs.WorkoutLogs.WorkoutLogResponse                               100%
+  HealthSync.Application.Features.Auth.Services.AuthService                                  0%
+  HealthSync.Application.Features.Auth.Services.GoogleTokenResponse                          0%
+  HealthSync.Application.Features.Users.Services.UserProfileService                          0%
+  HealthSync.Application.Services.ChallengeAdminService                                   85.3%
+  HealthSync.Application.Services.ChallengeDependencies                                    100%
+  HealthSync.Application.Services.ChallengeParticipationService                           69.4%
+  HealthSync.Application.Services.DashboardAdminService                                   88.8%
+  HealthSync.Application.Services.DashboardDependencies                                    100%
+  HealthSync.Application.Services.ExerciseService                                          100%
+  HealthSync.Application.Services.FoodItemService                                          100%
+  HealthSync.Application.Services.ForumAdminService                                       78.3%
+  HealthSync.Application.Services.ForumCategoryService                                     100%
+  HealthSync.Application.Services.ForumDependencies                                        100%
+  HealthSync.Application.Services.GoalService                                             57.8%
+  HealthSync.Application.Services.LeaderboardCalculationService                              0%
+  HealthSync.Application.Services.LeaderboardService                                       100%
+  HealthSync.Application.Services.NutritionLogService                                     54.1%
+  HealthSync.Application.Services.PointCalculationService                                   85%
+  HealthSync.Application.Services.UserDependencies                                         100%
+  HealthSync.Application.Services.UserService                                             97.8%
+  HealthSync.Application.Services.WorkoutDependencies                                      100%
+  HealthSync.Application.Services.WorkoutLogService                                       86.9%
+  HealthSync.Application.Validators.Exercises.CreateExerciseRequestValidator                 0%
+  HealthSync.Application.Validators.Exercises.UpdateExerciseRequestValidator                 0%
+  HealthSync.Application.Validators.FoodItems.CreateFoodItemRequestValidator                 0%
+  HealthSync.Application.Validators.FoodItems.UpdateFoodItemRequestValidator                 0%
+  HealthSync.Application.Validators.ForumCategories.CreateForumCategoryRequestValidator      0%
+  HealthSync.Application.Validators.ForumCategories.UpdateForumCategoryRequestValidator      0%
+  HealthSync.Application.Validators.Goals.CreateGoalValidator                             97.5%
+  HealthSync.Application.Validators.Goals.RecordProgressValidator                          100%
+  HealthSync.Application.Validators.Goals.UpdateGoalValidator                                0%
+  HealthSync.Application.Validators.Goals.UpdateProgressValidator                            0%
+  HealthSync.Application.Validators.Users.UpdateUserProfileValidator                         0%
+
+HealthSync.Domain                                                                         93.4%
+  HealthSync.Domain.Entities.ApplicationUser                                              94.7%
+  HealthSync.Domain.Entities.Challenge                                                     100%
+  HealthSync.Domain.Entities.ChallengeParticipation                                       87.5%
+  HealthSync.Domain.Entities.Exercise                                                      100%
+  HealthSync.Domain.Entities.ExerciseSession                                               100%
+  HealthSync.Domain.Entities.FoodEntry                                                     100%
+  HealthSync.Domain.Entities.FoodItem                                                     88.8%
+  HealthSync.Domain.Entities.ForumCategory                                                 100%
+  HealthSync.Domain.Entities.Goal                                                          100%
+  HealthSync.Domain.Entities.Leaderboard                                                   100%
+  HealthSync.Domain.Entities.Notification                                                    0%
+  HealthSync.Domain.Entities.NutritionLog                                                  100%
+  HealthSync.Domain.Entities.Post                                                          100%
+  HealthSync.Domain.Entities.ProgressRecord                                                100%
+  HealthSync.Domain.Entities.Reply                                                         100%
+  HealthSync.Domain.Entities.UserProfile                                                   100%
+  HealthSync.Domain.Entities.WorkoutLog                                                    100%
+
+HealthSync.Infrastructure                                                                  6.3%
+  HealthSync.Infrastructure.BackgroundJobs.LeaderboardUpdateJob                              0%
+  HealthSync.Infrastructure.Data.ApplicationDbContext                                      100%
+  HealthSync.Infrastructure.Data.Configurations.ApplicationUserConfiguration               100%
+  HealthSync.Infrastructure.Data.Configurations.ChallengeConfiguration                     100%
+  HealthSync.Infrastructure.Data.Configurations.ChallengeParticipationConfiguration        100%
+  HealthSync.Infrastructure.Data.Configurations.ExerciseConfiguration                      100%
+  HealthSync.Infrastructure.Data.Configurations.ExerciseSessionConfiguration               100%
+  HealthSync.Infrastructure.Data.Configurations.FoodEntryConfiguration                     100%
+  HealthSync.Infrastructure.Data.Configurations.FoodItemConfiguration                      100%
+  HealthSync.Infrastructure.Data.Configurations.ForumCategoryConfiguration                 100%
+  HealthSync.Infrastructure.Data.Configurations.GoalConfiguration                          100%
+  HealthSync.Infrastructure.Data.Configurations.LeaderboardConfiguration                   100%
+  HealthSync.Infrastructure.Data.Configurations.NutritionLogConfiguration                  100%
+  HealthSync.Infrastructure.Data.Configurations.PostConfiguration                          100%
+  HealthSync.Infrastructure.Data.Configurations.ProgressRecordConfiguration                100%
+  HealthSync.Infrastructure.Data.Configurations.ReplyConfiguration                         100%
+  HealthSync.Infrastructure.Data.Configurations.UserProfileConfiguration                   100%
+  HealthSync.Infrastructure.Data.Configurations.WorkoutLogConfiguration                    100%
+  HealthSync.Infrastructure.Migrations.AddHangfireJobStorage                                 0%
+  HealthSync.Infrastructure.Migrations.AddImageUrlToPost                                     0%
+  HealthSync.Infrastructure.Migrations.ApplicationDbContextModelSnapshot                     0%
+  HealthSync.Infrastructure.Migrations.Baseline                                              0%
+  HealthSync.Infrastructure.Migrations.InitialCreate                                         0%
+  HealthSync.Infrastructure.Repositories.ChallengeParticipationRepository                    0%
+  HealthSync.Infrastructure.Repositories.ChallengeRepository                                 0%
+  HealthSync.Infrastructure.Repositories.ExerciseRepository                                  0%
+  HealthSync.Infrastructure.Repositories.ExerciseSessionRepository                           0%
+  HealthSync.Infrastructure.Repositories.FoodItemRepository                                  0%
+  HealthSync.Infrastructure.Repositories.ForumCategoryRepository                             0%
+  HealthSync.Infrastructure.Repositories.ForumPostRepository                                 0%
+  HealthSync.Infrastructure.Repositories.ForumReplyRepository                                0%
+  HealthSync.Infrastructure.Repositories.GoalRepository                                      0%
+  HealthSync.Infrastructure.Repositories.LeaderboardRepository                               0%
+  HealthSync.Infrastructure.Repositories.NotificationRepository                              0%
+  HealthSync.Infrastructure.Repositories.NutritionLogRepository                              0%
+  HealthSync.Infrastructure.Repositories.UserProfileRepository                               0%
+  HealthSync.Infrastructure.Repositories.UserRepository                                      0%
+  HealthSync.Infrastructure.Repositories.WorkoutLogRepository                                0%
+  HealthSync.Infrastructure.Services.FileStorageService                                      0%
+  HealthSync.Infrastructure.Services.JwtService                                              0%
+  HealthSync.Infrastructure.Services.MinioService                                            0%
+
+HealthSync.WebApi                                                                         15.8%
+  HealthSync.WebApi.Controllers.Admin.AdminController                                        0%
+  HealthSync.WebApi.Controllers.Admin.CommunityChallengeController                           0%
+  HealthSync.WebApi.Controllers.Admin.DashboardController                                    0%
+  HealthSync.WebApi.Controllers.Admin.ExercisesController                                    0%
+  HealthSync.WebApi.Controllers.Admin.FoodController                                         0%
+  HealthSync.WebApi.Controllers.Admin.ForumCategoriesController                              0%
+  HealthSync.WebApi.Controllers.Admin.ForumModerationController                              0%
+  HealthSync.WebApi.Controllers.Admin.LeaderboardController                                  0%
+  HealthSync.WebApi.Controllers.Admin.UserRankController                                     0%
+  HealthSync.WebApi.Controllers.Admin.UsersController                                        0%
+  HealthSync.WebApi.Controllers.Admin.UserStatusController                                   0%
+  HealthSync.WebApi.Controllers.Admin.UserTitleController                                    0%
+  HealthSync.WebApi.Controllers.AuthController                                            41.9%
+  HealthSync.WebApi.Controllers.ChallengeParticipationController                             0%
+  HealthSync.WebApi.Controllers.ChallengesController                                      90.3%
+  HealthSync.WebApi.Controllers.CommunityChallengeController                                 0%
+  HealthSync.WebApi.Controllers.FoodsController                                              0%
+  HealthSync.WebApi.Controllers.ForumController                                           31.4%
+  HealthSync.WebApi.Controllers.GoalsController                                             26%
+  HealthSync.WebApi.Controllers.LeaderboardController                                        0%
+  HealthSync.WebApi.Controllers.NutritionLogsController                                   28.8%
+  HealthSync.WebApi.Controllers.ProfileController                                            0%
+  HealthSync.WebApi.Controllers.ProgressRecordsController                                    0%
+  HealthSync.WebApi.Controllers.UsersController                                           72.5%
+  HealthSync.WebApi.Controllers.WorkoutLogsController                                     66.6%
+  HealthSync.WebApi.Filters.FileUploadOperationFilter                                        0%
+  HealthSync.WebApi.Filters.HangfireDashboardAuthorizationFilter                          63.6%
+  HealthSync.WebApi.WeatherForecast                                                          0%
+  Program                                                                                    0%

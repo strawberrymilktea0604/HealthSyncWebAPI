@@ -25,6 +25,10 @@ RUN dotnet build "HealthSync.WebApi.csproj" -c Release -o /app/build
 # Publish application
 RUN dotnet publish "HealthSync.WebApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
+# Set environment variables for EF bundle creation
+ENV JWT_SECRET_KEY="dummy-key-for-migration-bundle-at-least-32-characters-long-1234567890"
+ENV ConnectionStrings__DefaultConnection="Server=dummy;Database=dummy;Trusted_Connection=True;"
+
 # Tạo EF Core Migration Bundle (standalone executable)
 WORKDIR "/src/HealthSync.Infrastructure"
 RUN dotnet ef migrations bundle \
