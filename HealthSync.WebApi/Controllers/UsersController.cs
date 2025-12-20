@@ -20,6 +20,8 @@ public class UsersController : ControllerBase
         _fileStorageService = fileStorageService;
     }
 
+    private const string UserIdNotFoundMessage = "User ID not found in token";
+
     /// <summary>
     /// Gets the profile of the currently authenticated user
     /// </summary>
@@ -36,7 +38,7 @@ public class UsersController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
         {
-            return Unauthorized(new { success = false, message = "User ID not found in token" });
+            return Unauthorized(new { success = false, message = UserIdNotFoundMessage });
         }
 
         var profile = await _profileService.GetUserProfileResponseAsync(id);
@@ -68,7 +70,7 @@ public class UsersController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
         {
-            return Unauthorized(new { success = false, message = "User ID not found in token" });
+            return Unauthorized(new { success = false, message = UserIdNotFoundMessage });
         }
 
         var updatedProfile = await _profileService.UpdateUserProfileAsync(request, id);
@@ -104,7 +106,7 @@ public class UsersController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
         {
-            return Unauthorized(new { success = false, message = "User ID not found in token" });
+            return Unauthorized(new { success = false, message = UserIdNotFoundMessage });
         }
 
         // Get current profile to retrieve old avatar URL
@@ -148,7 +150,7 @@ public class UsersController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
         {
-            return Unauthorized(new { success = false, message = "User ID not found in token" });
+            return Unauthorized(new { success = false, message = UserIdNotFoundMessage });
         }
 
         var stats = await _profileService.GetUserStatsAsync(id);

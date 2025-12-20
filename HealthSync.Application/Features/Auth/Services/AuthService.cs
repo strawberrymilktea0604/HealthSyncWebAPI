@@ -391,8 +391,7 @@ public class AuthService : IAuthService
         var urls = _configuration["ASPNETCORE_URLS"]?.Split(';');
         var httpsUrl = urls?.FirstOrDefault(u => u.StartsWith("https://"));
         var httpUrl = urls?.FirstOrDefault(u => u.StartsWith("http://"));
-        var defaultBaseUrl = _configuration["DefaultBaseUrl"] ?? "https://localhost:7144";
-        var baseUrl = httpsUrl ?? httpUrl ?? defaultBaseUrl;
+        var baseUrl = httpsUrl ?? httpUrl ?? throw new InvalidOperationException("No valid base URL found in ASPNETCORE_URLS configuration");
         var redirectUri = $"{baseUrl}{GoogleCallbackPath}";
         
         var requestBody = new

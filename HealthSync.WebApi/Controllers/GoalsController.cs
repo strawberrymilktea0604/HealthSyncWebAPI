@@ -20,6 +20,9 @@ public class GoalsController : ControllerBase
         _goalService = goalService;
     }
 
+    private const string ValidationFailedMessage = "Validation failed";
+    private const string UserNotAuthenticatedMessage = "User not authenticated";
+
     /// <summary>
     /// Create a new goal for the authenticated user
     /// </summary>
@@ -39,14 +42,14 @@ public class GoalsController : ControllerBase
             return BadRequest(new
             {
                 success = false,
-                message = "Validation failed",
+                message = ValidationFailedMessage,
                 errors = validationResult.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage })
             });
         }
 
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -76,7 +79,7 @@ public class GoalsController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -104,7 +107,7 @@ public class GoalsController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -138,14 +141,14 @@ public class GoalsController : ControllerBase
             return BadRequest(new
             {
                 success = false,
-                message = "Validation failed",
+                message = ValidationFailedMessage,
                 errors = validationResult.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage })
             });
         }
 
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -175,7 +178,7 @@ public class GoalsController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -213,14 +216,14 @@ public class GoalsController : ControllerBase
             return BadRequest(new
             {
                 success = false,
-                message = "Validation failed",
+                message = ValidationFailedMessage,
                 errors = validationResult.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage })
             });
         }
 
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -251,7 +254,7 @@ public class GoalsController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -296,14 +299,14 @@ public class GoalsController : ControllerBase
             return BadRequest(new
             {
                 success = false,
-                message = "Validation failed",
+                message = ValidationFailedMessage,
                 errors = validationResult.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage })
             });
         }
 
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -334,7 +337,7 @@ public class GoalsController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {
@@ -364,7 +367,7 @@ public class GoalsController : ControllerBase
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
-            return Unauthorized(new { success = false, message = "User not authenticated" });
+            return Unauthorized(new { success = false, message = UserNotAuthenticatedMessage });
 
         try
         {

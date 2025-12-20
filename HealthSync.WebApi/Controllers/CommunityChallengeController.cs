@@ -17,6 +17,8 @@ public class CommunityChallengeController : ControllerBase
     private readonly IFileStorageService _fileStorage;
     private readonly HealthSync.Application.Interfaces.INotificationRepository _notificationRepository;
 
+    private const string ErrorOccurredMessage = "An error occurred";
+
     public CommunityChallengeController(
         IChallengeRepository challengeRepository,
         IChallengeParticipationRepository participationRepository,
@@ -74,7 +76,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -138,7 +140,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -201,7 +203,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -287,7 +289,7 @@ public class CommunityChallengeController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 }

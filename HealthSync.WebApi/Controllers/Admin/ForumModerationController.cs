@@ -17,6 +17,8 @@ public class ForumModerationController : ControllerBase
     private readonly ILogger<ForumModerationController> _logger;
 
     private const string InvalidAdminUserMessage = "Invalid admin user";
+    private const string NotFoundKeyword = "not found";
+    private const string InternalServerErrorMessage = "Internal server error";
 
     public ForumModerationController(
         IForumAdminService forumAdminService,
@@ -49,7 +51,7 @@ public class ForumModerationController : ControllerBase
 
             if (!success)
             {
-                if (message.Contains("not found"))
+                if (message.Contains(NotFoundKeyword))
                 {
                     return NotFound(new { message });
                 }
@@ -61,7 +63,7 @@ public class ForumModerationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error pinning post with ID {PostId}", id);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, new { message = InternalServerErrorMessage });
         }
     }
 
@@ -88,7 +90,7 @@ public class ForumModerationController : ControllerBase
 
             if (!success)
             {
-                if (message.Contains("not found"))
+                if (message.Contains(NotFoundKeyword))
                     return NotFound(new { message });
                 return BadRequest(new { message });
             }
@@ -98,7 +100,7 @@ public class ForumModerationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error locking post with ID {PostId}", id);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, new { message = InternalServerErrorMessage });
         }
     }
 
@@ -125,7 +127,7 @@ public class ForumModerationController : ControllerBase
 
             if (!success)
             {
-                if (message.Contains("not found"))
+                if (message.Contains(NotFoundKeyword))
                     return NotFound(new { message });
                 return BadRequest(new { message });
             }
@@ -135,7 +137,7 @@ public class ForumModerationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting post with ID {PostId}", id);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, new { message = InternalServerErrorMessage });
         }
     }
 
@@ -162,7 +164,7 @@ public class ForumModerationController : ControllerBase
 
             if (!success)
             {
-                if (message.Contains("not found"))
+                if (message.Contains(NotFoundKeyword))
                     return NotFound(new { message });
                 return BadRequest(new { message });
             }
@@ -172,7 +174,7 @@ public class ForumModerationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error hiding reply with ID {ReplyId}", id);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, new { message = InternalServerErrorMessage });
         }
     }
 
@@ -199,7 +201,7 @@ public class ForumModerationController : ControllerBase
 
             if (!success)
             {
-                if (message.Contains("not found"))
+                if (message.Contains(NotFoundKeyword))
                     return NotFound(new { message });
                 return BadRequest(new { message });
             }
@@ -209,7 +211,7 @@ public class ForumModerationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting reply with ID {ReplyId}", id);
-            return StatusCode(500, new { message = "Internal server error" });
+            return StatusCode(500, new { message = InternalServerErrorMessage });
         }
     }
 }

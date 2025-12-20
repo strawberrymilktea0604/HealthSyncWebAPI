@@ -29,6 +29,10 @@ public class ForumController : ControllerBase
         _backgroundJobClient = backgroundJobClient;
     }
 
+    private const string ErrorOccurredMessage = "An error occurred";
+    private const string PostNotFoundMessage = "Post not found";
+    private const string InvalidUserMessage = "Invalid user";
+
     /// <summary>
     /// Get all forum categories
     /// </summary>
@@ -56,7 +60,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -119,7 +123,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -142,7 +146,7 @@ public class ForumController : ControllerBase
 
             if (post == null)
             {
-                return NotFound(new { success = false, message = "Post not found" });
+                return NotFound(new { success = false, message = PostNotFoundMessage });
             }
 
             var postDetail = new PostDetailDto
@@ -180,7 +184,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -202,7 +206,7 @@ public class ForumController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
             var categoryExists = await _db.ForumCategories.AnyAsync(c => c.CategoryId == request.CategoryId);
@@ -261,7 +265,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -281,13 +285,13 @@ public class ForumController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
             var post = await _db.Posts.FindAsync(postId);
             if (post == null)
             {
-                return NotFound(new { success = false, message = "Post not found" });
+                return NotFound(new { success = false, message = PostNotFoundMessage });
             }
 
             if (post.IsLocked)
@@ -316,7 +320,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -332,13 +336,13 @@ public class ForumController : ControllerBase
             var userId = GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
             var post = await _db.Posts.FindAsync(postId);
             if (post == null)
             {
-                return NotFound(new { success = false, message = "Post not found" });
+                return NotFound(new { success = false, message = PostNotFoundMessage });
             }
 
             // Verify ownership: only author can update their post
@@ -386,7 +390,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -400,14 +404,14 @@ public class ForumController : ControllerBase
         return userId;
     }
 
-    private bool IsUpdateRequestValid(UpdatePostRequest request)
+    private static bool IsUpdateRequestValid(UpdatePostRequest request)
     {
         return !string.IsNullOrWhiteSpace(request.Title) || 
                !string.IsNullOrWhiteSpace(request.Content) || 
                request.Image != null;
     }
 
-    private void UpdatePostFields(Post post, UpdatePostRequest request)
+    private static void UpdatePostFields(Post post, UpdatePostRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.Title))
         {
@@ -458,7 +462,7 @@ public class ForumController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
             var isAdmin = User.IsInRole("Admin");
@@ -466,7 +470,7 @@ public class ForumController : ControllerBase
             var post = await _db.Posts.FindAsync(postId);
             if (post == null)
             {
-                return NotFound(new { success = false, message = "Post not found" });
+                return NotFound(new { success = false, message = PostNotFoundMessage });
             }
 
             // Check authorization: owner or admin
@@ -489,7 +493,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -509,7 +513,7 @@ public class ForumController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
             var reply = await _db.Replies.FindAsync(replyId);
@@ -532,7 +536,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -547,7 +551,7 @@ public class ForumController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { success = false, message = "Invalid user" });
+                return Unauthorized(new { success = false, message = InvalidUserMessage });
             }
 
             var reply = await _db.Replies.FindAsync(replyId);
@@ -568,7 +572,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 
@@ -631,7 +635,7 @@ public class ForumController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = "An error occurred", error = ex.Message });
+            return StatusCode(500, new { success = false, message = ErrorOccurredMessage, error = ex.Message });
         }
     }
 }
