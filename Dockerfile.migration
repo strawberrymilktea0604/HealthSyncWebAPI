@@ -50,9 +50,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy EF Bundle từ build stage
 COPY --from=build /app/efbundle /app/efbundle
 
-# Create migration script
-RUN echo '#!/bin/bash\nset -e\n\necho "=========================================="\necho "HealthSync Migration Init Container"\necho "=========================================="\n\n# Extract DB host from connection string\nDB_HOST=$(echo "$ConnectionStrings__DefaultConnection" | grep -oP '\''(?<=Server=)[^;]+'\'' || echo "db")\nDB_PORT=1433\n\necho "Waiting for SQL Server at ${DB_HOST}:${DB_PORT}..."\n\n# Wait for database (max 120 seconds - increased for slow servers)\nMAX_RETRIES=120\nRETRY_COUNT=0\n\nwhile [ $RETRY_COUNT -lt $MAX_RETRIES ]; do\n    if nc -z -w 3 "$DB_HOST" "$DB_PORT" 2>/dev/null; then\n        echo "✓ SQL Server is ready!"\n        break\n    fi\n    \n    RETRY_COUNT=$((RETRY_COUNT + 1))\n    echo "Waiting... (attempt $RETRY_COUNT/$MAX_RETRIES)"\n    sleep 2\ndone\n\nif [ $RETRY_COUNT -eq $MAX_RETRIES ]; then\n    echo "✗ ERROR: SQL Server not ready after ${MAX_RETRIES} attempts"\n    exit 1\nfi\n\necho ""\necho "Running EF Core migrations..."\necho "Connection: ${ConnectionStrings__DefaultConnection}"\necho ""\n\n# Execute EF Core Bundle\n/app/efbundle --connection "$ConnectionStrings__DefaultConnection" --verbose\n\nif [ $? -eq 0 ]; then\n    echo ""\n    echo "=========================================="\n    echo "✓ Migrations completed successfully!"\n    echo "=========================================="\n    exit 0\nelse\n    echo ""\n    echo "=========================================="\n    echo "✗ Migration failed!"\n    echo "=========================================="\n    exit 1\nfi' > /app/migrate.sh
-
+# Copy migration script
+COPY migrate.sh /app/migrate.sh
 RUN chmod +x /app/migrate.sh
 
 # Switch to non-root user for security

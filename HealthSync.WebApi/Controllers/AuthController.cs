@@ -158,15 +158,7 @@ public class AuthController : ControllerBase
 <html>
 <body>
 <h2>Google Authorization Successful!</h2>
-<p><strong>Authorization Code:</strong> {code}</p>
-<p><strong>ID Token:</strong> {idToken}</p>
-<p>Use the ID Token above in Postman/Swagger to login:</p>
-<pre>
-POST /api/v1/auth/google
-{{
-  ""token"": ""{idToken}""
-}}
-</pre>
+<p>Authorization completed successfully. You can now use the token to login.</p>
 </body>
 </html>", "text/html");
         }
@@ -177,7 +169,6 @@ POST /api/v1/auth/google
 <body>
 <h2>Error exchanging code</h2>
 <p>{ex.Message}</p>
-<p>Authorization Code: {code}</p>
 </body>
 </html>", "text/html");
         }
