@@ -14,6 +14,8 @@ namespace HealthSync.WebApi.Tests.Controllers;
 
 public class WorkoutLogsControllerTests
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly Mock<IWorkoutLogService> _mockWorkoutLogService;
     private readonly Mock<ILogger<WorkoutLogsController>> _mockLogger;
     private readonly WorkoutLogsController _controller;
@@ -100,7 +102,7 @@ public class WorkoutLogsControllerTests
         createdResult.ActionName.Should().Be(nameof(WorkoutLogsController.CreateWorkoutLog));
         createdResult.Value.Should().NotBeNull();
         var json = JsonSerializer.Serialize(createdResult.Value);
-        var response = JsonSerializer.Deserialize<ApiResponse<WorkoutLogResponse>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var response = JsonSerializer.Deserialize<ApiResponse<WorkoutLogResponse>>(json, _jsonOptions);
         response.Should().NotBeNull();
         response!.Success.Should().BeTrue();
         response.Message.Should().Be("Workout log created successfully");

@@ -256,7 +256,7 @@ public class ChallengeAdminService : IChallengeAdminService
     }
 
     // Helper methods
-    private ChallengeDto MapToDto(Challenge challenge, int participantCount)
+    private static ChallengeDto MapToDto(Challenge challenge, int participantCount)
     {
         return new ChallengeDto
         {
@@ -278,7 +278,7 @@ public class ChallengeAdminService : IChallengeAdminService
         };
     }
 
-    private ParticipationDto MapParticipationToDto(ChallengeParticipation participation)
+    private static ParticipationDto MapParticipationToDto(ChallengeParticipation participation)
     {
         return new ParticipationDto
         {

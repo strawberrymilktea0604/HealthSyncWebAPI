@@ -12,7 +12,7 @@ public class FileUploadOperationFilter : IOperationFilter
                        p.ParameterType == typeof(IEnumerable<IFormFile>))
             .ToList();
 
-        if (!fileParams.Any())
+        if (fileParams.Count == 0)
             return;
 
         operation.RequestBody = new OpenApiRequestBody

@@ -280,17 +280,18 @@ public class NutritionLogService : INutritionLogService
         foreach (var entry in log.FoodEntries)
         {
             var mealTypeString = entry.MealType.ToString();
-            if (!response.EntriesByMeal.ContainsKey(mealTypeString))
+            if (!response.EntriesByMeal.TryGetValue(mealTypeString, out var mealEntries))
             {
-                response.EntriesByMeal[mealTypeString] = new List<FoodEntryResponse>();
+                mealEntries = new List<FoodEntryResponse>();
+                response.EntriesByMeal[mealTypeString] = mealEntries;
             }
-            response.EntriesByMeal[mealTypeString].Add(MapToFoodEntryResponse(entry));
+            mealEntries.Add(MapToFoodEntryResponse(entry));
         }
 
         return response;
     }
 
-    private FoodEntryResponse MapToFoodEntryResponse(FoodEntry entry, FoodItem? foodItem = null)
+    private static FoodEntryResponse MapToFoodEntryResponse(FoodEntry entry, FoodItem? foodItem = null)
     {
         var item = foodItem ?? entry.FoodItem;
         if (item == null)

@@ -83,6 +83,7 @@ public class ChallengesControllerTests : IDisposable
     public void Dispose()
     {
         _db.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     [Fact]

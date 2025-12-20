@@ -12,6 +12,8 @@ namespace HealthSync.WebApi.Tests.Controllers;
 
 public class UsersControllerTests
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly Mock<IUserProfileService> _mockProfileService;
     private readonly Mock<IFileStorageService> _mockFileStorageService;
     private readonly UsersController _controller;
@@ -66,7 +68,7 @@ public class UsersControllerTests
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         okResult.Value.Should().NotBeNull();
         var json = JsonSerializer.Serialize(okResult.Value);
-        var response = JsonSerializer.Deserialize<ApiResponse<UserProfileResponse>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var response = JsonSerializer.Deserialize<ApiResponse<UserProfileResponse>>(json, _jsonOptions);
         response.Should().NotBeNull();
         response!.Success.Should().BeTrue();
         response.Data.Should().NotBeNull();
@@ -91,7 +93,7 @@ public class UsersControllerTests
         var notFoundResult = result.Should().BeOfType<NotFoundObjectResult>().Subject;
         notFoundResult.Value.Should().NotBeNull();
         var json = JsonSerializer.Serialize(notFoundResult.Value);
-        var response = JsonSerializer.Deserialize<ApiResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var response = JsonSerializer.Deserialize<ApiResponse>(json, _jsonOptions);
         response.Should().NotBeNull();
         response!.Success.Should().BeFalse();
         response.Message.Should().Be("Profile not found");

@@ -82,7 +82,7 @@ public class ExerciseRepository : IExerciseRepository
 
     public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
     {
-        var query = _context.Exercises.Where(e => e.Name.ToLower() == name.ToLower());
+        var query = _context.Exercises.Where(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
         if (excludeId.HasValue)
         {
             query = query.Where(e => e.ExerciseId != excludeId.Value);

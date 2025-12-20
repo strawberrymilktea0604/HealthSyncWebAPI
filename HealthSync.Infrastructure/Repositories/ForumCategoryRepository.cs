@@ -54,13 +54,13 @@ public class ForumCategoryRepository : IForumCategoryRepository
     public async Task<bool> ExistsByNameAsync(string name)
     {
         return await _context.ForumCategories
-            .AnyAsync(fc => fc.Name.ToLower() == name.ToLower());
+            .AnyAsync(fc => string.Equals(fc.Name, name, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<bool> ExistsByNameAsync(string name, int excludeCategoryId)
     {
         return await _context.ForumCategories
-            .AnyAsync(fc => fc.Name.ToLower() == name.ToLower() 
+            .AnyAsync(fc => string.Equals(fc.Name, name, StringComparison.OrdinalIgnoreCase) 
                          && fc.CategoryId != excludeCategoryId);
     }
 

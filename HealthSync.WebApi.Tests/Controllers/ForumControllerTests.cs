@@ -104,6 +104,7 @@ public class ForumControllerTests : IDisposable
     {
         _db.Database.EnsureDeleted();
         _db.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     #region GetCategories Tests
@@ -121,7 +122,7 @@ public class ForumControllerTests : IDisposable
         var value = okResult.Value;
         Assert.NotNull(value);
         var success = value.GetType().GetProperty("success")?.GetValue(value);
-        Assert.True((bool?)success == true);
+        Assert.True(success is true);
     }
 
     [Fact]

@@ -156,12 +156,12 @@ public class FoodItemRepository : IFoodItemRepository
 
     public async Task<bool> ExistsByNameAsync(string name)
     {
-        return await _context.FoodItems.AnyAsync(f => f.Name.ToLower() == name.ToLower());
+        return await _context.FoodItems.AnyAsync(f => string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<bool> ExistsByNameAsync(string name, int excludeId)
     {
-        return await _context.FoodItems.AnyAsync(f => f.Name.ToLower() == name.ToLower() && f.FoodItemId != excludeId);
+        return await _context.FoodItems.AnyAsync(f => string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase) && f.FoodItemId != excludeId);
     }
 
     public async Task<bool> IsUsedInFoodEntriesAsync(int id)
