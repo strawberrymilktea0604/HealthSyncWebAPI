@@ -243,7 +243,7 @@ pipeline {
                         // Publish Cobertura coverage for Jenkins dashboard integration
                         echo "Publishing Cobertura coverage report..."
                         recordCoverage(
-                            tools: [[parser: 'COBERTURA', pattern: 'test-results/**/coverage.cobertura.xml']],
+                            tools: [[parser: 'COBERTURA', pattern: 'test-results/coverage-report/Cobertura.xml']],
                             sourceCodeRetention: 'NEVER'
                         )
                     }
