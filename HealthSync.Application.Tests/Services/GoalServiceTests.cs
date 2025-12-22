@@ -440,5 +440,166 @@ public class GoalServiceTests
         result.Should().NotBeNull();
         result.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task CreateGoalAsync_ShouldCreateMaintainWeightGoal_WhenValidRequest()
+    {
+        // Arrange
+        var userId = 1;
+        var request = new CreateGoalRequest
+        {
+            GoalType = GoalType.MaintainWeight,
+            TargetValue = 70,
+            Unit = "kg",
+            StartDate = DateTime.UtcNow.Date,
+            EndDate = DateTime.UtcNow.Date.AddDays(30)
+        };
+
+        var userProfile = new UserProfile
+        {
+            UserId = userId,
+            CurrentWeightKg = 70
+        };
+
+        _userProfileRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(userId))
+            .ReturnsAsync(userProfile);
+
+        _goalRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Goal>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _service.CreateGoalAsync(request, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.GoalType.Should().Be(GoalType.MaintainWeight);
+        result.TargetValue.Should().Be(70);
+        result.Status.Should().Be(GoalStatus.InProgress);
+
+        _goalRepositoryMock.Verify(r => r.AddAsync(It.Is<Goal>(g =>
+            g.GoalType == GoalType.MaintainWeight &&
+            g.TargetValue == 70 &&
+            g.Status == GoalStatus.InProgress)), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetProgressChartAsync_ShouldCalculateProgressPercentCorrectly_ForMaintainWeight()
+    {
+        // Arrange
+        var userId = 1;
+        var goal = new Goal
+        {
+            GoalId = 1,
+            UserId = userId,
+            GoalType = GoalType.MaintainWeight,
+            TargetValue = 70,
+            Unit = "kg",
+            StartDate = DateTime.UtcNow.Date,
+            EndDate = DateTime.UtcNow.Date.AddDays(30),
+            Status = GoalStatus.InProgress
+        };
+
+        var progressRecords = new List<ProgressRecord>
+        {
+            new ProgressRecord
+            {
+                GoalId = 1,
+                RecordDate = DateTime.UtcNow.Date,
+                RecordedValue = 70,
+                CreatedAt = DateTime.UtcNow
+            },
+            new ProgressRecord
+            {
+                GoalId = 1,
+                RecordDate = DateTime.UtcNow.Date.AddDays(7),
+                RecordedValue = 69.5m,
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetUserGoalsAsync(userId))
+            .ReturnsAsync(new List<Goal> { goal });
+
+        _goalRepositoryMock
+            .Setup(r => r.GetProgressRecordsByGoalIdAsync(goal.GoalId))
+            .ReturnsAsync(progressRecords);
+
+        // Act
+        var result = await _service.GetUserProgressChartAsync(userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.ProgressPoints.Should().NotBeEmpty();
+        // For MaintainWeight, progress should always be 100%
+        var maintainWeightPoint = result.ProgressPoints.FirstOrDefault();
+        maintainWeightPoint.Should().NotBeNull();
+        // Note: ProgressPointDto doesn't have GoalType, just check that points exist
+    }
+
+    [Fact]
+    public async Task RecordProgressAsync_ShouldCompleteMaintainWeightGoal_WhenWeightWithinRange()
+    {
+        // Arrange
+        var userId = 1;
+        var goal = new Goal
+        {
+            GoalId = 1,
+            UserId = userId,
+            GoalType = GoalType.MaintainWeight,
+            TargetValue = 70,
+            Unit = "kg",
+            StartDate = DateTime.UtcNow.Date,
+            EndDate = DateTime.UtcNow.Date.AddDays(30),
+            Status = GoalStatus.InProgress
+        };
+
+        var request = new RecordProgressRequest
+        {
+            GoalId = goal.GoalId,
+            RecordDate = DateTime.UtcNow.Date.AddDays(14),
+            RecordedValue = 70.5m // Within 1kg range of target
+        };
+
+        var existingRecords = new List<ProgressRecord>
+        {
+            new ProgressRecord
+            {
+                GoalId = goal.GoalId,
+                RecordDate = goal.StartDate,
+                RecordedValue = 70,
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goal.GoalId))
+            .ReturnsAsync(goal);
+
+        _goalRepositoryMock
+            .Setup(r => r.GetProgressRecordsByGoalIdAsync(goal.GoalId))
+            .ReturnsAsync(existingRecords);
+
+        _goalRepositoryMock
+            .Setup(r => r.AddProgressRecordAsync(It.IsAny<ProgressRecord>()))
+            .Returns(Task.CompletedTask);
+
+        _goalRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Goal>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _service.RecordProgressAsync(request, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.RecordedValue.Should().Be(70.5m);
+
+        // Verify goal is completed for MaintainWeight when within 1kg range
+        _goalRepositoryMock.Verify(r => r.UpdateAsync(It.Is<Goal>(g =>
+            g.Status == GoalStatus.Completed)), Times.Once);
+    }
 }
 

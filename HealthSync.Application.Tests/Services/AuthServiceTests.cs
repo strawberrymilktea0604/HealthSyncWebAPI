@@ -563,6 +563,116 @@ public class AuthServiceTests
         response.expires_in.Should().Be(3600);
     }
 
+    [Fact]
+    public async Task LoginAsync_ShouldReturnAuthResponse_WhenUserProfileIsNull()
+    {
+        // Arrange
+        var request = new LoginRequest("test@example.com", "Password123!");
+        var correctPasswordHash = HashPassword("Password123!");
+
+        var user = new ApplicationUser
+        {
+            UserId = 1,
+            Email = request.Email,
+            PasswordHash = correctPasswordHash,
+            Role = "Customer",
+            IsActive = true
+        };
+
+        var leaderboard = new Leaderboard
+        {
+            UserId = 1,
+            TotalPoints = 100
+        };
+
+        _userRepositoryMock
+            .Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync(user);
+
+        _jwtServiceMock
+            .Setup(j => j.GenerateAccessToken(user))
+            .Returns("access_token");
+
+        _jwtServiceMock
+            .Setup(j => j.GenerateRefreshToken())
+            .Returns("refresh_token");
+
+        _userProfileRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(user.UserId))
+            .ReturnsAsync((UserProfile?)null); // UserProfile is null
+
+        _leaderboardRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(user.UserId))
+            .ReturnsAsync(leaderboard);
+
+        // Act
+        var result = await _service.LoginAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.AccessToken.Should().Be("access_token");
+        result.RefreshToken.Should().Be("refresh_token");
+        result.Email.Should().Be(user.Email);
+        result.Role.Should().Be(user.Role);
+        result.FullName.Should().Be(""); // Should be empty string when UserProfile is null
+        result.ContributionPoints.Should().Be(leaderboard.TotalPoints);
+    }
+
+    [Fact]
+    public async Task LoginAsync_ShouldReturnAuthResponse_WhenLeaderboardIsNull()
+    {
+        // Arrange
+        var request = new LoginRequest("test@example.com", "Password123!");
+        var correctPasswordHash = HashPassword("Password123!");
+
+        var user = new ApplicationUser
+        {
+            UserId = 1,
+            Email = request.Email,
+            PasswordHash = correctPasswordHash,
+            Role = "Customer",
+            IsActive = true
+        };
+
+        var userProfile = new UserProfile
+        {
+            UserId = 1,
+            FullName = "Test User"
+        };
+
+        _userRepositoryMock
+            .Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync(user);
+
+        _jwtServiceMock
+            .Setup(j => j.GenerateAccessToken(user))
+            .Returns("access_token");
+
+        _jwtServiceMock
+            .Setup(j => j.GenerateRefreshToken())
+            .Returns("refresh_token");
+
+        _userProfileRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(user.UserId))
+            .ReturnsAsync(userProfile);
+
+        _leaderboardRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(user.UserId))
+            .ReturnsAsync((Leaderboard?)null); // Leaderboard is null
+
+        // Act
+        var result = await _service.LoginAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.AccessToken.Should().Be("access_token");
+        result.RefreshToken.Should().Be("refresh_token");
+        result.Email.Should().Be(user.Email);
+        result.Role.Should().Be(user.Role);
+        result.FullName.Should().Be(userProfile.FullName);
+        result.ContributionPoints.Should().Be(0); // Should be 0 when Leaderboard is null
+    }
+
     #endregion
 }
 

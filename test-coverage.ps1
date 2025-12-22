@@ -45,10 +45,11 @@ $reportGenerated = $false
 
 if (-not $TextOnly) {
     Write-Host "  -> Generating HTML report..." -ForegroundColor Cyan
-    reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" `
+    reportgenerator -reports:"TestResults/**/coverage.opencover.xml" `
                     -targetdir:"coveragereport" `
                     -reporttypes:Html `
-                    -classfilters:"-Program"
+                    -classfilters:"-Program;-*DTO*;-*Configuration*;-*Migration*" `
+                    -assemblyfilters:"+HealthSync.*"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  [OK] HTML report: coveragereport\index.html" -ForegroundColor Green
@@ -60,10 +61,11 @@ if (-not $TextOnly) {
 
 if (-not $HtmlOnly) {
     Write-Host "  -> Generating text summary..." -ForegroundColor Cyan
-    reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" `
+    reportgenerator -reports:"TestResults/**/coverage.opencover.xml" `
                     -targetdir:"." `
                     -reporttypes:TextSummary `
-                    -classfilters:"-Program"
+                    -classfilters:"-Program;-*DTO*;-*Configuration*;-*Migration*" `
+                    -assemblyfilters:"+HealthSync.*"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  [OK] Text summary: Summary.txt" -ForegroundColor Green
