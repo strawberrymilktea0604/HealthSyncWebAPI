@@ -118,19 +118,6 @@ pipeline {
             }
         }
 
-        stage('Build Solution') {
-            steps {
-                script {
-                    echo "========== STAGE: Build Solution =========="
-                    echo "Building .NET solution..."
-                    sh '''
-                        dotnet build HealthSyncWebAPI.sln -c Release
-                    '''
-                    echo "✓ Solution built successfully"
-                }
-            }
-        }
-
         stage('SonarQube Begin') {
             steps {
                 script {
@@ -153,6 +140,20 @@ pipeline {
                               /d:sonar.qualitygate.timeout=300
                         """
                     }
+                }
+            }
+        }
+
+        stage('Build Solution') {
+            steps {
+                script {
+                    echo "========== STAGE: Build Solution (Analyzed by Sonar) =========="
+                    // Nên clean trước để đảm bảo rebuild toàn bộ, giúp Sonar bắt được hết lỗi
+                    sh '''
+                        dotnet clean
+                        dotnet build HealthSyncWebAPI.sln -c Release
+                    '''
+                    echo "✓ Solution built successfully"
                 }
             }
         }
