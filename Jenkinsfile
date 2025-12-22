@@ -207,14 +207,16 @@ pipeline {
                         junit allowEmptyResults: true, 
                               testResults: 'test-results/TEST-*.xml, test-results/**/TEST-*.xml',
                               healthScaleFactor: 1.0
-                        echo "Generating coverage (if any)..."
+
+                        echo "Generating coverage (Switching to JaCoCo format to fix Duplicate Method error)..."
                         sh '''
                             dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
                             export PATH="$PATH:/root/.dotnet/tools"
-                            # Use Cobertura format (from runsettings) and exclude Program.cs from final report
+                            
+                            # 1. SỬA TẠI ĐÂY: Đổi reporttypes thành "Html;JaCoCo" (Thay vì Cobertura)
                             reportgenerator -reports:"test-results/**/coverage.cobertura.xml" \
                                 -targetdir:"test-results/coverage-report" \
-                                -reporttypes:"Html;Cobertura" \
+                                -reporttypes:"Html;JaCoCo" \
                                 -classfilters:"-Program" || true
                             
                             # Generate text summary for build logs
@@ -230,6 +232,8 @@ pipeline {
                                 echo "==========================================="
                             fi
                         '''
+                        
+                        // Publish HTML Report (Vẫn dùng được như thường)
                         publishHTML([
                             allowMissing: true,
                             alwaysLinkToLastBuild: true,
@@ -240,10 +244,13 @@ pipeline {
                             reportTitles: 'Code Coverage'
                         ])
                         
-                        // Publish Cobertura coverage for Jenkins dashboard integration
-                        echo "Publishing Cobertura coverage report..."
+                        // 2. SỬA TẠI ĐÂY: Đổi parser sang JACOCO và trỏ vào file JaCoCo.xml
+                        echo "Publishing JaCoCo coverage report to Jenkins..."
                         recordCoverage(
-                            tools: [[parser: 'COBERTURA', pattern: 'test-results/coverage-report/Cobertura.xml']],
+                            tools: [[
+                                parser: 'JACOCO', 
+                                pattern: 'test-results/coverage-report/JaCoCo.xml'
+                            ]],
                             sourceCodeRetention: 'NEVER'
                         )
                     }
