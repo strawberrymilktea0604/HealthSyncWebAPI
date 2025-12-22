@@ -148,6 +148,7 @@ public class CommunityChallengeControllerTests : IDisposable
     {
         _db.Database.EnsureDeleted();
         _db.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     #region GetOpenChallenges Tests

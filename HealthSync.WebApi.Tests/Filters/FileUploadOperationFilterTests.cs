@@ -183,7 +183,7 @@ public class FileUploadOperationFilterTests
         Assert.False(operation.RequestBody.Content.ContainsKey("application/json"));
     }
 
-    private OperationFilterContext CreateOperationFilterContext(MethodInfo methodInfo)
+    private static OperationFilterContext CreateOperationFilterContext(MethodInfo methodInfo)
     {
         var apiDescription = new ApiDescription
         {
@@ -203,14 +203,14 @@ public class FileUploadOperationFilterTests
     // Test controller class
     private class TestController
     {
-        public void NoFileParameters(int id, string name) { }
+        public static void NoFileParameters(int id, string name) { }
         
-        public void SingleFileParameter(IFormFile file) { }
+        public static void SingleFileParameter(IFormFile file) { }
         
-        public void MultipleFileParameters(IFormFile file1, IFormFile file2) { }
+        public static void MultipleFileParameters(IFormFile file1, IFormFile file2) { }
         
-        public void MultipleFilesParameter(IEnumerable<IFormFile> files) { }
+        public static void MultipleFilesParameter(IEnumerable<IFormFile> files) { }
         
-        public void MixedParameters(int id, IFormFile file, string name) { }
+        public static void MixedParameters(int id, IFormFile file, string name) { }
     }
 }

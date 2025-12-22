@@ -57,7 +57,7 @@ public class CreateFoodEntryRequestValidatorTests
     [Theory]
     [InlineData("")]
     [InlineData(null)]
-    public void Validate_MealTypeEmpty_ShouldHaveValidationError(string mealType)
+    public void Validate_MealTypeEmpty_ShouldHaveValidationError(string? mealType)
     {
         // Arrange
         var request = new CreateFoodEntryRequest

@@ -47,7 +47,7 @@ public class CommunityChallengeControllerTests : IDisposable
 
     public void Dispose()
     {
-        // Cleanup if needed
+        GC.SuppressFinalize(this);
     }
 
     #region CreateChallenge Tests

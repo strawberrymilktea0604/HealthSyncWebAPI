@@ -716,7 +716,7 @@ public class ForumControllerTests : IDisposable
         var success = value.GetType().GetProperty("success")?.GetValue(value);
         var data = value.GetType().GetProperty("data")?.GetValue(value);
 
-        Assert.True((bool?)success == true);
+        Assert.True((bool?)success);
 
         // Verify data contains image URL
         Assert.NotNull(data);
@@ -910,7 +910,7 @@ public class ForumControllerTests : IDisposable
         var success = value.GetType().GetProperty("success")?.GetValue(value);
         var message = value.GetType().GetProperty("message")?.GetValue(value);
 
-        Assert.True((bool?)success == false);
+        Assert.False((bool?)success);
         Assert.Equal("Invalid user", message);
 
         // Verify repository was not called

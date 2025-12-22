@@ -168,9 +168,12 @@ public class NotificationRepositoryTests : IDisposable
     [Fact]
     public async Task MarkAsReadAsync_NonExistingId_DoesNotThrow()
     {
-        // Act & Assert
+        // Act
         await _repository.MarkAsReadAsync(999);
-        // Should not throw exception
+        
+        // Assert - verify no exception was thrown and entity does not exist
+        var nonExistingNotification = await _context.Notifications.FindAsync(999);
+        Assert.Null(nonExistingNotification);
     }
 
     [Fact]
@@ -283,5 +286,6 @@ public class NotificationRepositoryTests : IDisposable
     public void Dispose()
     {
         _context.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

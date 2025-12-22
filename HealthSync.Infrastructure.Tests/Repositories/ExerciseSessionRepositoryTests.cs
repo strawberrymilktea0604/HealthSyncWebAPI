@@ -265,9 +265,12 @@ public class ExerciseSessionRepositoryTests : IDisposable
     [Fact]
     public async Task DeleteAsync_NonExistingId_DoesNotThrow()
     {
-        // Act & Assert
+        // Act
         await _repository.DeleteAsync(999);
-        // Should not throw exception
+        
+        // Assert - verify no exception was thrown and entity does not exist
+        var nonExistingSession = await _context.ExerciseSessions.FindAsync(999);
+        Assert.Null(nonExistingSession);
     }
 
     [Fact]
@@ -299,6 +302,7 @@ public class ExerciseSessionRepositoryTests : IDisposable
     public void Dispose()
     {
         _context.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 
