@@ -1,27 +1,27 @@
 Summary
-  Generated on: 12/23/2025 - 1:47:37 AM
+  Generated on: 12/23/2025 - 2:42:01 AM
   Parser: MultiReport (4x OpenCover)
   Assemblies: 4
   Classes: 100
   Files: 94
-  Line coverage: 87.5%
-  Covered lines: 1068
-  Uncovered lines: 152
-  Coverable lines: 1220
-  Total lines: 11710
-  Branch coverage: 71.1% (84 of 118)
-  Covered branches: 84
+  Line coverage: 97.9%
+  Covered lines: 1199
+  Uncovered lines: 25
+  Coverable lines: 1224
+  Total lines: 11717
+  Branch coverage: 74.5% (88 of 118)
+  Covered branches: 88
   Total branches: 118
-  Method coverage: 87.3% (124 of 142)
-  Full method coverage: 83% (118 of 142)
-  Covered methods: 124
-  Fully covered methods: 118
-  Total methods: 142
+  Method coverage: 99.3% (142 of 143)
+  Full method coverage: 95.1% (136 of 143)
+  Covered methods: 142
+  Fully covered methods: 136
+  Total methods: 143
 
-HealthSync.Application                                                                    92.1%
+HealthSync.Application                                                                    97.1%
   HealthSync.Application.Features.Auth.Services.AuthService                               93.3%
   HealthSync.Application.Features.Auth.Services.GoogleTokenResponse                        100%
-  HealthSync.Application.Features.Users.Services.UserProfileService                       30.7%
+  HealthSync.Application.Features.Users.Services.UserProfileService                        100%
   HealthSync.Application.Services.ChallengeAdminService                                    100%
   HealthSync.Application.Services.ChallengeDependencies                                    100%
   HealthSync.Application.Services.ChallengeParticipationService                            100%
@@ -51,12 +51,12 @@ HealthSync.Application                                                          
   HealthSync.Application.Validators.Goals.RecordProgressValidator                          100%
   HealthSync.Application.Validators.Goals.UpdateGoalValidator                              100%
   HealthSync.Application.Validators.Goals.UpdateProgressValidator                          100%
-  HealthSync.Application.Validators.Nutrition.CreateFoodEntryRequestValidator                0%
-  HealthSync.Application.Validators.Nutrition.CreateNutritionLogRequestValidator             0%
-  HealthSync.Application.Validators.Nutrition.UpdateNutritionLogNotesRequestValidator        0%
+  HealthSync.Application.Validators.Nutrition.CreateFoodEntryRequestValidator              100%
+  HealthSync.Application.Validators.Nutrition.CreateNutritionLogRequestValidator           100%
+  HealthSync.Application.Validators.Nutrition.UpdateNutritionLogNotesRequestValidator      100%
   HealthSync.Application.Validators.Users.UpdateUserProfileValidator                       100%
 
-HealthSync.Domain                                                                         91.3%
+HealthSync.Domain                                                                          100%
   HealthSync.Domain.Entities.ApplicationUser                                               100%
   HealthSync.Domain.Entities.Challenge                                                     100%
   HealthSync.Domain.Entities.ChallengeParticipation                                        100%
@@ -67,7 +67,7 @@ HealthSync.Domain                                                               
   HealthSync.Domain.Entities.ForumCategory                                                 100%
   HealthSync.Domain.Entities.Goal                                                          100%
   HealthSync.Domain.Entities.Leaderboard                                                   100%
-  HealthSync.Domain.Entities.Notification                                                    0%
+  HealthSync.Domain.Entities.Notification                                                  100%
   HealthSync.Domain.Entities.NutritionLog                                                  100%
   HealthSync.Domain.Entities.Post                                                          100%
   HealthSync.Domain.Entities.ProgressRecord                                                100%
@@ -75,41 +75,41 @@ HealthSync.Domain                                                               
   HealthSync.Domain.Entities.UserProfile                                                   100%
   HealthSync.Domain.Entities.WorkoutLog                                                    100%
 
-HealthSync.Infrastructure                                                                 84.9%
-  HealthSync.Infrastructure.BackgroundJobs.LeaderboardUpdateJob                              0%
+HealthSync.Infrastructure                                                                  100%
+  HealthSync.Infrastructure.BackgroundJobs.LeaderboardUpdateJob                            100%
   HealthSync.Infrastructure.Data.ApplicationDbContext                                      100%
   HealthSync.Infrastructure.Repositories.ChallengeParticipationRepository                  100%
   HealthSync.Infrastructure.Repositories.ChallengeRepository                               100%
   HealthSync.Infrastructure.Repositories.ExerciseRepository                                100%
-  HealthSync.Infrastructure.Repositories.ExerciseSessionRepository                           0%
+  HealthSync.Infrastructure.Repositories.ExerciseSessionRepository                         100%
   HealthSync.Infrastructure.Repositories.FoodItemRepository                                100%
   HealthSync.Infrastructure.Repositories.ForumCategoryRepository                           100%
   HealthSync.Infrastructure.Repositories.ForumPostRepository                               100%
   HealthSync.Infrastructure.Repositories.ForumReplyRepository                              100%
   HealthSync.Infrastructure.Repositories.GoalRepository                                    100%
   HealthSync.Infrastructure.Repositories.LeaderboardRepository                             100%
-  HealthSync.Infrastructure.Repositories.NotificationRepository                              0%
+  HealthSync.Infrastructure.Repositories.NotificationRepository                            100%
   HealthSync.Infrastructure.Repositories.NutritionLogRepository                            100%
-  HealthSync.Infrastructure.Repositories.UserProfileRepository                               0%
+  HealthSync.Infrastructure.Repositories.UserProfileRepository                             100%
   HealthSync.Infrastructure.Repositories.UserRepository                                    100%
   HealthSync.Infrastructure.Repositories.WorkoutLogRepository                              100%
   HealthSync.Infrastructure.Services.FileStorageService                                    100%
   HealthSync.Infrastructure.Services.JwtService                                            100%
   HealthSync.Infrastructure.Services.MinioService                                          100%
 
-HealthSync.WebApi                                                                         74.5%
+HealthSync.WebApi                                                                         98.4%
   HealthSync.WebApi.Controllers.Admin.AdminController                                      100%
   HealthSync.WebApi.Controllers.Admin.CommunityChallengeController                         100%
   HealthSync.WebApi.Controllers.Admin.DashboardController                                  100%
   HealthSync.WebApi.Controllers.Admin.ExercisesController                                  100%
   HealthSync.WebApi.Controllers.Admin.FoodController                                       100%
-  HealthSync.WebApi.Controllers.Admin.ForumCategoriesController                              0%
-  HealthSync.WebApi.Controllers.Admin.ForumModerationController                              0%
-  HealthSync.WebApi.Controllers.Admin.LeaderboardController                                  0%
-  HealthSync.WebApi.Controllers.Admin.UserRankController                                     0%
+  HealthSync.WebApi.Controllers.Admin.ForumCategoriesController                            100%
+  HealthSync.WebApi.Controllers.Admin.ForumModerationController                            100%
+  HealthSync.WebApi.Controllers.Admin.LeaderboardController                                100%
+  HealthSync.WebApi.Controllers.Admin.UserRankController                                   100%
   HealthSync.WebApi.Controllers.Admin.UsersController                                      100%
   HealthSync.WebApi.Controllers.Admin.UserStatusController                                 100%
-  HealthSync.WebApi.Controllers.Admin.UserTitleController                                    0%
+  HealthSync.WebApi.Controllers.Admin.UserTitleController                                  100%
   HealthSync.WebApi.Controllers.AuthController                                             100%
   HealthSync.WebApi.Controllers.ChallengeParticipationController                           100%
   HealthSync.WebApi.Controllers.ChallengesController                                       100%
@@ -123,5 +123,5 @@ HealthSync.WebApi                                                               
   HealthSync.WebApi.Controllers.ProgressRecordsController                                  100%
   HealthSync.WebApi.Controllers.UsersController                                            100%
   HealthSync.WebApi.Controllers.WorkoutLogsController                                      100%
-  HealthSync.WebApi.Filters.FileUploadOperationFilter                                        0%
-  HealthSync.WebApi.Filters.HangfireDashboardAuthorizationFilter                          63.6%
+  HealthSync.WebApi.Filters.FileUploadOperationFilter                                      100%
+  HealthSync.WebApi.Filters.HangfireDashboardAuthorizationFilter                          73.3%

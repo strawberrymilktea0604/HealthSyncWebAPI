@@ -601,5 +601,331 @@ public class GoalServiceTests
         _goalRepositoryMock.Verify(r => r.UpdateAsync(It.Is<Goal>(g =>
             g.Status == GoalStatus.Completed)), Times.Once);
     }
+
+    [Fact]
+    public async Task GetGoalByIdAsync_ShouldThrowException_WhenGoalNotFound()
+    {
+        // Arrange
+        var userId = 1;
+        var goalId = 999;
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goalId))
+            .ReturnsAsync((Goal?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.GetGoalByIdAsync(goalId, userId));
+    }
+
+    [Fact]
+    public async Task GetGoalByIdAsync_ShouldThrowException_WhenUserIdMismatch()
+    {
+        // Arrange
+        var userId = 1;
+        var goalId = 1;
+
+        var goal = new Goal
+        {
+            GoalId = goalId,
+            UserId = 999, // Different user
+            GoalType = GoalType.WeightLoss,
+            TargetValue = 65
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goalId))
+            .ReturnsAsync(goal);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.GetGoalByIdAsync(goalId, userId));
+    }
+
+    [Fact]
+    public async Task UpdateGoalAsync_ShouldThrowException_WhenGoalNotFound()
+    {
+        // Arrange
+        var userId = 1;
+        var goalId = 999;
+        var request = new UpdateGoalRequest
+        {
+            GoalType = GoalType.WeightLoss,
+            TargetValue = 60,
+            Unit = "kg",
+            StartDate = DateTime.UtcNow.Date.AddDays(1),
+            EndDate = DateTime.UtcNow.Date.AddDays(31)
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goalId))
+            .ReturnsAsync((Goal?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.UpdateGoalAsync(goalId, request, userId));
+    }
+
+    [Fact]
+    public async Task UpdateGoalAsync_ShouldThrowException_WhenGoalCompleted()
+    {
+        // Arrange
+        var userId = 1;
+        var goalId = 1;
+        var request = new UpdateGoalRequest
+        {
+            GoalType = GoalType.WeightLoss,
+            TargetValue = 60,
+            Unit = "kg",
+            StartDate = DateTime.UtcNow.Date.AddDays(1),
+            EndDate = DateTime.UtcNow.Date.AddDays(31)
+        };
+
+        var goal = new Goal
+        {
+            GoalId = goalId,
+            UserId = userId,
+            Status = GoalStatus.Completed // Already completed
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goalId))
+            .ReturnsAsync(goal);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.UpdateGoalAsync(goalId, request, userId));
+
+        exception.Message.Should().Contain("Cannot update completed or cancelled goals");
+    }
+
+    [Fact]
+    public async Task RecordProgressAsync_ShouldThrowException_WhenGoalNotFound()
+    {
+        // Arrange
+        var userId = 1;
+        var request = new RecordProgressRequest
+        {
+            GoalId = 999,
+            RecordDate = DateTime.UtcNow.Date,
+            RecordedValue = 68
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(999))
+            .ReturnsAsync((Goal?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.RecordProgressAsync(request, userId));
+    }
+
+    [Fact]
+    public async Task RecordProgressAsync_ShouldThrowException_WhenGoalCompleted()
+    {
+        // Arrange
+        var userId = 1;
+        var goalId = 1;
+        var request = new RecordProgressRequest
+        {
+            GoalId = goalId,
+            RecordDate = DateTime.UtcNow.Date,
+            RecordedValue = 68
+        };
+
+        var goal = new Goal
+        {
+            GoalId = goalId,
+            UserId = userId,
+            Status = GoalStatus.Completed
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goalId))
+            .ReturnsAsync(goal);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.RecordProgressAsync(request, userId));
+
+        exception.Message.Should().Contain("Cannot record progress for completed or cancelled goals");
+    }
+
+    [Fact]
+    public async Task RecordProgressAsync_ShouldThrowException_WhenDateOutsideGoalPeriod()
+    {
+        // Arrange
+        var userId = 1;
+        var goalId = 1;
+        var request = new RecordProgressRequest
+        {
+            GoalId = goalId,
+            RecordDate = DateTime.UtcNow.Date.AddDays(100), // Outside goal period
+            RecordedValue = 68
+        };
+
+        var goal = new Goal
+        {
+            GoalId = goalId,
+            UserId = userId,
+            GoalType = GoalType.WeightLoss,
+            TargetValue = 65,
+            StartDate = DateTime.UtcNow.Date,
+            EndDate = DateTime.UtcNow.Date.AddDays(30),
+            Status = GoalStatus.InProgress
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goalId))
+            .ReturnsAsync(goal);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.RecordProgressAsync(request, userId));
+
+        exception.Message.Should().Contain("Record date must be within goal period");
+    }
+
+    [Fact]
+    public async Task UpdateProgressRecordAsync_ShouldThrowException_WhenRecordNotFound()
+    {
+        // Arrange
+        var userId = 1;
+        var recordId = 999;
+        var request = new UpdateProgressRequest
+        {
+            RecordedValue = 68
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetProgressRecordByIdAsync(recordId))
+            .ReturnsAsync((ProgressRecord?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.UpdateProgressRecordAsync(recordId, request, userId));
+    }
+
+    [Fact]
+    public async Task UpdateProgressRecordAsync_ShouldThrowException_WhenUnauthorizedAccess()
+    {
+        // Arrange
+        var userId = 1;
+        var recordId = 1;
+        var request = new UpdateProgressRequest
+        {
+            RecordedValue = 68
+        };
+
+        var record = new ProgressRecord
+        {
+            ProgressRecordId = recordId,
+            GoalId = 1
+        };
+
+        var goal = new Goal
+        {
+            GoalId = 1,
+            UserId = 999 // Different user
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetProgressRecordByIdAsync(recordId))
+            .ReturnsAsync(record);
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(1))
+            .ReturnsAsync(goal);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.UpdateProgressRecordAsync(recordId, request, userId));
+    }
+
+    [Fact]
+    public async Task DeleteGoalAsync_ShouldThrowException_WhenGoalNotFound()
+    {
+        // Arrange
+        var userId = 1;
+        var goalId = 999;
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goalId))
+            .ReturnsAsync((Goal?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.DeleteGoalAsync(goalId, userId));
+    }
+
+    [Fact]
+    public async Task DeleteGoalAsync_ShouldThrowException_WhenUserIdMismatch()
+    {
+        // Arrange
+        var userId = 1;
+        var goalId = 1;
+
+        var goal = new Goal
+        {
+            GoalId = goalId,
+            UserId = 999 // Different user
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(goalId))
+            .ReturnsAsync(goal);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.DeleteGoalAsync(goalId, userId));
+    }
+
+    [Fact]
+    public async Task DeleteProgressRecordAsync_ShouldThrowException_WhenRecordNotFound()
+    {
+        // Arrange
+        var userId = 1;
+        var recordId = 999;
+
+        _goalRepositoryMock
+            .Setup(r => r.GetProgressRecordByIdAsync(recordId))
+            .ReturnsAsync((ProgressRecord?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.DeleteProgressRecordAsync(recordId, userId));
+    }
+
+    [Fact]
+    public async Task DeleteProgressRecordAsync_ShouldThrowException_WhenUnauthorizedAccess()
+    {
+        // Arrange
+        var userId = 1;
+        var recordId = 1;
+
+        var record = new ProgressRecord
+        {
+            ProgressRecordId = recordId,
+            GoalId = 1
+        };
+
+        var goal = new Goal
+        {
+            GoalId = 1,
+            UserId = 999 // Different user
+        };
+
+        _goalRepositoryMock
+            .Setup(r => r.GetProgressRecordByIdAsync(recordId))
+            .ReturnsAsync(record);
+
+        _goalRepositoryMock
+            .Setup(r => r.GetByIdAsync(1))
+            .ReturnsAsync(goal);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            _service.DeleteProgressRecordAsync(recordId, userId));
+    }
 }
 

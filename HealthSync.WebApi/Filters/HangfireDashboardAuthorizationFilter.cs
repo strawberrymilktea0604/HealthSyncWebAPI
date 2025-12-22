@@ -11,8 +11,15 @@ public class HangfireDashboardAuthorizationFilter : IDashboardAuthorizationFilte
 {
     public bool Authorize(DashboardContext context)
     {
+        var user = GetUser(context);
+        return AuthorizeUser(user);
+    }
+
+    // Virtual for testing - allows test subclass to inject user without needing real DashboardContext
+    protected virtual ClaimsPrincipal GetUser(DashboardContext context)
+    {
         var httpContext = context.GetHttpContext();
-        return AuthorizeUser(httpContext.User);
+        return httpContext.User;
     }
 
     // Extracted for testing
