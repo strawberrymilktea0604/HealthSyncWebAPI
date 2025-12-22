@@ -214,22 +214,21 @@ pipeline {
                                 --no-build || echo "⚠️ Tests failed for $p (Check if JunitXml.TestLogger is installed)"
                         done
 
-                        # 4. Generate HTML Report cho Jenkins (Dùng ReportGenerator)
-                        echo "Generating Coverage Reports for Jenkins..."
+                        # 4. Convert Report cho Jenkins (Dùng JaCoCo để né lỗi Duplicate)
+                        echo "Generating Coverage Reports..."
                         dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
                         
-                        # Chúng ta dùng ReportGenerator để gộp các file OpenCover lại thành HTML và Cobertura (cho Jenkins xem)
-                        # Lưu ý: Input là coverage.opencover.xml (do bước trên tạo ra)
+                        # Input: OpenCover (có sẵn từ bước test)
+                        # Output: JaCoCo (cho Jenkins) và Html (cho người xem)
+                        # KHÔNG sinh ra Cobertura nữa vì nó gây lỗi
                         /root/.dotnet/tools/reportgenerator \
                             "-reports:test-results/**/coverage.opencover.xml" \
                             "-targetdir:test-results" \
-                            "-reporttypes:Cobertura;Html" \
+                            "-reporttypes:JaCoCo;Html" \
                             "-classfilters:-Program" || true
                             
-                        # Debug: List file để kiểm tra
-                        echo "=== Files created ==="
-                        find test-results -name "coverage.opencover.xml"
-                        ls -la test-results/Cobertura.xml || true
+                        # Debug info
+                        ls -la test-results
                     '''
                     echo "✓ Unit tests stage finished"
                 }
@@ -242,11 +241,12 @@ pipeline {
                               testResults: 'test-results/TEST-*.xml, test-results/**/TEST-*.xml',
                               healthScaleFactor: 1.0
 
-                        // Jenkins đọc file Cobertura đã được ReportGenerator xử lý sạch sẽ
+                        // QUAN TRỌNG: Dùng parser JAČOCO thay vì COBERTURA
+                        // JaCoCo chấp nhận các hàm trùng tên của .NET async mà không crash
                         recordCoverage(
                             tools: [[
-                                parser: 'COBERTURA', 
-                                pattern: 'test-results/Cobertura.xml' 
+                                parser: 'JACOCO', 
+                                pattern: 'test-results/JaCoCo.xml' 
                             ]],
                             sourceCodeRetention: 'NEVER'
                         )
