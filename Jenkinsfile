@@ -194,7 +194,7 @@ pipeline {
                         echo "========== Generated test results =========="
                         ls -la test-results || true
                         echo "========== JUnit XML files =========="
-                        find test-results -name "TEST-*.xml" -exec echo {} \; || true
+                        find test-results -name "TEST-*.xml" || true
                         echo "=========================================="
                     '''
                     echo "✓ Unit tests stage finished (see artifacts/test-results)"
