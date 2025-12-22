@@ -133,7 +133,7 @@ pipeline {
                               /v:"${BUILD_NUMBER}" \\
                               /d:sonar.login="${SONAR_AUTH_TOKEN}" \\
                               /d:sonar.host.url="${SONAR_HOST_URL}" \\
-                              /d:sonar.cs.vscoveragexml.reportsPaths="test-results/**/coverage.cobertura.xml" \\
+                              /d:sonar.cs.opencover.reportsPaths="test-results/coverage.opencover.xml" \\
                               /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**,**/Program.cs" \\
                               /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**" \\
                               /d:sonar.qualitygate.wait=true \\
@@ -197,6 +197,20 @@ pipeline {
                         echo "========== JUnit XML files =========="
                         find test-results -name "TEST-*.xml" || true
                         echo "=========================================="
+                        
+                        # 2. CONVERT REPORT NGAY TẠI ĐÂY (Trước khi SonarQube End chạy)
+                        echo "Generating Coverage Reports for SonarQube & Jenkins..."
+                        dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
+                        export PATH="$PATH:/root/.dotnet/tools"
+                        
+                        # Tạo OpenCover (cho SonarQube) và JaCoCo (cho Jenkins) cùng lúc
+                        reportgenerator -reports:"test-results/**/coverage.cobertura.xml" \
+                            -targetdir:"test-results" \
+                            -reporttypes:"OpenCover;JaCoCo;Html" \
+                            -classfilters:"-Program" || true
+                            
+                        # Đổi tên file OpenCover cho khớp với config
+                        mv test-results/coverage.opencover.xml test-results/coverage.opencover.xml || true
                     '''
                     echo "✓ Unit tests stage finished (see artifacts/test-results)"
                 }
@@ -209,51 +223,25 @@ pipeline {
                               testResults: 'test-results/TEST-*.xml, test-results/**/TEST-*.xml',
                               healthScaleFactor: 1.0
 
-                        echo "Generating coverage (Switching to JaCoCo format to fix Duplicate Method error)..."
-                        sh '''
-                            dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
-                            export PATH="$PATH:/root/.dotnet/tools"
-                            
-                            # 1. SỬA TẠI ĐÂY: Đổi reporttypes thành "Html;JaCoCo" (Thay vì Cobertura)
-                            reportgenerator -reports:"test-results/**/coverage.cobertura.xml" \
-                                -targetdir:"test-results/coverage-report" \
-                                -reporttypes:"Html;JaCoCo" \
-                                -classfilters:"-Program" || true
-                            
-                            # Generate text summary for build logs
-                            reportgenerator -reports:"test-results/**/coverage.cobertura.xml" \
-                                -targetdir:"test-results" \
-                                -reporttypes:"TextSummary" \
-                                -classfilters:"-Program" || true
-                            
-                            # Display coverage summary in console
-                            if [ -f test-results/Summary.txt ]; then
-                                echo "========== Code Coverage Summary =========="
-                                cat test-results/Summary.txt
-                                echo "==========================================="
-                            fi
-                        '''
+                        // Publish JaCoCo Report (File đã được tạo ở bước Run Unit Tests)
+                        recordCoverage(
+                            tools: [[
+                                parser: 'JACOCO', 
+                                pattern: 'test-results/JaCoCo.xml' 
+                            ]],
+                            sourceCodeRetention: 'NEVER'
+                        )
                         
-                        // Publish HTML Report (Vẫn dùng được như thường)
+                        // Publish HTML Report
                         publishHTML([
                             allowMissing: true,
                             alwaysLinkToLastBuild: true,
                             keepAll: true,
-                            reportDir: 'test-results/coverage-report',
+                            reportDir: 'test-results', // File index.html nằm ngay trong test-results do config reportgenerator ở trên
                             reportFiles: 'index.html',
                             reportName: 'Coverage Report',
                             reportTitles: 'Code Coverage'
                         ])
-                        
-                        // 2. SỬA TẠI ĐÂY: Đổi parser sang JACOCO và trỏ vào file JaCoCo.xml
-                        echo "Publishing JaCoCo coverage report to Jenkins..."
-                        recordCoverage(
-                            tools: [[
-                                parser: 'JACOCO', 
-                                pattern: 'test-results/coverage-report/JaCoCo.xml'
-                            ]],
-                            sourceCodeRetention: 'NEVER'
-                        )
                     }
                 }
             }
