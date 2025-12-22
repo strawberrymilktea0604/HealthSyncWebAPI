@@ -133,7 +133,7 @@ pipeline {
                               /v:"${BUILD_NUMBER}" \\
                               /d:sonar.login="${SONAR_AUTH_TOKEN}" \\
                               /d:sonar.host.url="${SONAR_HOST_URL}" \\
-                              /d:sonar.cs.opencover.reportsPaths="${WORKSPACE}/test-results/coverage.opencover.xml" \\
+                              /d:sonar.cs.opencover.reportsPaths="test-results/**/coverage.opencover.xml" \\
                               /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**,**/Program.cs" \\
                               /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**" \\
                               /d:sonar.qualitygate.wait=true \\
@@ -203,47 +203,33 @@ pipeline {
                             logfile="TEST-${pname}.xml"
                             echo "Running tests for [$p]"
                             
-                            # Chạy test (Lưu ý: Project phải có JunitXml.TestLogger mới chạy được dòng --logger junit)
+                            # === KHÁC BIỆT CHÍNH Ở DÒNG DƯỚI ===
+                            # Thêm ";Format=opencover" vào tham số collect
+                            # Điều này giúp tạo ra file coverage.opencover.xml ngay lập tức (Miễn phí & Chuẩn)
                             dotnet test "$p" -c Release \
                                 --settings HealthSync.runsettings \
-                                --collect:"XPlat Code Coverage" \
+                                --collect:"XPlat Code Coverage;Format=opencover" \
                                 --results-directory ./test-results \
                                 --logger "junit;LogFileName=$logfile;MethodFormat=Class;FailureBodyFormat=Verbose" \
                                 --no-build || echo "⚠️ Tests failed for $p (Check if JunitXml.TestLogger is installed)"
                         done
 
-                        # 4. Generate Coverage Reports (FIX QUAN TRỌNG TẠI ĐÂY)
-                        echo "Generating Coverage Reports..."
-                        
-                        # Cài đặt tool
+                        # 4. Generate HTML Report cho Jenkins (Dùng ReportGenerator)
+                        echo "Generating Coverage Reports for Jenkins..."
                         dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
                         
-                        # Sử dụng đường dẫn tuyệt đối để gọi tool (Tránh việc PATH chưa cập nhật kịp)
-                        # Bước 4.1: Tạo OpenCover cho SonarQube trước (Ưu tiên số 1)
+                        # Chúng ta dùng ReportGenerator để gộp các file OpenCover lại thành HTML và Cobertura (cho Jenkins xem)
+                        # Lưu ý: Input là coverage.opencover.xml (do bước trên tạo ra)
                         /root/.dotnet/tools/reportgenerator \
-                            "-reports:test-results/**/coverage.cobertura.xml" \
+                            "-reports:test-results/**/coverage.opencover.xml" \
                             "-targetdir:test-results" \
-                            "-reporttypes:OpenCover" \
+                            "-reporttypes:Cobertura;Html" \
                             "-classfilters:-Program" || true
                             
-                        # Kiểm tra và đổi tên cho khớp config Sonar
-                        if [ -f test-results/OpenCover.xml ]; then
-                            mv test-results/OpenCover.xml test-results/coverage.opencover.xml
-                            echo "✓ Created coverage.opencover.xml for SonarQube"
-                        else
-                            echo "❌ FAILED to create OpenCover.xml"
-                        fi
-
-                        # Bước 4.2: Tạo JaCoCo và HTML cho Jenkins (Ưu tiên số 2)
-                        /root/.dotnet/tools/reportgenerator \
-                            "-reports:test-results/**/coverage.cobertura.xml" \
-                            "-targetdir:test-results" \
-                            "-reporttypes:JaCoCo;Html" \
-                            "-classfilters:-Program" || true
-                            
-                        # Debug: List file để chắc chắn file tồn tại
-                        ls -la test-results/coverage.opencover.xml || true
-                        ls -la test-results/JaCoCo.xml || true
+                        # Debug: List file để kiểm tra
+                        echo "=== Files created ==="
+                        find test-results -name "coverage.opencover.xml"
+                        ls -la test-results/Cobertura.xml || true
                     '''
                     echo "✓ Unit tests stage finished"
                 }
@@ -256,11 +242,11 @@ pipeline {
                               testResults: 'test-results/TEST-*.xml, test-results/**/TEST-*.xml',
                               healthScaleFactor: 1.0
 
-                        // Publish JaCoCo Report
+                        // Jenkins đọc file Cobertura đã được ReportGenerator xử lý sạch sẽ
                         recordCoverage(
                             tools: [[
-                                parser: 'JACOCO', 
-                                pattern: 'test-results/JaCoCo.xml' 
+                                parser: 'COBERTURA', 
+                                pattern: 'test-results/Cobertura.xml' 
                             ]],
                             sourceCodeRetention: 'NEVER'
                         )
