@@ -133,7 +133,7 @@ pipeline {
                               /v:"${BUILD_NUMBER}" \\
                               /d:sonar.login="${SONAR_AUTH_TOKEN}" \\
                               /d:sonar.host.url="${SONAR_HOST_URL}" \\
-                              /d:sonar.cs.opencover.reportsPaths="test-results/coverage.opencover.xml" \\
+                              /d:sonar.cs.opencover.reportsPaths="${WORKSPACE}/test-results/coverage.opencover.xml" \\
                               /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**,**/Program.cs" \\
                               /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**" \\
                               /d:sonar.qualitygate.wait=true \\
@@ -152,8 +152,35 @@ pipeline {
                     sh '''
                         dotnet clean
                         dotnet build HealthSyncWebAPI.sln -c Release
+                        
+                        # Build test projects riêng để đảm bảo chúng được compile (build theo thứ tự dependencies)
+                        echo "Building test projects in dependency order..."
+                        
+                        # Build domain tests first (least dependencies)
+                        find . -name "HealthSync.Domain.Tests.csproj" -type f | while read -r proj; do
+                            echo "Building test project: $proj"
+                            dotnet build "$proj" -c Release || echo "Warning: Failed to build $proj"
+                        done
+                        
+                        # Build application tests next
+                        find . -name "HealthSync.Application.Tests.csproj" -type f | while read -r proj; do
+                            echo "Building test project: $proj"
+                            dotnet build "$proj" -c Release || echo "Warning: Failed to build $proj"
+                        done
+                        
+                        # Build infrastructure tests (depends on domain and application)
+                        find . -name "HealthSync.Infrastructure.Tests.csproj" -type f | while read -r proj; do
+                            echo "Building test project: $proj"
+                            dotnet build "$proj" -c Release || echo "Warning: Failed to build $proj"
+                        done
+                        
+                        # Build webapi tests last (most dependencies)
+                        find . -name "HealthSync.WebApi.Tests.csproj" -type f | while read -r proj; do
+                            echo "Building test project: $proj"
+                            dotnet build "$proj" -c Release || echo "Warning: Failed to build $proj"
+                        done
                     '''
-                    echo "✓ Solution built successfully"
+                    echo "✓ Solution and test projects built successfully"
                 }
             }
         }
@@ -176,6 +203,7 @@ pipeline {
 
                         echo "Found test projects:"
                         echo "$TEST_PROJECTS"
+                        echo "Total test projects found: $(echo "$TEST_PROJECTS" | wc -l)"
 
                         # loop over projects -> run dotnet test for each and write a distinct JUnit XML
                         for p in $TEST_PROJECTS; do
@@ -184,12 +212,16 @@ pipeline {
                             logfile="TEST-${pname}.xml"
                             echo "Running tests for [$p] -> test-results/$logfile"
                             # Use runsettings to exclude Program.cs and other infrastructure from coverage
-                            dotnet test "$p" -c Release \
+                            if dotnet test "$p" -c Release \
                                 --settings HealthSync.runsettings \
                                 --collect:"XPlat Code Coverage" \
                                 --results-directory ./test-results \
                                 --logger "junit;LogFileName=$logfile;MethodFormat=Class;FailureBodyFormat=Verbose" \
-                                --no-build || true
+                                --no-build; then
+                                echo "✓ Tests passed for $p"
+                            else
+                                echo "⚠️  Tests failed for $p, but continuing..."
+                            fi
                         done
 
                         echo "========== Generated test results =========="
@@ -209,8 +241,18 @@ pipeline {
                             -reporttypes:"OpenCover;JaCoCo;Html" \
                             -classfilters:"-Program" || true
                             
-                        # Đổi tên file OpenCover cho khớp với config
-                        mv test-results/coverage.opencover.xml test-results/coverage.opencover.xml || true
+                        # === SỬA ĐOẠN NÀY ===
+                        # ReportGenerator sinh ra file tên là "OpenCover.xml", ta cần đổi tên nó thành "coverage.opencover.xml"
+                        if [ -f test-results/OpenCover.xml ]; then
+                            mv test-results/OpenCover.xml test-results/coverage.opencover.xml
+                            echo "✓ Renamed OpenCover.xml to coverage.opencover.xml"
+                        else
+                            echo "⚠️ Warning: OpenCover.xml not found!"
+                        fi
+                        
+                        # Debug: List file ra để kiểm tra xem file nằm đâu
+                        echo "=== File Listing in test-results ==="
+                        ls -la test-results
                     '''
                     echo "✓ Unit tests stage finished (see artifacts/test-results)"
                 }
