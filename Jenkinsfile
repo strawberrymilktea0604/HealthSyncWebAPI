@@ -190,71 +190,62 @@ pipeline {
                 script {
                     echo "========== STAGE: Run Unit Tests =========="
                     sh '''
-                        # clean previous results
+                        # 1. Clean previous results
                         rm -rf test-results || true
                         mkdir -p test-results
 
-                        # find test projects (adjust glob if your tests live in different folders)
+                        # 2. Find test projects
                         TEST_PROJECTS=$(find . -type f -name '*Tests*.csproj' -o -name '*Test*.csproj' || true)
-                        if [ -z "$TEST_PROJECTS" ]; then
-                            echo "No test project files found by pattern '*Tests*' or '*Test*' - aborting tests"
-                            exit 0
-                        fi
-
-                        echo "Found test projects:"
-                        echo "$TEST_PROJECTS"
-                        echo "Total test projects found: $(echo "$TEST_PROJECTS" | wc -l)"
-
-                        # loop over projects -> run dotnet test for each and write a distinct JUnit XML
+                        
+                        # 3. Run Tests Loop
                         for p in $TEST_PROJECTS; do
-                            # derive short name for file
                             pname=$(basename "$p" .csproj | sed 's/[^a-zA-Z0-9._-]/_/g')
                             logfile="TEST-${pname}.xml"
-                            echo "Running tests for [$p] -> test-results/$logfile"
-                            # Use runsettings to exclude Program.cs and other infrastructure from coverage
-                            if dotnet test "$p" -c Release \
+                            echo "Running tests for [$p]"
+                            
+                            # Chạy test (Lưu ý: Project phải có JunitXml.TestLogger mới chạy được dòng --logger junit)
+                            dotnet test "$p" -c Release \
                                 --settings HealthSync.runsettings \
                                 --collect:"XPlat Code Coverage" \
                                 --results-directory ./test-results \
                                 --logger "junit;LogFileName=$logfile;MethodFormat=Class;FailureBodyFormat=Verbose" \
-                                --no-build; then
-                                echo "✓ Tests passed for $p"
-                            else
-                                echo "⚠️  Tests failed for $p, but continuing..."
-                            fi
+                                --no-build || echo "⚠️ Tests failed for $p (Check if JunitXml.TestLogger is installed)"
                         done
 
-                        echo "========== Generated test results =========="
-                        ls -la test-results || true
-                        echo "========== JUnit XML files =========="
-                        find test-results -name "TEST-*.xml" || true
-                        echo "=========================================="
+                        # 4. Generate Coverage Reports (FIX QUAN TRỌNG TẠI ĐÂY)
+                        echo "Generating Coverage Reports..."
                         
-                        # 2. CONVERT REPORT NGAY TẠI ĐÂY (Trước khi SonarQube End chạy)
-                        echo "Generating Coverage Reports for SonarQube & Jenkins..."
+                        # Cài đặt tool
                         dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
-                        export PATH="$PATH:/root/.dotnet/tools"
                         
-                        # Tạo OpenCover (cho SonarQube) và JaCoCo (cho Jenkins) cùng lúc
-                        reportgenerator -reports:"test-results/**/coverage.cobertura.xml" \
-                            -targetdir:"test-results" \
-                            -reporttypes:"OpenCover;JaCoCo;Html" \
-                            -classfilters:"-Program" || true
+                        # Sử dụng đường dẫn tuyệt đối để gọi tool (Tránh việc PATH chưa cập nhật kịp)
+                        # Bước 4.1: Tạo OpenCover cho SonarQube trước (Ưu tiên số 1)
+                        /root/.dotnet/tools/reportgenerator \
+                            "-reports:test-results/**/coverage.cobertura.xml" \
+                            "-targetdir:test-results" \
+                            "-reporttypes:OpenCover" \
+                            "-classfilters:-Program" || true
                             
-                        # === SỬA ĐOẠN NÀY ===
-                        # ReportGenerator sinh ra file tên là "OpenCover.xml", ta cần đổi tên nó thành "coverage.opencover.xml"
+                        # Kiểm tra và đổi tên cho khớp config Sonar
                         if [ -f test-results/OpenCover.xml ]; then
                             mv test-results/OpenCover.xml test-results/coverage.opencover.xml
-                            echo "✓ Renamed OpenCover.xml to coverage.opencover.xml"
+                            echo "✓ Created coverage.opencover.xml for SonarQube"
                         else
-                            echo "⚠️ Warning: OpenCover.xml not found!"
+                            echo "❌ FAILED to create OpenCover.xml"
                         fi
-                        
-                        # Debug: List file ra để kiểm tra xem file nằm đâu
-                        echo "=== File Listing in test-results ==="
-                        ls -la test-results
+
+                        # Bước 4.2: Tạo JaCoCo và HTML cho Jenkins (Ưu tiên số 2)
+                        /root/.dotnet/tools/reportgenerator \
+                            "-reports:test-results/**/coverage.cobertura.xml" \
+                            "-targetdir:test-results" \
+                            "-reporttypes:JaCoCo;Html" \
+                            "-classfilters:-Program" || true
+                            
+                        # Debug: List file để chắc chắn file tồn tại
+                        ls -la test-results/coverage.opencover.xml || true
+                        ls -la test-results/JaCoCo.xml || true
                     '''
-                    echo "✓ Unit tests stage finished (see artifacts/test-results)"
+                    echo "✓ Unit tests stage finished"
                 }
             }
             post {
@@ -265,7 +256,7 @@ pipeline {
                               testResults: 'test-results/TEST-*.xml, test-results/**/TEST-*.xml',
                               healthScaleFactor: 1.0
 
-                        // Publish JaCoCo Report (File đã được tạo ở bước Run Unit Tests)
+                        // Publish JaCoCo Report
                         recordCoverage(
                             tools: [[
                                 parser: 'JACOCO', 
@@ -279,7 +270,7 @@ pipeline {
                             allowMissing: true,
                             alwaysLinkToLastBuild: true,
                             keepAll: true,
-                            reportDir: 'test-results', // File index.html nằm ngay trong test-results do config reportgenerator ở trên
+                            reportDir: 'test-results', 
                             reportFiles: 'index.html',
                             reportName: 'Coverage Report',
                             reportTitles: 'Code Coverage'
