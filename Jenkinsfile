@@ -236,9 +236,10 @@ pipeline {
                         
                         // Publish Cobertura coverage for Jenkins dashboard integration
                         echo "Publishing Cobertura coverage report..."
-                        publishCoverage adapters: [
-                            coberturaAdapter('test-results/**/coverage.cobertura.xml')
-                        ], sourceFileResolver: sourceFiles('NEVER_STORE')
+                        recordCoverage(
+                            tools: [[parser: 'COBERTURA', pattern: 'test-results/**/coverage.cobertura.xml']],
+                            sourceCodeRetention: 'NEVER'
+                        )
                     }
                 }
             }
