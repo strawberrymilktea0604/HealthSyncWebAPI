@@ -397,8 +397,3 @@ static void ConfigureEndpoints(WebApplication app)
             TimeZone = TimeZoneInfo.Utc
         });
 }
-
-namespace HealthSync.WebApi
-{
-    // Application entry point
-}
