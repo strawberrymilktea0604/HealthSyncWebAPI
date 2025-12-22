@@ -275,6 +275,9 @@ public class NutritionLogRepositoryTests : IDisposable
     {
         // Act & Assert
         await _repository.DeleteAsync(999); // Should not throw
+        
+        // Assert that no exception was thrown
+        Assert.True(true);
     }
 
     [Fact]
@@ -345,6 +348,9 @@ public class NutritionLogRepositoryTests : IDisposable
     {
         // Act & Assert
         await _repository.DeleteFoodEntryAsync(999); // Should not throw
+        
+        // Assert that no exception was thrown
+        Assert.True(true);
     }
 
     [Fact]

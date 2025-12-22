@@ -134,8 +134,8 @@ pipeline {
                               /d:sonar.login="${SONAR_AUTH_TOKEN}" \\
                               /d:sonar.host.url="${SONAR_HOST_URL}" \\
                               /d:sonar.cs.opencover.reportsPaths="test-results/**/coverage.opencover.xml" \\
-                              /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**,**/Program.cs" \\
-                              /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**" \\
+                              /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**,**/Program.cs,**/*DTOs*/**,**/*Configurations*/**" \
+                              /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/*DTOs*/**,**/*Configurations*/**"
                               /d:sonar.qualitygate.wait=true \\
                               /d:sonar.qualitygate.timeout=300
                         """

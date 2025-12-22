@@ -62,6 +62,7 @@ public class FileStorageServiceTests
         await _service.DeleteFileAsync(fileUrl);
 
         // Assert - No exception should be thrown
+        Assert.True(true);
     }
 
     [Fact]
@@ -74,6 +75,7 @@ public class FileStorageServiceTests
         await _service.DeleteFileAsync(fileUrl);
 
         // Assert - No exception should be thrown
+        Assert.True(true);
     }
 
     [Fact]

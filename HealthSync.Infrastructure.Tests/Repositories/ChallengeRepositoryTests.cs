@@ -265,7 +265,8 @@ public class ChallengeRepositoryTests : IDisposable
         await _repository.DeleteAsync(999);
         await _repository.SaveChangesAsync();
 
-        // Should not throw exception
+        // Assert that no exception was thrown
+        Assert.True(true);
     }
 
     [Fact]

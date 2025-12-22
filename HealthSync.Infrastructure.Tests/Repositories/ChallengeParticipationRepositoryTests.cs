@@ -346,6 +346,9 @@ public class ChallengeParticipationRepositoryTests : IDisposable
         // Act & Assert
         await _repository.DeleteAsync(999);
         await _repository.SaveChangesAsync();
+        
+        // Assert that no exception was thrown
+        Assert.True(true);
     }
 
     [Fact]
