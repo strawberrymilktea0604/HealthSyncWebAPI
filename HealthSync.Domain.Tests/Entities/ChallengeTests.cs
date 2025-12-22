@@ -1,5 +1,5 @@
-using FluentAssertions;
 using HealthSync.Domain.Entities;
+using FluentAssertions;
 using Xunit;
 
 namespace HealthSync.Domain.Tests.Entities;
@@ -74,3 +74,4 @@ public class ChallengeTests
         challenge.UpdatedAt.Should().Be(updatedAt);
     }
 }
+

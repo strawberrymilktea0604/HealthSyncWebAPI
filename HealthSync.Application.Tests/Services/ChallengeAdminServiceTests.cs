@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.Challenges;
 using HealthSync.Application.Interfaces;
@@ -6,6 +5,7 @@ using HealthSync.Application.Services;
 using HealthSync.Domain.Entities;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace HealthSync.Application.Tests.Services;
 
@@ -639,3 +639,4 @@ public class ChallengeAdminServiceTests
         result.Message.Should().Be("Admin not found");
     }
 }
+

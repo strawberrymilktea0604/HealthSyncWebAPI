@@ -230,4 +230,172 @@ public class WorkoutLogsControllerTests
         root.GetProperty("success").GetBoolean().Should().BeFalse();
         root.GetProperty("message").GetString().Should().Be("Start date must be before or equal to end date");
     }
+
+    [Fact]
+    public async Task CreateWorkoutLog_ShouldReturnUnauthorized_WhenUserNotAuthenticated()
+    {
+        // Arrange
+        var request = new CreateWorkoutLogRequest
+        {
+            WorkoutDate = new DateTime(2025, 12, 19),
+            Notes = "Chest day workout",
+            ExerciseSessions = new List<CreateExerciseSessionRequest>
+            {
+                new CreateExerciseSessionRequest
+                {
+                    ExerciseId = 1,
+                    Sets = 4,
+                    Reps = 10,
+                    WeightKg = 80,
+                    RestSeconds = 90,
+                    Rpe = 8,
+                    OrderIndex = 1
+                }
+            }
+        };
+
+        // Setup unauthenticated user
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+        };
+
+        // Act
+        var result = await _controller.CreateWorkoutLog(request);
+
+        // Assert
+        var unauthorizedResult = result.Result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+        var json = JsonSerializer.Serialize(unauthorizedResult.Value);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("message").GetString().Should().Be("User ID not found in token");
+    }
+
+    [Fact]
+    public async Task CreateWorkoutLog_ShouldReturnBadRequest_WhenArgumentExceptionThrown()
+    {
+        // Arrange
+        var userId = 1;
+        var request = new CreateWorkoutLogRequest
+        {
+            WorkoutDate = new DateTime(2025, 12, 19),
+            Notes = "Chest day workout",
+            ExerciseSessions = new List<CreateExerciseSessionRequest>
+            {
+                new CreateExerciseSessionRequest
+                {
+                    ExerciseId = 1,
+                    Sets = 4,
+                    Reps = 10,
+                    WeightKg = 80,
+                    RestSeconds = 90,
+                    Rpe = 8,
+                    OrderIndex = 1
+                }
+            }
+        };
+
+        _mockWorkoutLogService
+            .Setup(s => s.CreateWorkoutLogAsync(userId, request))
+            .ThrowsAsync(new ArgumentException("Invalid exercise ID"));
+
+        // Act
+        var result = await _controller.CreateWorkoutLog(request);
+
+        // Assert
+        var badRequestResult = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
+        var json = JsonSerializer.Serialize(badRequestResult.Value);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("message").GetString().Should().Be("Invalid exercise ID");
+    }
+
+    [Fact]
+    public async Task CreateWorkoutLog_ShouldReturn500_WhenServiceThrowsException()
+    {
+        // Arrange
+        var userId = 1;
+        var request = new CreateWorkoutLogRequest
+        {
+            WorkoutDate = new DateTime(2025, 12, 19),
+            Notes = "Chest day workout",
+            ExerciseSessions = new List<CreateExerciseSessionRequest>
+            {
+                new CreateExerciseSessionRequest
+                {
+                    ExerciseId = 1,
+                    Sets = 4,
+                    Reps = 10,
+                    WeightKg = 80,
+                    RestSeconds = 90,
+                    Rpe = 8,
+                    OrderIndex = 1
+                }
+            }
+        };
+
+        _mockWorkoutLogService
+            .Setup(s => s.CreateWorkoutLogAsync(userId, request))
+            .ThrowsAsync(new Exception("Database connection failed"));
+
+        // Act
+        var result = await _controller.CreateWorkoutLog(request);
+
+        // Assert
+        var statusCodeResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        statusCodeResult.StatusCode.Should().Be(500);
+        var json = JsonSerializer.Serialize(statusCodeResult.Value);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("message").GetString().Should().Be("An error occurred while creating workout log");
+    }
+
+    [Fact]
+    public async Task GetWorkoutLogs_ShouldReturnUnauthorized_WhenUserNotAuthenticated()
+    {
+        // Arrange
+        // Setup unauthenticated user
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+        };
+
+        // Act
+        var result = await _controller.GetWorkoutLogs();
+
+        // Assert
+        var unauthorizedResult = result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
+        var json = JsonSerializer.Serialize(unauthorizedResult.Value);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("message").GetString().Should().Be("User ID not found in token");
+    }
+
+    [Fact]
+    public async Task GetWorkoutLogs_ShouldReturn500_WhenServiceThrowsException()
+    {
+        // Arrange
+        var userId = 1;
+
+        _mockWorkoutLogService
+            .Setup(s => s.GetWorkoutLogsAsync(userId, 1, 20, null, null))
+            .ThrowsAsync(new Exception("Database connection failed"));
+
+        // Act
+        var result = await _controller.GetWorkoutLogs();
+
+        // Assert
+        var statusCodeResult = result.Should().BeOfType<ObjectResult>().Subject;
+        statusCodeResult.StatusCode.Should().Be(500);
+        var json = JsonSerializer.Serialize(statusCodeResult.Value);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        root.GetProperty("success").GetBoolean().Should().BeFalse();
+        root.GetProperty("message").GetString().Should().Be("An error occurred while retrieving workout logs");
+    }
 }
+

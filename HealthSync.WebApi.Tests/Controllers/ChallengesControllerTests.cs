@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs.Challenges;
 using HealthSync.Application.Interfaces;
 using HealthSync.Domain.Entities;
@@ -10,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using System.Text.Json;
 using System.Security.Claims;
+using FluentAssertions;
 
 namespace HealthSync.WebApi.Tests.Controllers;
 
@@ -164,3 +164,4 @@ public class ChallengesControllerTests : IDisposable
         root.GetProperty("message").GetString().Should().Be("Challenge not found");
     }
 }
+

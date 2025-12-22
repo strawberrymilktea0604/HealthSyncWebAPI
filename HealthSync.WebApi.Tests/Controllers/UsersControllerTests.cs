@@ -303,3 +303,4 @@ public class UsersControllerTests
         data.GetProperty("ContributionPoints").GetInt32().Should().Be(150);
     }
 }
+

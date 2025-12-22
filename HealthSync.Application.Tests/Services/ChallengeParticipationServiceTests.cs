@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs.Challenges;
 using HealthSync.Application.Interfaces;
 using HealthSync.Application.Services;
@@ -6,6 +5,7 @@ using HealthSync.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using FluentAssertions;
 using Xunit;
 
 namespace HealthSync.Application.Tests.Services;
@@ -361,3 +361,4 @@ public class ChallengeParticipationServiceTests
             _service.SubmitChallengeResultAsync(challengeId, userId, request));
     }
 }
+

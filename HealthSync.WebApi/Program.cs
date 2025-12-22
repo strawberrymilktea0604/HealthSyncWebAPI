@@ -131,12 +131,16 @@ static void ConfigureServices(WebApplicationBuilder builder)
     // Add services to the container.
     builder.Services.AddControllers();
 
+    // Add FluentValidation auto validation
+    builder.Services.AddFluentValidationAutoValidation();
+
     // Add Health Checks
     builder.Services.AddHealthChecks();
 
     // Add FluentValidation
     builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Users.UpdateUserProfileValidator>();
     builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Exercises.CreateExerciseRequestValidator>();
+    builder.Services.AddValidatorsFromAssemblyContaining<HealthSync.Application.Validators.Nutrition.CreateFoodEntryRequestValidator>();
 
     // Add DbContext (without Identity)
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -396,8 +400,5 @@ static void ConfigureEndpoints(WebApplication app)
 
 namespace HealthSync.WebApi
 {
-    record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-    {
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-    }
+    // Application entry point
 }

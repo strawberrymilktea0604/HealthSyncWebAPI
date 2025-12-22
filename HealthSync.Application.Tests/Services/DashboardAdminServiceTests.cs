@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs.Dashboard;
 using HealthSync.Application.Interfaces;
 using HealthSync.Application.Services;
@@ -6,6 +5,7 @@ using HealthSync.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace HealthSync.Application.Tests.Services;
 
@@ -401,3 +401,4 @@ public class DashboardAdminServiceTests
         result.Message.Should().Contain("Error getting users by contribution points");
     }
 }
+

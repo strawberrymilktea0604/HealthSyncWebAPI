@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs.Nutrition;
 using HealthSync.Application.Interfaces;
 using HealthSync.Application.Services;
@@ -6,6 +5,7 @@ using HealthSync.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace HealthSync.Application.Tests.Services;
 
@@ -263,3 +263,4 @@ public class NutritionLogServiceTests
         result.Notes.Should().BeNull();
     }
 }
+

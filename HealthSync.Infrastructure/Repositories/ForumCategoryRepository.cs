@@ -37,6 +37,7 @@ public class ForumCategoryRepository : IForumCategoryRepository
 
     public async Task UpdateAsync(ForumCategory category)
     {
+        category.UpdatedAt = DateTime.UtcNow;
         _context.ForumCategories.Update(category);
         await _context.SaveChangesAsync();
     }

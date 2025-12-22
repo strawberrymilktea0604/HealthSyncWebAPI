@@ -1,5 +1,6 @@
 using FluentValidation;
 using HealthSync.Application.DTOs.FoodItems;
+using HealthSync.Domain.Entities;
 
 namespace HealthSync.Application.Validators.FoodItems;
 
@@ -12,7 +13,7 @@ public class UpdateFoodItemRequestValidator : AbstractValidator<UpdateFoodItemRe
             .MaximumLength(200).WithMessage("Name cannot exceed 200 characters");
 
         RuleFor(x => x.Category)
-            .IsInEnum().WithMessage("Invalid food category");
+            .Must(BeValidFoodCategory).WithMessage("Invalid food category");
 
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters")
@@ -26,7 +27,7 @@ public class UpdateFoodItemRequestValidator : AbstractValidator<UpdateFoodItemRe
             .GreaterThan(0).WithMessage("Serving size must be greater than 0");
 
         RuleFor(x => x.ServingUnit)
-            .IsInEnum().WithMessage("Invalid serving unit");
+            .Must(BeValidServingUnit).WithMessage("Invalid serving unit");
 
         RuleFor(x => x.CaloriesPerServing)
             .GreaterThanOrEqualTo(0).WithMessage("Calories per serving must be 0 or greater");
@@ -47,5 +48,15 @@ public class UpdateFoodItemRequestValidator : AbstractValidator<UpdateFoodItemRe
         RuleFor(x => x.SugarG)
             .GreaterThanOrEqualTo(0).WithMessage("Sugar must be 0 or greater")
             .When(x => x.SugarG.HasValue);
+    }
+
+    private static bool BeValidFoodCategory(string? category)
+    {
+        return string.IsNullOrEmpty(category) || Enum.TryParse<HealthSync.Domain.Entities.FoodCategory>(category, true, out _);
+    }
+
+    private static bool BeValidServingUnit(string? servingUnit)
+    {
+        return string.IsNullOrEmpty(servingUnit) || Enum.TryParse<HealthSync.Domain.Entities.ServingUnit>(servingUnit, true, out _);
     }
 }

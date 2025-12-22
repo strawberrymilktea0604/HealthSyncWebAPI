@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.Leaderboard;
 using HealthSync.Application.Interfaces;
@@ -6,6 +5,7 @@ using HealthSync.Application.Services;
 using HealthSync.Domain.Entities;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace HealthSync.Application.Tests.Services;
 
@@ -413,3 +413,4 @@ public class LeaderboardServiceTests
         _userProfileRepositoryMock.Verify(r => r.GetTopUsersByContributionPointsAsync(defaultLimit), Times.Once);
     }
 }
+

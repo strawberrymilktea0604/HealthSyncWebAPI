@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.Exercises;
 using HealthSync.Application.Interfaces;
@@ -7,6 +6,7 @@ using HealthSync.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace HealthSync.Application.Tests.Services;
 
@@ -476,3 +476,4 @@ public class ExerciseServiceTests
             _service.DeleteExerciseAsync(1));
     }
 }
+

@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.WorkoutLogs;
 using HealthSync.Application.Interfaces;
@@ -108,10 +107,10 @@ public class WorkoutLogServiceTests
         var result = await _service.CreateWorkoutLogAsync(userId, request);
 
         // Assert
-        result.Should().NotBeNull();
-        result.WorkoutDate.Should().Be(request.WorkoutDate);
-        result.Notes.Should().Be("Chest day");
-        result.ExerciseSessions.Should().HaveCount(1);
+        Assert.NotNull(result);
+        Assert.Equal(request.WorkoutDate, result.WorkoutDate);
+        Assert.Equal("Chest day", result.Notes);
+        Assert.Single(result.ExerciseSessions);
 
         // Verify totals were calculated
         _workoutLogRepositoryMock.Verify(r => r.UpdateAsync(It.Is<WorkoutLog>(wl =>
@@ -325,11 +324,11 @@ public class WorkoutLogServiceTests
         var result = await _service.AddExerciseSessionAsync(workoutLogId, request);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ExerciseId.Should().Be(2);
-        result.Sets.Should().Be(3);
-        result.Reps.Should().Be(15);
-        result.Rpe.Should().Be(7);
+        Assert.NotNull(result);
+        Assert.Equal(2, result.ExerciseId);
+        Assert.Equal(3, result.Sets);
+        Assert.Equal(15, result.Reps);
+        Assert.Equal(7, result.Rpe);
 
         // Verify totals were recalculated
         _workoutLogRepositoryMock.Verify(r => r.UpdateAsync(It.Is<WorkoutLog>(wl =>
@@ -430,12 +429,12 @@ public class WorkoutLogServiceTests
         var result = await _service.GetWorkoutLogsAsync(userId, pageNumber, pageSize, startDate, endDate);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Items.Should().HaveCount(1);
-        result.TotalItems.Should().Be(1);
-        result.CurrentPage.Should().Be(pageNumber);
-        result.PageSize.Should().Be(pageSize);
-        result.Items.First().WorkoutLogId.Should().Be(1);
+        Assert.NotNull(result);
+        Assert.Single(result.Items);
+        Assert.Equal(1, result.TotalItems);
+        Assert.Equal(pageNumber, result.CurrentPage);
+        Assert.Equal(pageSize, result.PageSize);
+        Assert.Equal(1, result.Items.First().WorkoutLogId);
     }
 
     [Fact]
@@ -463,10 +462,11 @@ public class WorkoutLogServiceTests
         var result = await _service.GetWorkoutLogsAsync(userId, pageNumber, pageSize);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Items.Should().BeEmpty();
-        result.TotalItems.Should().Be(0);
-        result.CurrentPage.Should().Be(pageNumber);
-        result.PageSize.Should().Be(pageSize);
+        Assert.NotNull(result);
+        Assert.Empty(result.Items);
+        Assert.Equal(0, result.TotalItems);
+        Assert.Equal(pageNumber, result.CurrentPage);
+        Assert.Equal(pageSize, result.PageSize);
     }
 }
+

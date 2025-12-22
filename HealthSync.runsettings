@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Exclude>
+                <ModulePath>*Migrations*</ModulePath>
+                <ModulePath>*DTOs*</ModulePath>
+                <ModulePath>*Configurations*</ModulePath>
+                <ModulePath>*Program.cs</ModulePath>
+                <ModulePath>*WeatherForecast.cs</ModulePath>
+              </Exclude>
+            </ModulePaths>
+            <Functions>
+              <Exclude>
+                <Function>^Program\..*</Function>
+                <Function>.*Program\$.*</Function>
+                <Function>.*WeatherForecast.*</Function>
+                <Function>HealthSync\.Infrastructure\.Migrations\..*</Function>
+                <Function>HealthSync\.Application\.DTOs\..*</Function>
+                <Function>HealthSync\.Infrastructure\.Data\.Configurations\..*</Function>
+              </Exclude>
+            </Functions>
+            <Attributes>
+              <Exclude>
+                <Attribute>^System\.Diagnostics\.DebuggerHiddenAttribute$</Attribute>
+                <Attribute>^System\.Diagnostics\.DebuggerNonUserCodeAttribute$</Attribute>
+                <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+                <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+              </Exclude>
+            </Attributes>
+            <CompanyNames>
+              <Exclude>
+                <CompanyName>.*microsoft.*</CompanyName>
+              </Exclude>
+            </CompanyNames>
+            <Sources>
+              <Exclude>
+                <Source>.*\\Migrations\\.*</Source>
+                <Source>.*\\obj\\.*</Source>
+                <Source>.*Program\.cs$</Source>
+              </Exclude>
+            </Sources>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

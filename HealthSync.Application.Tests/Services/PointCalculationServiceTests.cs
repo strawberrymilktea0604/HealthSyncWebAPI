@@ -1,10 +1,10 @@
-using FluentAssertions;
 using HealthSync.Application.Interfaces;
 using HealthSync.Application.Services;
 using HealthSync.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace HealthSync.Application.Tests.Services;
 
@@ -254,3 +254,4 @@ public class PointCalculationServiceTests
             l.UserId == 2 && l.TotalPoints == 5)), Times.Once);
     }
 }
+

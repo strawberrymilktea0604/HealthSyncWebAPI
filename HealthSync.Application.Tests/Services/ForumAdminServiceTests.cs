@@ -1,8 +1,8 @@
-using FluentAssertions;
 using HealthSync.Application.Interfaces;
 using HealthSync.Application.Services;
 using HealthSync.Domain.Entities;
 using Moq;
+using FluentAssertions;
 using Xunit;
 
 namespace HealthSync.Application.Tests.Services;
@@ -313,3 +313,4 @@ public class ForumAdminServiceTests
         result.Message.Should().Be("Reply not found");
     }
 }
+

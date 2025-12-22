@@ -59,3 +59,4 @@ public class HangfireDashboardAuthorizationFilterTests
         Assert.True(result);
     }
 }
+

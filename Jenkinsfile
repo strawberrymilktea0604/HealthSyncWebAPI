@@ -146,8 +146,9 @@ pipeline {
                               /v:"${BUILD_NUMBER}" \\
                               /d:sonar.login="${SONAR_AUTH_TOKEN}" \\
                               /d:sonar.host.url="${SONAR_HOST_URL}" \\
-                              /d:sonar.cs.opencover.reportsPaths="test-results/**/coverage.opencover.xml" \\
-                              /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**" \\
+                              /d:sonar.cs.vscoveragexml.reportsPaths="test-results/**/coverage.cobertura.xml" \\
+                              /d:sonar.exclusions="**/Migrations/**,**/*.Tests/**,**/*.Test/**,**/Program.cs" \\
+                              /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**" \\
                               /d:sonar.qualitygate.wait=true \\
                               /d:sonar.qualitygate.timeout=300
                         """
@@ -181,9 +182,10 @@ pipeline {
                             pname=$(basename "$p" .csproj | sed 's/[^a-zA-Z0-9._-]/_/g')
                             logfile="test-results/TEST-${pname}.xml"
                             echo "Running tests for [$p] -> $logfile"
-                            # Note: NO --no-build to be safe; remove newline escaping if you embed in pipeline groovy string
+                            # Use runsettings to exclude Program.cs and other infrastructure from coverage
                             dotnet test "$p" -c Release \
-                                --collect:"XPlat Code Coverage;Format=opencover" \
+                                --settings HealthSync.runsettings \
+                                --collect:"XPlat Code Coverage" \
                                 --results-directory ./test-results \
                                 --logger "junit;LogFileName=${logfile}" || true
                         done
@@ -203,7 +205,24 @@ pipeline {
                         sh '''
                             dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
                             export PATH="$PATH:/root/.dotnet/tools"
-                            reportgenerator -reports:"test-results/**/coverage.opencover.xml" -targetdir:"test-results/coverage-report" -reporttypes:Html || true
+                            # Use Cobertura format (from runsettings) and exclude Program.cs from final report
+                            reportgenerator -reports:"test-results/**/coverage.cobertura.xml" \
+                                -targetdir:"test-results/coverage-report" \
+                                -reporttypes:"Html;Cobertura" \
+                                -classfilters:"-Program" || true
+                            
+                            # Generate text summary for build logs
+                            reportgenerator -reports:"test-results/**/coverage.cobertura.xml" \
+                                -targetdir:"test-results" \
+                                -reporttypes:"TextSummary" \
+                                -classfilters:"-Program" || true
+                            
+                            # Display coverage summary in console
+                            if [ -f test-results/Summary.txt ]; then
+                                echo "========== Code Coverage Summary =========="
+                                cat test-results/Summary.txt
+                                echo "==========================================="
+                            fi
                         '''
                         publishHTML([
                             allowMissing: true,
@@ -214,6 +233,12 @@ pipeline {
                             reportName: 'Coverage Report',
                             reportTitles: 'Code Coverage'
                         ])
+                        
+                        // Publish Cobertura coverage for Jenkins dashboard integration
+                        echo "Publishing Cobertura coverage report..."
+                        publishCoverage adapters: [
+                            coberturaAdapter('test-results/**/coverage.cobertura.xml')
+                        ], sourceFileResolver: sourceFiles('NEVER_STORE')
                     }
                 }
             }

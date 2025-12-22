@@ -51,11 +51,11 @@ public class ForumPostRepository : IForumPostRepository
 
     public async Task DeleteAsync(int postId)
     {
-        var post = await GetByIdWithRepliesAsync(postId);
+        var post = await GetByIdAsync(postId);
         if (post is not null)
         {
-            // Cascade delete: replies will be deleted automatically if configured in DbContext
             _context.Posts.Remove(post);
+            await SaveChangesAsync();
         }
     }
 

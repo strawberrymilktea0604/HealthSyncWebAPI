@@ -1,5 +1,5 @@
-using FluentAssertions;
 using HealthSync.Domain.Entities;
+using FluentAssertions;
 using Xunit;
 
 namespace HealthSync.Domain.Tests.Entities;
@@ -57,3 +57,4 @@ public class NutritionLogTests
         nutritionLog.CreatedAt.Should().Be(createdAt);
     }
 }
+

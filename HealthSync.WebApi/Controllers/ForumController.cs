@@ -13,7 +13,6 @@ namespace HealthSync.WebApi.Controllers;
 
 [ApiController]
 [Route("api/v1/forum")]
-[Authorize(Roles = "Customer")]
 public class ForumController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -192,6 +191,7 @@ public class ForumController : ControllerBase
     /// Create a new post in a forum category (supports optional image upload)
     /// </summary>
     [HttpPost("posts")]
+    [Authorize(Roles = "Customer")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> CreatePost([FromForm] CreatePostWithImageRequest request)
     {
@@ -273,6 +273,7 @@ public class ForumController : ControllerBase
     /// Create a new reply to a post
     /// </summary>
     [HttpPost("posts/{postId}/replies")]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> CreateReply(int postId, [FromBody] CreateReplyRequest request)
     {
         try
@@ -328,6 +329,7 @@ public class ForumController : ControllerBase
     /// Update a post (only by the author)
     /// </summary>
     [HttpPut("posts/{postId}")]
+    [Authorize(Roles = "Customer")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UpdatePost(int postId, [FromForm] UpdatePostRequest request)
     {
@@ -364,7 +366,7 @@ public class ForumController : ControllerBase
             if (request.Image != null && request.Image.Length > 0)
             {
                 var imageResult = await HandleImageUpdateAsync(request.Image);
-                if (imageResult is not OkResult)
+                if (!(imageResult is OkObjectResult))
                 {
                     return imageResult;
                 }
@@ -455,6 +457,7 @@ public class ForumController : ControllerBase
     /// Delete a post (only by the author or Admin)
     /// </summary>
     [HttpDelete("posts/{postId}")]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> DeletePost(int postId)
     {
         try
@@ -479,15 +482,14 @@ public class ForumController : ControllerBase
                 return Forbid();
             }
 
-            // Check if post has replies - cannot delete if has replies
+            // Check if post has replies - only prevent deletion for non-admin owners
             var hasReplies = await _db.Replies.AnyAsync(r => r.PostId == postId);
-            if (hasReplies)
+            if (hasReplies && !isAdmin)
             {
                 return BadRequest(new { success = false, message = "Cannot delete post that has replies" });
             }
 
-            _db.Posts.Remove(post);
-            await _db.SaveChangesAsync();
+            await _postRepository.DeleteAsync(postId);
 
             return Ok(new { success = true, message = "Post deleted successfully" });
         }
@@ -501,6 +503,7 @@ public class ForumController : ControllerBase
     /// Update a reply (only by the author)
     /// </summary>
     [HttpPut("posts/{postId}/replies/{replyId}")]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> UpdateReply(int postId, int replyId, [FromBody] UpdateReplyRequest request)
     {
         try
@@ -544,6 +547,7 @@ public class ForumController : ControllerBase
     /// Delete a reply (only by the author)
     /// </summary>
     [HttpDelete("posts/{postId}/replies/{replyId}")]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> DeleteReply(int postId, int replyId)
     {
         try

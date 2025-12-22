@@ -1,4 +1,3 @@
-using FluentAssertions;
 using HealthSync.Application.DTOs;
 using HealthSync.Application.DTOs.FoodItems;
 using HealthSync.Application.Interfaces;
@@ -7,6 +6,7 @@ using HealthSync.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System.Security.Claims;
+using FluentAssertions;
 using Xunit;
 
 namespace HealthSync.Application.Tests.Services;
@@ -334,3 +334,4 @@ public class FoodItemServiceTests
         result.Should().BeFalse();
     }
 }
+
