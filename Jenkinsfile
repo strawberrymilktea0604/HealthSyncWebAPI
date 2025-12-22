@@ -206,8 +206,7 @@ pipeline {
                         echo "Publishing test results..."
                         junit allowEmptyResults: true, 
                               testResults: 'test-results/TEST-*.xml, test-results/**/TEST-*.xml',
-                              healthScaleFactor: 1.0,
-                              allowEmptyResults: true
+                              healthScaleFactor: 1.0
                         echo "Generating coverage (if any)..."
                         sh '''
                             dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
