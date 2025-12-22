@@ -180,18 +180,22 @@ pipeline {
                         for p in $TEST_PROJECTS; do
                             # derive short name for file
                             pname=$(basename "$p" .csproj | sed 's/[^a-zA-Z0-9._-]/_/g')
-                            logfile="test-results/TEST-${pname}.xml"
-                            echo "Running tests for [$p] -> $logfile"
+                            logfile="TEST-${pname}.xml"
+                            echo "Running tests for [$p] -> test-results/$logfile"
                             # Use runsettings to exclude Program.cs and other infrastructure from coverage
                             dotnet test "$p" -c Release \
                                 --settings HealthSync.runsettings \
                                 --collect:"XPlat Code Coverage" \
                                 --results-directory ./test-results \
-                                --logger "junit;LogFileName=${logfile}" || true
+                                --logger "junit;LogFileName=$logfile;MethodFormat=Class;FailureBodyFormat=Verbose" \
+                                --no-build || true
                         done
 
-                        echo "List generated test results:"
+                        echo "========== Generated test results =========="
                         ls -la test-results || true
+                        echo "========== JUnit XML files =========="
+                        find test-results -name "TEST-*.xml" -exec echo {} \; || true
+                        echo "=========================================="
                     '''
                     echo "✓ Unit tests stage finished (see artifacts/test-results)"
                 }
@@ -200,7 +204,10 @@ pipeline {
                 always {
                     script {
                         echo "Publishing test results..."
-                        junit allowEmptyResults: true, testResults: 'test-results/**/TEST-*.xml'
+                        junit allowEmptyResults: true, 
+                              testResults: 'test-results/TEST-*.xml, test-results/**/TEST-*.xml',
+                              healthScaleFactor: 1.0,
+                              allowEmptyResults: true
                         echo "Generating coverage (if any)..."
                         sh '''
                             dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.26 || true
