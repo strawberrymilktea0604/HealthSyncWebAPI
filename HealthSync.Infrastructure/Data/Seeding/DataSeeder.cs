@@ -86,7 +86,7 @@ public sealed class DataSeeder : IDataSeeder
             // 2. Optionally seed demo data
             if (_settings.SeedDemoData)
             {
-                await SeedDemoDataAsync(adminId, cancellationToken);
+                await SeedDemoDataAsync(cancellationToken);
             }
 
             await transaction.CommitAsync(cancellationToken);
@@ -96,7 +96,7 @@ public sealed class DataSeeder : IDataSeeder
         {
             await transaction.RollbackAsync(cancellationToken);
             _logger.LogError(ex, "Database seeding failed. Transaction rolled back.");
-            throw;
+            throw new InvalidOperationException("Failed to seed database. See inner exception for details.", ex);
         }
     }
 
@@ -247,7 +247,7 @@ public sealed class DataSeeder : IDataSeeder
 
     #region Demo Data Seeding
 
-    private async Task SeedDemoDataAsync(int adminId, CancellationToken cancellationToken)
+    private async Task SeedDemoDataAsync(CancellationToken cancellationToken)
     {
         // Check if demo data already exists
         var existingCustomers = await _context.ApplicationUsers
@@ -370,13 +370,14 @@ public sealed class DataSeeder : IDataSeeder
         var posts = new List<Post>();
         var replies = new List<Reply>();
 
-        foreach (var customer in customers)
+        // Process each customer who decides to create a post (30% chance)
+        var postsData = customers
+            .Where(_ => _faker.Random.Bool(0.3f))
+            .Select(customer => (customer, category: _faker.PickRandom(categories)))
+            .ToList();
+
+        foreach (var (customer, category) in postsData)
         {
-            // 30% chance of creating a post
-            if (!_faker.Random.Bool(0.3f)) continue;
-
-            var category = _faker.PickRandom(categories);
-
             // 50% chance of post having an image
             if (_faker.Random.Bool(0.5f))
             {

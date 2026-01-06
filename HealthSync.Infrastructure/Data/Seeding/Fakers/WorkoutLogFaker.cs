@@ -19,7 +19,7 @@ public sealed class WorkoutLogFaker : Faker<WorkoutLog>
             .RuleFor(w => w.CreatedAt, workoutDate);
     }
 
-    private static readonly string[] WorkoutNotes =
+    private static readonly string?[] WorkoutNotes =
     {
         "Buổi tập tốt, cảm thấy khỏe!",
         "Hơi mệt nhưng cố gắng hoàn thành.",

@@ -9,6 +9,9 @@ namespace HealthSync.Infrastructure.Data.Seeding.Fakers;
 /// </summary>
 public sealed class ForumPostFaker
 {
+    // Private constructor to prevent instantiation
+    private ForumPostFaker() { }
+
     private static readonly string[] PostTitles =
     {
         "Hành trình giảm 10kg trong 3 tháng của mình!",

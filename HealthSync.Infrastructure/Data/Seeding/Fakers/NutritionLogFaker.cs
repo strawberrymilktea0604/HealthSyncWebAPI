@@ -9,6 +9,9 @@ namespace HealthSync.Infrastructure.Data.Seeding.Fakers;
 /// </summary>
 public sealed class NutritionLogFaker
 {
+    // Private constructor to prevent instantiation
+    private NutritionLogFaker() { }
+
     private static readonly Dictionary<MealType, (int minEntries, int maxEntries)> MealEntryRanges = new()
     {
         { MealType.Breakfast, (1, 3) },
