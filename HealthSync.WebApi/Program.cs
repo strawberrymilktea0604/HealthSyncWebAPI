@@ -226,6 +226,8 @@ static void RegisterApplicationServices(IServiceCollection services)
     services.AddScoped<HealthSync.Application.Interfaces.IJwtService, HealthSync.Infrastructure.Services.JwtService>();
     services.AddScoped<HealthSync.Application.Interfaces.IExerciseService, HealthSync.Application.Services.ExerciseService>();
     services.AddScoped<HealthSync.Application.Interfaces.IExerciseRepository, HealthSync.Infrastructure.Repositories.ExerciseRepository>();
+    services.AddScoped<HealthSync.Application.Interfaces.IGoalService, HealthSync.Application.Services.GoalService>();
+    services.AddScoped<HealthSync.Application.Interfaces.IGoalRepository, HealthSync.Infrastructure.Repositories.GoalRepository>();
     // Register storage service (MinIO) - implements both IStorageService and IFileStorageService
     services.AddSingleton<HealthSync.Infrastructure.Services.MinioService>();
     services.AddSingleton<HealthSync.Application.Interfaces.IStorageService>(sp => sp.GetRequiredService<HealthSync.Infrastructure.Services.MinioService>());
