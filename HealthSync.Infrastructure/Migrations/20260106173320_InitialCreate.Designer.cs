@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthSync.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260106075339_InitialCreate")]
+    [Migration("20260106173320_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
