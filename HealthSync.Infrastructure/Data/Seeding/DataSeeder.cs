@@ -41,7 +41,7 @@ public sealed class DataSeeder : IDataSeeder
         IOptions<SeedSettings> settings,
         IConfiguration configuration,
         ILogger<DataSeeder> logger,
-        ILogger<ImageSeeder> imageSeederLogger)
+        ILoggerFactory loggerFactory)
     {
         _context = context;
         _settings = settings.Value;
@@ -49,8 +49,8 @@ public sealed class DataSeeder : IDataSeeder
         _logger = logger;
         _faker = new Faker { Random = new Randomizer(42) }; // Deterministic seed
 
-        // Initialize ImageSeeder
-        _imageSeeder = CreateImageSeeder(imageSeederLogger);
+        // Initialize ImageSeeder with its own logger from factory
+        _imageSeeder = CreateImageSeeder(loggerFactory.CreateLogger<ImageSeeder>());
     }
 
     private ImageSeeder CreateImageSeeder(ILogger<ImageSeeder> logger)
