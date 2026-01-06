@@ -135,6 +135,7 @@ public sealed class DataSeeder : IDataSeeder
 
         await SeedExercisesAsync(dbAdminId, cancellationToken);
         await SeedFoodItemsAsync(dbAdminId, cancellationToken);
+        await SeedChallengesAsync(adminId, cancellationToken);
     }
 
     private async Task SeedForumCategoriesAsync(CancellationToken cancellationToken)
@@ -250,6 +251,62 @@ public sealed class DataSeeder : IDataSeeder
         _logger.LogInformation("Seeded {Count} food items.", foodItems.Count);
     }
 
+    private async Task SeedChallengesAsync(int adminId, CancellationToken cancellationToken)
+    {
+        if (await _context.Challenges.AnyAsync(cancellationToken))
+        {
+            _logger.LogDebug("Challenges already exist. Skipping.");
+            return;
+        }
+
+        // Challenges require an admin for CreatedByAdminId FK
+        if (adminId <= 0)
+        {
+            _logger.LogWarning("No admin user available. Skipping challenge seeding.");
+            return;
+        }
+
+        var referenceDate = DateTime.UtcNow;
+        var definitions = ChallengeCatalog.GetChallenges(referenceDate);
+        var challenges = new List<Challenge>();
+        var now = DateTime.UtcNow;
+
+        foreach (var def in definitions)
+        {
+            // Upload image if available
+            string? imageUrl = null;
+            if (!string.IsNullOrEmpty(def.ImageFileName))
+            {
+                imageUrl = await _imageSeeder.EnsureImageAsync(def.ImageFileName, "challenges", cancellationToken);
+            }
+
+            var startDate = referenceDate.AddDays(def.DaysFromNow);
+            var endDate = startDate.AddDays(def.DurationDays);
+
+            challenges.Add(new Challenge
+            {
+                Title = def.Title,
+                Description = def.Description,
+                ChallengeType = def.ChallengeType,
+                StartDate = startDate,
+                EndDate = endDate,
+                Criteria = def.Criteria,
+                Status = def.Status,
+                MaxParticipants = def.MaxParticipants,
+                RewardDescription = def.RewardDescription,
+                ImageUrl = imageUrl,
+                CreatedByAdminId = adminId,
+                CreatedAt = now.AddDays(def.DaysFromNow - 7), // Created a week before start
+                UpdatedAt = now
+            });
+        }
+
+        await _context.Challenges.AddRangeAsync(challenges, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Seeded {Count} community challenges.", challenges.Count);
+    }
+
     #endregion
 
     #region Demo Data Seeding
@@ -276,6 +333,7 @@ public sealed class DataSeeder : IDataSeeder
         var exercises = await _context.Exercises.ToListAsync(cancellationToken);
         var foodItems = await _context.FoodItems.ToListAsync(cancellationToken);
         var categories = await _context.ForumCategories.ToListAsync(cancellationToken);
+        var challenges = await _context.Challenges.ToListAsync(cancellationToken);
 
         // Generate activity for each customer
         foreach (var customer in customers)
@@ -285,6 +343,15 @@ public sealed class DataSeeder : IDataSeeder
 
         // Generate forum posts with images
         await SeedForumPostsAsync(customers, categories, cancellationToken);
+
+        // Seed goals with progress records for customers
+        await SeedGoalsAsync(customers, cancellationToken);
+
+        // Seed challenge participations for customers
+        if (challenges.Count > 0)
+        {
+            await SeedChallengeParticipationsAsync(customers, challenges, cancellationToken);
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Demo data seeding completed.");
@@ -413,6 +480,163 @@ public sealed class DataSeeder : IDataSeeder
 
         _logger.LogInformation("Seeded {Posts} forum posts with {Replies} replies.", posts.Count, replies.Count);
     }
+
+    private async Task SeedGoalsAsync(List<ApplicationUser> customers, CancellationToken cancellationToken)
+    {
+        var allGoals = new List<Goal>();
+        var referenceDate = DateTime.UtcNow;
+
+        foreach (var customer in customers)
+        {
+            // 80% of customers have goals
+            if (!_faker.Random.Bool(0.8f)) continue;
+
+            // Each customer has 1-3 goals
+            var goalCount = _faker.Random.Int(1, 3);
+            var goals = GoalFaker.GenerateGoalsForUser(customer.UserId, goalCount, referenceDate, _faker);
+            allGoals.AddRange(goals);
+        }
+
+        if (allGoals.Count > 0)
+        {
+            await _context.Goals.AddRangeAsync(allGoals, cancellationToken);
+            
+            // Count progress records
+            var totalProgressRecords = allGoals.Sum(g => g.ProgressRecords.Count);
+            _logger.LogInformation(
+                "Seeded {GoalCount} goals with {ProgressCount} progress records.",
+                allGoals.Count,
+                totalProgressRecords);
+        }
+    }
+
+    private Task SeedChallengeParticipationsAsync(
+        List<ApplicationUser> customers,
+        List<Challenge> challenges,
+        CancellationToken cancellationToken)
+    {
+        var participations = new List<ChallengeParticipation>();
+        var now = DateTime.UtcNow;
+
+        // Get open challenges for participation
+        var openChallenges = challenges.Where(c => c.Status == ChallengeStatus.Open).ToList();
+        var closedChallenges = challenges.Where(c => c.Status == ChallengeStatus.Closed).ToList();
+
+        foreach (var customer in customers)
+        {
+            // 60% of customers join at least one open challenge
+            if (_faker.Random.Bool(0.6f) && openChallenges.Count > 0)
+            {
+                var challengesToJoin = _faker.PickRandom(openChallenges, _faker.Random.Int(1, Math.Min(3, openChallenges.Count)));
+                
+                foreach (var challenge in challengesToJoin)
+                {
+                    var participation = CreateParticipation(customer.UserId, challenge, false, now);
+                    participations.Add(participation);
+                }
+            }
+
+            // 40% of customers have participated in closed challenges
+            if (_faker.Random.Bool(0.4f) && closedChallenges.Count > 0)
+            {
+                var pastChallenges = _faker.PickRandom(closedChallenges, _faker.Random.Int(1, Math.Min(2, closedChallenges.Count)));
+                
+                foreach (var challenge in pastChallenges)
+                {
+                    var participation = CreateParticipation(customer.UserId, challenge, true, now);
+                    participations.Add(participation);
+                }
+            }
+        }
+
+        if (participations.Count > 0)
+        {
+            _context.ChallengeParticipations.AddRange(participations);
+            _logger.LogInformation("Seeded {Count} challenge participations.", participations.Count);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private ChallengeParticipation CreateParticipation(
+        int userId,
+        Challenge challenge,
+        bool isClosed,
+        DateTime now)
+    {
+        var joinedDate = challenge.StartDate.AddDays(_faker.Random.Int(0, 7));
+        
+        ParticipationStatus status;
+        DateTime? completedAt = null;
+        string? submissionText = null;
+        DateTime? submittedAt = null;
+
+        if (isClosed)
+        {
+            // For closed challenges, determine outcome
+            var outcome = _faker.Random.Int(1, 100);
+            if (outcome <= 60)
+            {
+                status = ParticipationStatus.Completed;
+                completedAt = challenge.EndDate.AddDays(-_faker.Random.Int(0, 3));
+                submissionText = _faker.PickRandom(SubmissionTexts);
+                submittedAt = completedAt.Value.AddHours(-_faker.Random.Int(1, 24));
+            }
+            else if (outcome <= 85)
+            {
+                status = ParticipationStatus.Failed;
+            }
+            else
+            {
+                status = ParticipationStatus.Joined; // Didn't complete
+            }
+        }
+        else
+        {
+            // For open challenges
+            var progress = _faker.Random.Int(1, 100);
+            if (progress <= 70)
+            {
+                status = ParticipationStatus.Joined;
+            }
+            else if (progress <= 90)
+            {
+                status = ParticipationStatus.PendingApproval;
+                submissionText = _faker.PickRandom(SubmissionTexts);
+                submittedAt = now.AddDays(-_faker.Random.Int(0, 3));
+            }
+            else
+            {
+                status = ParticipationStatus.Completed;
+                completedAt = now.AddDays(-_faker.Random.Int(1, 7));
+                submissionText = _faker.PickRandom(SubmissionTexts);
+                submittedAt = completedAt.Value.AddHours(-_faker.Random.Int(1, 24));
+            }
+        }
+
+        return new ChallengeParticipation
+        {
+            ChallengeId = challenge.ChallengeId,
+            UserId = userId,
+            JoinedDate = joinedDate,
+            Status = status,
+            SubmissionText = submissionText,
+            SubmittedAt = submittedAt,
+            CompletedAt = completedAt,
+            CreatedAt = joinedDate
+        };
+    }
+
+    private static readonly string[] SubmissionTexts =
+    {
+        "Đã hoàn thành thử thách! Cảm thấy rất tuyệt vời.",
+        "Mình đã cố gắng hết sức, hy vọng đạt yêu cầu.",
+        "Thử thách này giúp mình thay đổi thói quen rất nhiều.",
+        "Cảm ơn thử thách đã giúp mình có động lực tập luyện!",
+        "Đã đạt được mục tiêu, tiếp tục duy trì thói quen này.",
+        "Khó khăn ban đầu nhưng cuối cùng cũng vượt qua được.",
+        "Rất vui khi tham gia thử thách cùng mọi người."
+    };
 
     #endregion
 
