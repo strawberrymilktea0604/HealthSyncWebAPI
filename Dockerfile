@@ -24,6 +24,10 @@ WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080
 COPY --from=publish /app/publish .
 
+# Copy seed data images for database seeding
+# These images are uploaded to MinIO during app startup when seeding is enabled
+COPY ["HealthSync.WebApi/SeedData/", "/app/seed-data/"]
+
 # Install curl for health checks
 RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
 

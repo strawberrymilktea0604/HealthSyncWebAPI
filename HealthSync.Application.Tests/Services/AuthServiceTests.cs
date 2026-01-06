@@ -673,6 +673,181 @@ public class AuthServiceTests
         result.ContributionPoints.Should().Be(0); // Should be 0 when Leaderboard is null
     }
 
+    [Fact]
+    public async Task InitializeAdminAsync_ShouldThrowException_WhenInitializationKeyIsNull()
+    {
+        // Arrange
+        var request = new InitializeAdminRequest
+        {
+            Email = "admin@example.com",
+            Password = "AdminPass123!",
+            FullName = "System Admin",
+            InitializationKey = "any_key"
+        };
+
+        _userRepositoryMock
+            .Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<ApplicationUser>()); // No admin exists
+
+        _configurationMock
+            .Setup(c => c["AdminInitialization:SecretKey"])
+            .Returns((string?)null); // Key not configured
+
+        // Act
+        Func<Task> act = async () => await _service.InitializeAdminAsync(request);
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("Invalid initialization key");
+    }
+
+    [Fact]
+    public async Task InitializeAdminAsync_ShouldThrowException_WhenInitializationKeyIsEmpty()
+    {
+        // Arrange
+        var request = new InitializeAdminRequest
+        {
+            Email = "admin@example.com",
+            Password = "AdminPass123!",
+            FullName = "System Admin",
+            InitializationKey = "any_key"
+        };
+
+        _userRepositoryMock
+            .Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<ApplicationUser>()); // No admin exists
+
+        _configurationMock
+            .Setup(c => c["AdminInitialization:SecretKey"])
+            .Returns(string.Empty); // Key is empty
+
+        // Act
+        Func<Task> act = async () => await _service.InitializeAdminAsync(request);
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("Invalid initialization key");
+    }
+
+    [Fact]
+    public async Task InitializeAdminAsync_ShouldThrowException_WhenEmailAlreadyExists()
+    {
+        // Arrange
+        var request = new InitializeAdminRequest
+        {
+            Email = "existing@example.com",
+            Password = "AdminPass123!",
+            FullName = "System Admin",
+            InitializationKey = "valid_key"
+        };
+
+        _userRepositoryMock
+            .Setup(r => r.GetAllAsync())
+            .ReturnsAsync(new List<ApplicationUser>()); // No admin exists
+
+        _configurationMock
+            .Setup(c => c["AdminInitialization:SecretKey"])
+            .Returns("valid_key");
+
+        var existingUser = new ApplicationUser { Email = request.Email };
+        _userRepositoryMock
+            .Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync(existingUser); // Email already exists
+
+        // Act
+        Func<Task> act = async () => await _service.InitializeAdminAsync(request);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Email already exists");
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_ShouldReturnEmptyFullName_WhenUserProfileIsNull()
+    {
+        // Arrange
+        var request = new RefreshTokenRequest("valid_refresh_token");
+
+        var user = new ApplicationUser
+        {
+            UserId = 1,
+            Email = "test@example.com",
+            Role = "Customer",
+            RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
+        };
+
+        _userRepositoryMock
+            .Setup(r => r.GetByRefreshTokenAsync(request.RefreshToken))
+            .ReturnsAsync(user);
+
+        _jwtServiceMock
+            .Setup(j => j.GenerateAccessToken(user))
+            .Returns("new_access_token");
+
+        _jwtServiceMock
+            .Setup(j => j.GenerateRefreshToken())
+            .Returns("new_refresh_token");
+
+        _userProfileRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(user.UserId))
+            .ReturnsAsync((UserProfile?)null); // Profile is null
+
+        _leaderboardRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(user.UserId))
+            .ReturnsAsync(new Leaderboard { UserId = 1, TotalPoints = 100 });
+
+        // Act
+        var result = await _service.RefreshTokenAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.FullName.Should().Be(""); // Empty when profile is null
+        result.ContributionPoints.Should().Be(100);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_ShouldReturnZeroPoints_WhenLeaderboardIsNull()
+    {
+        // Arrange
+        var request = new RefreshTokenRequest("valid_refresh_token");
+
+        var user = new ApplicationUser
+        {
+            UserId = 1,
+            Email = "test@example.com",
+            Role = "Customer",
+            RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
+        };
+
+        _userRepositoryMock
+            .Setup(r => r.GetByRefreshTokenAsync(request.RefreshToken))
+            .ReturnsAsync(user);
+
+        _jwtServiceMock
+            .Setup(j => j.GenerateAccessToken(user))
+            .Returns("new_access_token");
+
+        _jwtServiceMock
+            .Setup(j => j.GenerateRefreshToken())
+            .Returns("new_refresh_token");
+
+        _userProfileRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(user.UserId))
+            .ReturnsAsync(new UserProfile { UserId = 1, FullName = "Test User" });
+
+        _leaderboardRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(user.UserId))
+            .ReturnsAsync((Leaderboard?)null); // Leaderboard is null
+
+        // Act
+        var result = await _service.RefreshTokenAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.FullName.Should().Be("Test User");
+        result.ContributionPoints.Should().Be(0); // Zero when leaderboard is null
+    }
+
     #endregion
 }
 

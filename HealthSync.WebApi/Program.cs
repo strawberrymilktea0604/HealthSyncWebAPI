@@ -8,6 +8,7 @@ using System.Text;
 using System.Collections.Generic;
 using HealthSync.Domain.Entities;
 using HealthSync.Infrastructure.Data;
+using HealthSync.Infrastructure.Data.Seeding;
 using HealthSync.Application.Interfaces;
 using HealthSync.Application.Services;
 using HealthSync.Infrastructure.Repositories;
@@ -199,6 +200,9 @@ static void ConfigureServices(WebApplicationBuilder builder)
     // Register application services
     RegisterApplicationServices(builder.Services);
 
+    // Add Data Seeding services
+    builder.Services.AddDataSeeding(builder.Configuration);
+
     // Add Swagger/OpenAPI
     ConfigureSwagger(builder.Services);
 }
@@ -352,16 +356,17 @@ static void ConfigureEndpoints(WebApplication app)
     app.MapGet("/", () => Results.Redirect("/swagger"));
 
     // ========================================
-    // MIGRATION HANDLING
+    // MIGRATION & SEEDING HANDLING
     // ========================================
     // PRODUCTION: Migrations được chạy bởi init container riêng biệt (Dockerfile.migration)
     // Điều này tránh race condition khi chạy nhiều replicas
-    // Chỉ verify database connection ở đây, KHÔNG chạy migrations tự động
+    // Seeding chạy ở đây sau khi database đã sẵn sàng
 
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
         var logger = services.GetRequiredService<ILogger<Program>>();
+        var configuration = services.GetRequiredService<IConfiguration>();
 
         try
         {
@@ -374,6 +379,16 @@ static void ConfigureEndpoints(WebApplication app)
             if (canConnect)
             {
                 logger.LogInformation("✓ Database connection verified successfully");
+
+                // Run Data Seeding if enabled
+                var seedingEnabled = configuration.GetValue<bool>("SeedSettings:EnableDataSeeding");
+                if (seedingEnabled)
+                {
+                    logger.LogInformation("Starting database seeding...");
+                    var seeder = services.GetRequiredService<IDataSeeder>();
+                    seeder.SeedAsync().GetAwaiter().GetResult();
+                    logger.LogInformation("✓ Database seeding completed");
+                }
             }
             else
             {
@@ -383,7 +398,7 @@ static void ConfigureEndpoints(WebApplication app)
         catch (Exception ex)
         {
             // Log lỗi nhưng KHÔNG crash app
-            logger.LogError(ex, "Database connection check failed. App will continue but may not work properly.");
+            logger.LogError(ex, "Database connection check or seeding failed. App will continue but may not work properly.");
         }
     }
 

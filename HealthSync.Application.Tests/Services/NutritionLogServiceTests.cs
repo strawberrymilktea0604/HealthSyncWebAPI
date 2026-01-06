@@ -632,5 +632,401 @@ public class NutritionLogServiceTests
         // Assert
         result.Should().BeFalse();
     }
+
+    #region Additional Tests for 100% Coverage
+
+    [Fact]
+    public async Task CreateNutritionLogAsync_ShouldCreateLogWithFoodEntries_WhenValidRequest()
+    {
+        // Arrange
+        var userId = 1;
+        var date = new DateTime(2025, 11, 3);
+        var request = new CreateNutritionLogRequest
+        {
+            LogDate = date,
+            Notes = "Test log with entries",
+            FoodEntries = new List<CreateFoodEntryRequest>
+            {
+                new CreateFoodEntryRequest
+                {
+                    FoodItemId = 1,
+                    MealType = "Breakfast",
+                    Quantity = 2,
+                    ConsumedAt = DateTime.UtcNow,
+                    Notes = "Eggs"
+                },
+                new CreateFoodEntryRequest
+                {
+                    FoodItemId = 2,
+                    MealType = "Lunch",
+                    Quantity = 1,
+                    ConsumedAt = DateTime.UtcNow.AddHours(4),
+                    Notes = "Chicken"
+                }
+            }
+        };
+
+        var foodItem1 = new FoodItem
+        {
+            FoodItemId = 1,
+            Name = "Egg",
+            Category = "Protein",
+            ServingSize = 1,
+            ServingUnit = ServingUnit.Piece,
+            CaloriesPerServing = 70,
+            ProteinG = 6,
+            CarbsG = 0.6m,
+            FatG = 5
+        };
+
+        var foodItem2 = new FoodItem
+        {
+            FoodItemId = 2,
+            Name = "Chicken Breast",
+            Category = "Protein",
+            ServingSize = 100,
+            ServingUnit = ServingUnit.Gram,
+            CaloriesPerServing = 165,
+            ProteinG = 31,
+            CarbsG = 0,
+            FatG = 3.6m
+        };
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetByUserAndDateAsync(userId, date))
+            .ReturnsAsync((NutritionLog?)null);
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.CreateAsync(It.IsAny<NutritionLog>()))
+            .ReturnsAsync((NutritionLog log) =>
+            {
+                log.NutritionLogId = 1;
+                // Populate food entries with FoodItem data
+                foreach (var entry in log.FoodEntries)
+                {
+                    if (entry.FoodItemId == 1)
+                        entry.FoodItem = foodItem1;
+                    else if (entry.FoodItemId == 2)
+                        entry.FoodItem = foodItem2;
+                }
+                return log;
+            });
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetByIdAsync(1))
+            .ReturnsAsync((NutritionLog log) =>
+            {
+                var newLog = new NutritionLog
+                {
+                    NutritionLogId = 1,
+                    UserId = userId,
+                    LogDate = date,
+                    Notes = "Test log with entries",
+                    FoodEntries = new List<FoodEntry>
+                    {
+                        new FoodEntry
+                        {
+                            FoodEntryId = 1,
+                            FoodItemId = 1,
+                            MealType = MealType.Breakfast,
+                            Quantity = 2,
+                            Calories = 140,
+                            ProteinG = 12,
+                            CarbsG = 1.2m,
+                            FatG = 10,
+                            FoodItem = foodItem1
+                        },
+                        new FoodEntry
+                        {
+                            FoodEntryId = 2,
+                            FoodItemId = 2,
+                            MealType = MealType.Lunch,
+                            Quantity = 1,
+                            Calories = 165,
+                            ProteinG = 31,
+                            CarbsG = 0,
+                            FatG = 3.6m,
+                            FoodItem = foodItem2
+                        }
+                    }
+                };
+                return newLog;
+            });
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<NutritionLog>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _service.CreateNutritionLogAsync(userId, request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.NutritionLogId.Should().Be(1);
+        result.Notes.Should().Be("Test log with entries");
+        result.EntriesByMeal.Should().ContainKey("Breakfast");
+        result.EntriesByMeal.Should().ContainKey("Lunch");
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ShouldReturnLog_WhenLogExists()
+    {
+        // Arrange
+        var userId = 1;
+        var logId = 1;
+
+        var foodItem = new FoodItem
+        {
+            FoodItemId = 1,
+            Name = "Test Food",
+            Category = "Protein",
+            ServingSize = 100,
+            ServingUnit = ServingUnit.Gram,
+            CaloriesPerServing = 100,
+            ProteinG = 20,
+            CarbsG = 5,
+            FatG = 2
+        };
+
+        var log = new NutritionLog
+        {
+            NutritionLogId = logId,
+            UserId = userId,
+            LogDate = DateTime.UtcNow.Date,
+            TotalCalories = 500,
+            TotalProteinG = 50,
+            TotalCarbsG = 30,
+            TotalFatG = 20,
+            Notes = "Test log",
+            CreatedAt = DateTime.UtcNow,
+            FoodEntries = new List<FoodEntry>
+            {
+                new FoodEntry
+                {
+                    FoodEntryId = 1,
+                    NutritionLogId = logId,
+                    FoodItemId = 1,
+                    FoodItem = foodItem,
+                    MealType = MealType.Breakfast,
+                    Quantity = 2,
+                    Calories = 200,
+                    ProteinG = 40,
+                    CarbsG = 10,
+                    FatG = 4,
+                    ConsumedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                }
+            }
+        };
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetByIdAsync(logId))
+            .ReturnsAsync(log);
+
+        // Act
+        var result = await _service.GetByIdAsync(userId, logId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.NutritionLogId.Should().Be(logId);
+        result.TotalCalories.Should().Be(500);
+        result.TotalProteinG.Should().Be(50);
+        result.TotalCarbsG.Should().Be(30);
+        result.TotalFatG.Should().Be(20);
+        result.Notes.Should().Be("Test log");
+        result.EntriesByMeal.Should().ContainKey("Breakfast");
+    }
+
+    [Fact]
+    public async Task UpdateNotesAsync_ShouldUpdateNotes_WhenLogExists()
+    {
+        // Arrange
+        var userId = 1;
+        var logId = 1;
+        var newNotes = "Updated notes";
+
+        var log = new NutritionLog
+        {
+            NutritionLogId = logId,
+            UserId = userId,
+            LogDate = DateTime.UtcNow.Date,
+            Notes = "Old notes",
+            CreatedAt = DateTime.UtcNow,
+            FoodEntries = new List<FoodEntry>()
+        };
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetByIdAsync(logId))
+            .ReturnsAsync(log);
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<NutritionLog>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _service.UpdateNotesAsync(userId, logId, newNotes);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Notes.Should().Be(newNotes);
+        _nutritionLogRepositoryMock.Verify(r => r.UpdateAsync(It.Is<NutritionLog>(l =>
+            l.Notes == newNotes)), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateNotesAsync_ShouldThrowException_WhenUserIdMismatch()
+    {
+        // Arrange
+        var userId = 1;
+        var logId = 1;
+
+        var log = new NutritionLog
+        {
+            NutritionLogId = logId,
+            UserId = 999, // Different user
+            LogDate = DateTime.UtcNow.Date,
+            FoodEntries = new List<FoodEntry>()
+        };
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetByIdAsync(logId))
+            .ReturnsAsync(log);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _service.UpdateNotesAsync(userId, logId, "New notes"));
+        
+        exception.Message.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ShouldDeleteLog_WhenLogExists()
+    {
+        // Arrange
+        var userId = 1;
+        var logId = 1;
+
+        var log = new NutritionLog
+        {
+            NutritionLogId = logId,
+            UserId = userId,
+            LogDate = DateTime.UtcNow.Date,
+            FoodEntries = new List<FoodEntry>()
+        };
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetByIdAsync(logId))
+            .ReturnsAsync(log);
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.DeleteAsync(logId))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _service.DeleteAsync(userId, logId);
+
+        // Assert
+        result.Should().BeTrue();
+        _nutritionLogRepositoryMock.Verify(r => r.DeleteAsync(logId), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetNutritionLogsAsync_ShouldCalculatePaginationCorrectly()
+    {
+        // Arrange
+        var userId = 1;
+        var pageNumber = 2;
+        var pageSize = 5;
+
+        var logs = new List<NutritionLog>
+        {
+            new NutritionLog
+            {
+                NutritionLogId = 6,
+                UserId = userId,
+                LogDate = new DateTime(2025, 11, 6),
+                FoodEntries = new List<FoodEntry>()
+            }
+        };
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetByUserIdAsync(userId, pageNumber, pageSize))
+            .ReturnsAsync((logs, 8)); // 8 total items
+
+        // Act
+        var result = await _service.GetNutritionLogsAsync(userId, pageNumber, pageSize);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(1);
+        result.CurrentPage.Should().Be(2);
+        result.PageSize.Should().Be(5);
+        result.TotalItems.Should().Be(8);
+        result.TotalPages.Should().Be(2);
+        result.HasNext.Should().BeFalse();
+        result.HasPrevious.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DeleteFoodEntryAsync_ShouldRecalculateTotals_WhenLogIsNull()
+    {
+        // Arrange
+        var userId = 1;
+        var entryId = 1;
+
+        var nutritionLog = new NutritionLog
+        {
+            NutritionLogId = 1,
+            UserId = userId,
+            LogDate = DateTime.UtcNow.Date,
+            TotalCalories = 165,
+            TotalProteinG = 31,
+            TotalCarbsG = 0,
+            TotalFatG = 3.6m,
+            FoodEntries = new List<FoodEntry>
+            {
+                new FoodEntry
+                {
+                    FoodEntryId = 1,
+                    NutritionLogId = 1,
+                    FoodItemId = 1,
+                    Quantity = 1,
+                    Calories = 165,
+                    ProteinG = 31,
+                    CarbsG = 0,
+                    FatG = 3.6m
+                }
+            }
+        };
+
+        // Set navigation properties
+        foreach (var entry in nutritionLog.FoodEntries)
+        {
+            entry.NutritionLog = nutritionLog;
+        }
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetFoodEntryByIdAsync(entryId))
+            .ReturnsAsync(nutritionLog.FoodEntries.First());
+
+        _nutritionLogRepositoryMock
+            .Setup(r => r.DeleteFoodEntryAsync(entryId))
+            .Returns(Task.FromResult(true));
+
+        // After delete, log returns null
+        _nutritionLogRepositoryMock
+            .Setup(r => r.GetByIdAsync(1))
+            .ReturnsAsync((NutritionLog?)null);
+
+        // Act
+        var result = await _service.DeleteFoodEntryAsync(userId, entryId);
+
+        // Assert
+        result.Should().BeTrue();
+        // UpdateAsync should not be called since log is null
+        _nutritionLogRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<NutritionLog>()), Times.Never);
+    }
+
+    #endregion
 }
 

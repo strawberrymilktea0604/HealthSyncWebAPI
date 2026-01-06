@@ -6,9 +6,9 @@
         <Configuration>
           <Format>opencover</Format>
           
-          <ExcludeByFile>**/DTOs/**/*.cs,**/Migrations/**/*.cs,**/Configurations/**/*.cs,**/Program.cs,**/WeatherForecast.cs</ExcludeByFile>
+          <ExcludeByFile>**/DTOs/**/*.cs,**/Migrations/**/*.cs,**/Configurations/**/*.cs,**/Seeding/**/*.cs,**/Program.cs,**/WeatherForecast.cs</ExcludeByFile>
 
-          <Exclude>[HealthSync.Application]HealthSync.Application.DTOs.*,[HealthSync.Infrastructure]HealthSync.Infrastructure.Migrations.*,[HealthSync.Infrastructure]HealthSync.Infrastructure.Data.Configurations.*</Exclude>
+          <Exclude>[HealthSync.Application]HealthSync.Application.DTOs.*,[HealthSync.Infrastructure]HealthSync.Infrastructure.Migrations.*,[HealthSync.Infrastructure]HealthSync.Infrastructure.Data.Configurations.*,[HealthSync.Infrastructure]HealthSync.Infrastructure.Data.Seeding.*,[HealthSync.Presentation]HealthSync.Presentation.Services.DataSeeder</Exclude>
 
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
           

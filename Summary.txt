@@ -1,24 +1,24 @@
 Summary
-  Generated on: 12/23/2025 - 2:42:01 AM
+  Generated on: 1/6/2026 - 11:56:02 PM
   Parser: MultiReport (4x OpenCover)
   Assemblies: 4
   Classes: 100
   Files: 94
-  Line coverage: 97.9%
-  Covered lines: 1199
-  Uncovered lines: 25
+  Line coverage: 99%
+  Covered lines: 1212
+  Uncovered lines: 12
   Coverable lines: 1224
   Total lines: 11717
-  Branch coverage: 74.5% (88 of 118)
-  Covered branches: 88
+  Branch coverage: 83.8% (99 of 118)
+  Covered branches: 99
   Total branches: 118
   Method coverage: 99.3% (142 of 143)
-  Full method coverage: 95.1% (136 of 143)
+  Full method coverage: 95.8% (137 of 143)
   Covered methods: 142
-  Fully covered methods: 136
+  Fully covered methods: 137
   Total methods: 143
 
-HealthSync.Application                                                                    97.1%
+HealthSync.Application                                                                    98.9%
   HealthSync.Application.Features.Auth.Services.AuthService                               93.3%
   HealthSync.Application.Features.Auth.Services.GoogleTokenResponse                        100%
   HealthSync.Application.Features.Users.Services.UserProfileService                        100%
@@ -32,10 +32,10 @@ HealthSync.Application                                                          
   HealthSync.Application.Services.ForumAdminService                                        100%
   HealthSync.Application.Services.ForumCategoryService                                     100%
   HealthSync.Application.Services.ForumDependencies                                        100%
-  HealthSync.Application.Services.GoalService                                             90.2%
+  HealthSync.Application.Services.GoalService                                             95.8%
   HealthSync.Application.Services.LeaderboardCalculationService                            100%
   HealthSync.Application.Services.LeaderboardService                                       100%
-  HealthSync.Application.Services.NutritionLogService                                     83.3%
+  HealthSync.Application.Services.NutritionLogService                                     96.9%
   HealthSync.Application.Services.PointCalculationService                                  100%
   HealthSync.Application.Services.UserDependencies                                         100%
   HealthSync.Application.Services.UserService                                              100%

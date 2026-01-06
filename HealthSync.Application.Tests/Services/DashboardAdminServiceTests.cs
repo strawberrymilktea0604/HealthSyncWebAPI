@@ -69,11 +69,15 @@ public class DashboardAdminServiceTests
     public async Task GetDashboardStatsAsync_ShouldReturnSuccessWithStats_WhenAllDataAvailable()
     {
         // Arrange
+        // Use dates within the current month to ensure NewUsersThisMonth is correctly calculated
+        var today = DateTime.UtcNow;
+        var firstDayOfMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        
         var users = new List<ApplicationUser>
         {
-            new ApplicationUser { UserId = 1, IsActive = true, CreatedAt = DateTime.UtcNow.AddDays(-10) },
-            new ApplicationUser { UserId = 2, IsActive = true, CreatedAt = DateTime.UtcNow.AddDays(-5) },
-            new ApplicationUser { UserId = 3, IsActive = false, CreatedAt = DateTime.UtcNow.AddDays(-1) }
+            new ApplicationUser { UserId = 1, IsActive = true, CreatedAt = firstDayOfMonth.AddDays(1) },
+            new ApplicationUser { UserId = 2, IsActive = true, CreatedAt = firstDayOfMonth.AddDays(2) },
+            new ApplicationUser { UserId = 3, IsActive = false, CreatedAt = firstDayOfMonth.AddHours(1) }
         };
 
         _userRepositoryMock
