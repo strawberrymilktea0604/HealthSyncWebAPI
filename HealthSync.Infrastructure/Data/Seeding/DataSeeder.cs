@@ -77,6 +77,29 @@ public sealed class DataSeeder : IDataSeeder
     {
         _logger.LogInformation("Starting database seeding...");
 
+        // Try to acquire distributed lock to prevent race conditions when multiple instances start
+        // Timeout of 0 means no wait - if another instance is seeding, we skip immediately
+        await using var distributedLock = await DistributedLock.TryAcquireAsync(
+            _context,
+            _logger,
+            "HealthSync_DataSeeding",
+            timeoutMs: 0,
+            cancellationToken);
+
+        if (distributedLock == null)
+        {
+            _logger.LogInformation(
+                "Another instance is currently seeding data. Skipping seeding on this instance.");
+            return;
+        }
+
+        // Check if seeding has already been completed by checking a marker
+        if (await IsSeedingCompletedAsync(cancellationToken))
+        {
+            _logger.LogInformation("Database has already been seeded. Skipping.");
+            return;
+        }
+
         using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
         try
@@ -100,6 +123,31 @@ public sealed class DataSeeder : IDataSeeder
             _logger.LogError(ex, "Database seeding failed. Transaction rolled back.");
             throw new InvalidOperationException("Failed to seed database. See inner exception for details.", ex);
         }
+    }
+
+    /// <summary>
+    /// Checks if seeding has already been completed by verifying catalog data exists.
+    /// This provides a quick check before acquiring locks and running full seeding logic.
+    /// </summary>
+    private async Task<bool> IsSeedingCompletedAsync(CancellationToken cancellationToken)
+    {
+        // Check if essential catalog data exists
+        // If ForumCategories, Exercises, and FoodItems all exist, seeding is considered complete
+        var hasCatalogData = await _context.ForumCategories.AnyAsync(cancellationToken)
+            && await _context.Exercises.AnyAsync(cancellationToken)
+            && await _context.FoodItems.AnyAsync(cancellationToken);
+
+        // If demo data seeding is enabled, also check for demo customers
+        if (_settings.SeedDemoData && hasCatalogData)
+        {
+            var existingCustomers = await _context.ApplicationUsers
+                .AsNoTracking()
+                .CountAsync(u => u.Role == "Customer", cancellationToken);
+
+            return existingCustomers >= _settings.DemoCustomerCount;
+        }
+
+        return hasCatalogData;
     }
 
     /// <summary>
@@ -354,6 +402,10 @@ public sealed class DataSeeder : IDataSeeder
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Calculate and update contribution points for seeded users
+        await CalculateSeededUserPointsAsync(customers, cancellationToken);
+
         _logger.LogInformation("Demo data seeding completed.");
     }
 
@@ -637,6 +689,96 @@ public sealed class DataSeeder : IDataSeeder
         "Khó khăn ban đầu nhưng cuối cùng cũng vượt qua được.",
         "Rất vui khi tham gia thử thách cùng mọi người."
     };
+
+    /// <summary>
+    /// Calculate and update contribution points for seeded users.
+    /// Uses same formula as PointCalculationService:
+    /// Points = (WorkoutLogs * 5) + (Posts * 2) + (Replies * 1) + (CompletedChallenges * 10)
+    /// </summary>
+    private async Task CalculateSeededUserPointsAsync(
+        List<ApplicationUser> customers,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Calculating contribution points for {Count} seeded users...", customers.Count);
+
+        const int WORKOUT_LOG_POINTS = 5;
+        const int FORUM_POST_POINTS = 2;
+        const int FORUM_REPLY_POINTS = 1;
+        const int COMPLETED_CHALLENGE_POINTS = 10;
+
+        var userIds = customers.Select(c => c.UserId).ToList();
+
+        // Get all workout logs for seeded users
+        var workoutCounts = await _context.WorkoutLogs
+            .AsNoTracking()
+            .Where(w => userIds.Contains(w.UserId))
+            .GroupBy(w => w.UserId)
+            .Select(g => new { UserId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.UserId, x => x.Count, cancellationToken);
+
+        // Get all forum posts for seeded users
+        var postCounts = await _context.Posts
+            .AsNoTracking()
+            .Where(p => userIds.Contains(p.UserId))
+            .GroupBy(p => p.UserId)
+            .Select(g => new { UserId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.UserId, x => x.Count, cancellationToken);
+
+        // Get all forum replies for seeded users
+        var replyCounts = await _context.Replies
+            .AsNoTracking()
+            .Where(r => userIds.Contains(r.UserId))
+            .GroupBy(r => r.UserId)
+            .Select(g => new { UserId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.UserId, x => x.Count, cancellationToken);
+
+        // Get all completed challenges for seeded users
+        var completedChallengeCounts = await _context.ChallengeParticipations
+            .AsNoTracking()
+            .Where(cp => userIds.Contains(cp.UserId) && cp.Status == ParticipationStatus.Completed)
+            .GroupBy(cp => cp.UserId)
+            .Select(g => new { UserId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.UserId, x => x.Count, cancellationToken);
+
+        // Update leaderboard and user profile for each customer
+        foreach (var customer in customers)
+        {
+            var workouts = workoutCounts.GetValueOrDefault(customer.UserId, 0);
+            var posts = postCounts.GetValueOrDefault(customer.UserId, 0);
+            var replies = replyCounts.GetValueOrDefault(customer.UserId, 0);
+            var challenges = completedChallengeCounts.GetValueOrDefault(customer.UserId, 0);
+
+            var totalPoints = (workouts * WORKOUT_LOG_POINTS) +
+                              (posts * FORUM_POST_POINTS) +
+                              (replies * FORUM_REPLY_POINTS) +
+                              (challenges * COMPLETED_CHALLENGE_POINTS);
+
+            // Update Leaderboard
+            if (customer.Leaderboard != null)
+            {
+                customer.Leaderboard.TotalPoints = totalPoints;
+                customer.Leaderboard.UpdatedAt = DateTime.UtcNow;
+            }
+
+            // Update UserProfile
+            if (customer.UserProfile != null)
+            {
+                customer.UserProfile.ContributionPoints = totalPoints;
+                customer.UserProfile.UpdatedAt = DateTime.UtcNow;
+            }
+
+            _logger.LogDebug(
+                "User {UserId}: {Workouts} workouts, {Posts} posts, {Replies} replies, {Challenges} challenges = {TotalPoints} points",
+                customer.UserId, workouts, posts, replies, challenges, totalPoints);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        var totalPointsSum = customers.Sum(c => c.Leaderboard?.TotalPoints ?? 0);
+        _logger.LogInformation(
+            "Finished calculating points for {Count} users. Total points distributed: {TotalPoints}",
+            customers.Count, totalPointsSum);
+    }
 
     #endregion
 

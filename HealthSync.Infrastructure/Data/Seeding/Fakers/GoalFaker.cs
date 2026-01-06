@@ -10,7 +10,7 @@ namespace HealthSync.Infrastructure.Data.Seeding.Fakers;
 /// </summary>
 public static class GoalFaker
 {
-    private static readonly string[] NoteTemplates =
+    private static readonly string?[] NoteTemplates =
     {
         "Bắt đầu hành trình mới!",
         "Tiến độ tốt, tiếp tục cố gắng.",
