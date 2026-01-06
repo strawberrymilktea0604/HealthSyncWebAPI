@@ -151,7 +151,8 @@ static void ConfigureServices(WebApplicationBuilder builder)
 
     // Add DbContext (without Identity)
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+               .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
 
     // Add Hangfire services
     var hangfireConn = builder.Configuration.GetConnectionString("HangfireConnection");

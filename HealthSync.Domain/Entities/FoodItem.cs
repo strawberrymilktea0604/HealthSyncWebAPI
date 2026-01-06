@@ -25,8 +25,8 @@ public class FoodItem
     public decimal? SugarG { get; set; }
 
     // Admin tracking
-    public int CreatedByAdminId { get; set; }
-    public ApplicationUser CreatedByAdmin { get; set; } = null!;
+    public int? CreatedByAdminId { get; set; }
+    public ApplicationUser? CreatedByAdmin { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

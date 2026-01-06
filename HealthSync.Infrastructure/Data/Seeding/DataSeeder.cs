@@ -101,8 +101,8 @@ public sealed class DataSeeder : IDataSeeder
     }
 
     /// <summary>
-    /// Ensures at least one admin exists for FK references.
-    /// Does NOT create admin if none exists - returns first admin ID.
+    /// Checks for an existing admin user ID for FK references.
+    /// Returns 0 if no admin exists (does NOT create one).
     /// </summary>
     private async Task<int> EnsureAdminExistsAsync(CancellationToken cancellationToken)
     {
@@ -114,8 +114,8 @@ public sealed class DataSeeder : IDataSeeder
 
         if (admin == null)
         {
-            _logger.LogWarning("No admin user found. Catalog data will use placeholder admin ID = 1.");
-            return 1; // Placeholder - catalog items will reference this
+            _logger.LogWarning("No admin user found for catalog data FK references.");
+            return 0; // Return invalid ID - catalog seeding will be skipped
         }
 
         return admin.UserId;
@@ -126,8 +126,13 @@ public sealed class DataSeeder : IDataSeeder
     private async Task SeedCatalogDataAsync(int adminId, CancellationToken cancellationToken)
     {
         await SeedForumCategoriesAsync(cancellationToken);
-        await SeedExercisesAsync(adminId, cancellationToken);
-        await SeedFoodItemsAsync(adminId, cancellationToken);
+        
+        // Seed catalog data even if adminId is 0 (System created)
+        // Now that the Entities support nullable CreatedByAdminId, we can pass null if adminId is 0
+        int? dbAdminId = adminId > 0 ? adminId : null;
+
+        await SeedExercisesAsync(dbAdminId, cancellationToken);
+        await SeedFoodItemsAsync(dbAdminId, cancellationToken);
     }
 
     private async Task SeedForumCategoriesAsync(CancellationToken cancellationToken)
@@ -153,7 +158,7 @@ public sealed class DataSeeder : IDataSeeder
         _logger.LogInformation("Seeded {Count} forum categories.", categories.Count);
     }
 
-    private async Task SeedExercisesAsync(int adminId, CancellationToken cancellationToken)
+    private async Task SeedExercisesAsync(int? adminId, CancellationToken cancellationToken)
     {
         if (await _context.Exercises.AnyAsync(cancellationToken))
         {
@@ -196,7 +201,7 @@ public sealed class DataSeeder : IDataSeeder
         _logger.LogInformation("Seeded {Count} exercises.", exercises.Count);
     }
 
-    private async Task SeedFoodItemsAsync(int adminId, CancellationToken cancellationToken)
+    private async Task SeedFoodItemsAsync(int? adminId, CancellationToken cancellationToken)
     {
         if (await _context.FoodItems.AnyAsync(cancellationToken))
         {

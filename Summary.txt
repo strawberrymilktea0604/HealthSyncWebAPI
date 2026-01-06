@@ -1,13 +1,13 @@
 Summary
-  Generated on: 1/7/2026 - 12:25:46 AM
+  Generated on: 1/7/2026 - 2:20:13 AM
   Parser: MultiReport (4x OpenCover)
   Assemblies: 4
   Classes: 100
   Files: 94
   Line coverage: 99%
-  Covered lines: 1212
+  Covered lines: 1210
   Uncovered lines: 12
-  Coverable lines: 1224
+  Coverable lines: 1222
   Total lines: 11717
   Branch coverage: 83.8% (99 of 118)
   Covered branches: 99

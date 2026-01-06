@@ -44,7 +44,7 @@ public class ImageSeeder
         CancellationToken cancellationToken = default)
     {
         var objectName = $"{folder.Trim('/')}/{localFileName}";
-        var localFilePath = Path.Combine(_seedImagePath, localFileName);
+        var localFilePath = Path.Combine(_seedImagePath, folder, localFileName);
 
         // Check if local file exists
         if (!File.Exists(localFilePath))

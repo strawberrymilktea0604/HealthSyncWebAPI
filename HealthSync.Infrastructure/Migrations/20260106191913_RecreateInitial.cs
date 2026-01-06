@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HealthSync.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class RecreateInitial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -115,7 +115,7 @@ namespace HealthSync.Infrastructure.Migrations
                     ImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     VideoUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CaloriesPerMinute = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: true),
-                    CreatedByAdminId = table.Column<int>(type: "int", nullable: false),
+                    CreatedByAdminId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -148,7 +148,7 @@ namespace HealthSync.Infrastructure.Migrations
                     FatG = table.Column<decimal>(type: "decimal(6,2)", precision: 6, scale: 2, nullable: false),
                     FiberG = table.Column<decimal>(type: "decimal(6,2)", precision: 6, scale: 2, nullable: true),
                     SugarG = table.Column<decimal>(type: "decimal(6,2)", precision: 6, scale: 2, nullable: true),
-                    CreatedByAdminId = table.Column<int>(type: "int", nullable: false),
+                    CreatedByAdminId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },

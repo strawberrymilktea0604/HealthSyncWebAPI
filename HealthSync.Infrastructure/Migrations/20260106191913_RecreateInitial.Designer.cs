@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthSync.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260106173320_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260106191913_RecreateInitial")]
+    partial class RecreateInitial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -248,7 +248,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CreatedByAdminId")
+                    b.Property<int?>("CreatedByAdminId")
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -430,7 +430,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CreatedByAdminId")
+                    b.Property<int?>("CreatedByAdminId")
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -993,8 +993,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "CreatedByAdmin")
                         .WithMany()
                         .HasForeignKey("CreatedByAdminId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CreatedByAdmin");
                 });
@@ -1042,8 +1041,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "CreatedByAdmin")
                         .WithMany()
                         .HasForeignKey("CreatedByAdminId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CreatedByAdmin");
                 });

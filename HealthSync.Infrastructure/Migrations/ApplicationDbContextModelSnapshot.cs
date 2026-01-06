@@ -245,7 +245,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CreatedByAdminId")
+                    b.Property<int?>("CreatedByAdminId")
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -427,7 +427,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CreatedByAdminId")
+                    b.Property<int?>("CreatedByAdminId")
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -990,8 +990,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "CreatedByAdmin")
                         .WithMany()
                         .HasForeignKey("CreatedByAdminId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CreatedByAdmin");
                 });
@@ -1039,8 +1038,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.HasOne("HealthSync.Domain.Entities.ApplicationUser", "CreatedByAdmin")
                         .WithMany()
                         .HasForeignKey("CreatedByAdminId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CreatedByAdmin");
                 });
