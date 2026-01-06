@@ -410,6 +410,11 @@ pipeline {
                             echo "# Docker Hub Repository (injected by Jenkins)" >> .env.prod.tmp
                             echo "DOCKER_HUB_REPO=\$DOCKER_HUB_REPO_VAR" >> .env.prod.tmp
                             
+                            echo "" >> .env.prod.tmp
+                            echo "# Auto-enable Data Seeding (Injected by Jenkins)" >> .env.prod.tmp
+                            echo "SeedSettings__EnableDataSeeding=true" >> .env.prod.tmp
+                            echo "SeedSettings__SeedDemoData=true" >> .env.prod.tmp
+                            
                             # 4. Copy các file cấu hình
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
                                 docker-compose.prod.yml \$SSH_USER@\$PROD_SERVER_IP:\$PROD_DEPLOY_DIR/
