@@ -116,6 +116,12 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
     OverrideConfigurationFromEnvironment(builder, "MinIO:SecretKey", "MINIO_SECRET_KEY");
     OverrideConfigurationFromEnvironment(builder, "MinIO:BucketName", "MINIO_BUCKET_NAME");
     OverrideConfigurationFromEnvironment(builder, "MinIO:UseSSL", "MINIO_USE_SSL");
+
+    // Override Seeding settings
+    OverrideConfigurationFromEnvironment(builder, "SeedSettings:EnableDataSeeding", "SeedSettings__EnableDataSeeding");
+    OverrideConfigurationFromEnvironment(builder, "SeedSettings:EnableDataSeeding", "SEED_DATA");
+    OverrideConfigurationFromEnvironment(builder, "SeedSettings:SeedDemoData", "SeedSettings__SeedDemoData");
+    OverrideConfigurationFromEnvironment(builder, "SeedSettings:SeedDemoData", "SEED_DEMO_DATA");
 }
 
 static void OverrideConfigurationFromEnvironment(WebApplicationBuilder builder, string configKey, string envVar)
@@ -382,6 +388,10 @@ static void ConfigureEndpoints(WebApplication app)
 
                 // Run Data Seeding if enabled
                 var seedingEnabled = configuration.GetValue<bool>("SeedSettings:EnableDataSeeding");
+                var seedDemo = configuration.GetValue<bool>("SeedSettings:SeedDemoData");
+                
+                logger.LogInformation($"[Seeding Check] Enabled: {seedingEnabled}, Demo Data: {seedDemo}");
+                
                 if (seedingEnabled)
                 {
                     logger.LogInformation("Starting database seeding...");

@@ -414,6 +414,8 @@ pipeline {
                             echo "# Auto-enable Data Seeding (Injected by Jenkins)" >> .env.prod.tmp
                             echo "SeedSettings__EnableDataSeeding=true" >> .env.prod.tmp
                             echo "SeedSettings__SeedDemoData=true" >> .env.prod.tmp
+                            echo "SEED_DATA=true" >> .env.prod.tmp
+                            echo "SEED_DEMO_DATA=true" >> .env.prod.tmp
                             
                             # 4. Copy các file cấu hình
                             scp -P 2222 -o StrictHostKeyChecking=no -i \$SSH_KEY \
