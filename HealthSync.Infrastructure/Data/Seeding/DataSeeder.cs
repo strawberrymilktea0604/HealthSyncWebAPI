@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Minio;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace HealthSync.Infrastructure.Data.Seeding;
 
@@ -299,8 +301,8 @@ public sealed class DataSeeder : IDataSeeder
         {
             var customer = customerFaker.Generate();
             
-            // Hash password using BCrypt
-            customer.PasswordHash = BCrypt.Net.BCrypt.HashPassword(_settings.DefaultCustomerPassword);
+            // Hash password using PBKDF2 (same as AuthService)
+            customer.PasswordHash = HashPassword(_settings.DefaultCustomerPassword);
 
             // Generate profile
             var profile = profileFaker.Generate();
@@ -413,4 +415,22 @@ public sealed class DataSeeder : IDataSeeder
     }
 
     #endregion
+
+    private static string HashPassword(string password)
+    {
+        byte[] salt = new byte[128 / 8];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(salt);
+        }
+
+        string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+            password: password,
+            salt: salt,
+            prf: KeyDerivationPrf.HMACSHA256,
+            iterationCount: 100000,
+            numBytesRequested: 256 / 8));
+
+        return $"{Convert.ToBase64String(salt)}.{hashed}";
+    }
 }

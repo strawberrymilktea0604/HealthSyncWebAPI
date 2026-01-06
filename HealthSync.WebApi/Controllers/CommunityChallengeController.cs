@@ -8,7 +8,7 @@ using HealthSync.Domain.Entities;
 namespace HealthSync.WebApi.Controllers;
 
 [ApiController]
-[Route("api/v1/challenges")]
+[Route("api/v1/community-challenges")]
 [Authorize(Roles = "Customer")]
 public class CommunityChallengeController : ControllerBase
 {
