@@ -398,7 +398,7 @@ public sealed class DataSeeder : IDataSeeder
         // Seed challenge participations for customers
         if (challenges.Count > 0)
         {
-            await SeedChallengeParticipationsAsync(customers, challenges, cancellationToken);
+            SeedChallengeParticipations(customers, challenges);
         }
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -562,19 +562,21 @@ public sealed class DataSeeder : IDataSeeder
         }
     }
 
-    private Task SeedChallengeParticipationsAsync(
+    private void SeedChallengeParticipations(
         List<ApplicationUser> customers,
-        List<Challenge> challenges,
-        CancellationToken cancellationToken)
+        List<Challenge> challenges)
     {
         var participations = new List<ChallengeParticipation>();
         var now = DateTime.UtcNow;
 
-        // Get open challenges for participation
+        // Get open and closed challenges for participation
         var openChallenges = challenges.Where(c => c.Status == ChallengeStatus.Open).ToList();
         var closedChallenges = challenges.Where(c => c.Status == ChallengeStatus.Closed).ToList();
 
-        foreach (var customer in customers)
+        // Get user IDs from customers
+        var customerUserIds = customers.Select(c => c.UserId).ToList();
+
+        foreach (var userId in customerUserIds)
         {
             // 60% of customers join at least one open challenge
             if (_faker.Random.Bool(0.6f) && openChallenges.Count > 0)
@@ -583,8 +585,7 @@ public sealed class DataSeeder : IDataSeeder
                 
                 foreach (var challenge in challengesToJoin)
                 {
-                    var participation = CreateParticipation(customer.UserId, challenge, false, now);
-                    participations.Add(participation);
+                    participations.Add(CreateParticipation(userId, challenge, false, now));
                 }
             }
 
@@ -595,8 +596,7 @@ public sealed class DataSeeder : IDataSeeder
                 
                 foreach (var challenge in pastChallenges)
                 {
-                    var participation = CreateParticipation(customer.UserId, challenge, true, now);
-                    participations.Add(participation);
+                    participations.Add(CreateParticipation(userId, challenge, true, now));
                 }
             }
         }
@@ -606,8 +606,6 @@ public sealed class DataSeeder : IDataSeeder
             _context.ChallengeParticipations.AddRange(participations);
             _logger.LogInformation("Seeded {Count} challenge participations.", participations.Count);
         }
-
-        return Task.CompletedTask;
     }
 
     private ChallengeParticipation CreateParticipation(

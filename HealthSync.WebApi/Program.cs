@@ -393,7 +393,7 @@ static void ConfigureEndpoints(WebApplication app)
                 var seedingEnabled = configuration.GetValue<bool>("SeedSettings:EnableDataSeeding");
                 var seedDemo = configuration.GetValue<bool>("SeedSettings:SeedDemoData");
                 
-                logger.LogInformation($"[Seeding Check] Enabled: {seedingEnabled}, Demo Data: {seedDemo}");
+                logger.LogInformation("[Seeding Check] Enabled: {SeedingEnabled}, Demo Data: {SeedDemoData}", seedingEnabled, seedDemo);
                 
                 if (seedingEnabled)
                 {

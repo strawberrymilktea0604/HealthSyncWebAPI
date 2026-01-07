@@ -48,22 +48,14 @@ public sealed class DistributedLock : IAsyncDisposable
             // -2: Lock request was canceled
             // -3: Lock request was a deadlock victim
             // -999: Parameter validation or other call error
-            var result = await context.Database.ExecuteSqlRawAsync(
-                "EXEC @result = sp_getapplock @Resource = {0}, @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = {1}",
-                cancellationToken,
-                lockName,
-                timeoutMs);
-
-            // Check if lock was acquired (result >= 0 means success)
-            // Note: ExecuteSqlRawAsync returns number of rows affected, not the sp return value
-            // We need to use a different approach to check the result
+            
+            // Use SqlQueryRaw to get the actual return value from sp_getapplock
             var lockResult = await context.Database
                 .SqlQueryRaw<int>(
                     @"DECLARE @result int;
                       EXEC @result = sp_getapplock @Resource = {0}, @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = {1};
                       SELECT @result AS Value",
-                    lockName,
-                    timeoutMs)
+                    new object[] { lockName, timeoutMs })
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (lockResult >= 0)

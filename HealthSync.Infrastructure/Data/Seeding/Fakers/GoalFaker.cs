@@ -136,49 +136,64 @@ public static class GoalFaker
         var progressCount = CalculateProgressCount(goal, referenceDate, faker);
         if (progressCount <= 0) return;
 
-        var effectiveEndDate = goal.Status == GoalStatus.Completed
-            ? goal.EndDate
-            : (referenceDate < goal.EndDate ? referenceDate : goal.EndDate);
-
+        var effectiveEndDate = GetEffectiveEndDate(goal, referenceDate);
         var daysBetween = (effectiveEndDate - goal.StartDate).Days;
         if (daysBetween <= 0) return;
 
         // Calculate progress values based on goal type
         var initialValue = CalculateInitialValue(goal, faker);
-        var progressPerRecord = (goal.TargetValue / progressCount) * faker.Random.Decimal(0.8m, 1.2m);
+        var progressPerRecord = goal.TargetValue / progressCount * faker.Random.Decimal(0.8m, 1.2m);
 
+        AddProgressRecordsToGoal(goal, progressCount, daysBetween, effectiveEndDate, initialValue, progressPerRecord, faker);
+    }
+
+    private static DateTime GetEffectiveEndDate(Goal goal, DateTime referenceDate)
+    {
+        if (goal.Status == GoalStatus.Completed)
+        {
+            return goal.EndDate;
+        }
+        
+        return referenceDate < goal.EndDate ? referenceDate : goal.EndDate;
+    }
+
+    private static void AddProgressRecordsToGoal(
+        Goal goal,
+        int progressCount,
+        int daysBetween,
+        DateTime effectiveEndDate,
+        decimal initialValue,
+        decimal progressPerRecord,
+        Faker faker)
+    {
         for (int i = 0; i < progressCount; i++)
         {
-            var recordDate = goal.StartDate.AddDays((daysBetween / progressCount) * (i + 1));
+            var recordDate = goal.StartDate.AddDays(daysBetween / progressCount * (i + 1));
             if (recordDate > effectiveEndDate) break;
 
-            var progressValue = CalculateProgressValue(
-                initialValue, 
-                progressPerRecord, 
-                i, 
-                goal.GoalType, 
-                faker
-            );
-
-            var record = new ProgressRecord
-            {
-                RecordDate = recordDate,
-                RecordedValue = progressValue,
-                WeightKg = goal.GoalType is GoalType.WeightLoss or GoalType.WeightGain or GoalType.MaintainWeight
-                    ? progressValue
-                    : null,
-                WaistCm = goal.GoalType == GoalType.BodyMeasurement && goal.Unit == "cm"
-                    ? faker.Random.Decimal(60m, 100m)
-                    : null,
-                ChestCm = faker.Random.Bool(0.3f) ? faker.Random.Decimal(80m, 120m) : null,
-                HipCm = faker.Random.Bool(0.3f) ? faker.Random.Decimal(85m, 110m) : null,
-                Notes = faker.PickRandom(NoteTemplates),
-                CreatedAt = recordDate,
-                UpdatedAt = recordDate
-            };
-
+            var progressValue = CalculateProgressValue(initialValue, progressPerRecord, i, goal.GoalType, faker);
+            var record = CreateProgressRecord(goal, recordDate, progressValue, faker);
             goal.ProgressRecords.Add(record);
         }
+    }
+
+    private static ProgressRecord CreateProgressRecord(Goal goal, DateTime recordDate, decimal progressValue, Faker faker)
+    {
+        var isWeightGoal = goal.GoalType is GoalType.WeightLoss or GoalType.WeightGain or GoalType.MaintainWeight;
+        var isBodyMeasurementCm = goal.GoalType == GoalType.BodyMeasurement && goal.Unit == "cm";
+
+        return new ProgressRecord
+        {
+            RecordDate = recordDate,
+            RecordedValue = progressValue,
+            WeightKg = isWeightGoal ? progressValue : null,
+            WaistCm = isBodyMeasurementCm ? faker.Random.Decimal(60m, 100m) : null,
+            ChestCm = faker.Random.Bool(0.3f) ? faker.Random.Decimal(80m, 120m) : null,
+            HipCm = faker.Random.Bool(0.3f) ? faker.Random.Decimal(85m, 110m) : null,
+            Notes = faker.PickRandom(NoteTemplates),
+            CreatedAt = recordDate,
+            UpdatedAt = recordDate
+        };
     }
 
     private static int CalculateProgressCount(Goal goal, DateTime referenceDate, Faker faker)
