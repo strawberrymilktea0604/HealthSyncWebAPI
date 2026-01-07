@@ -198,10 +198,7 @@ public static class GoalFaker
 
     private static int CalculateProgressCount(Goal goal, DateTime referenceDate, Faker faker)
     {
-        var effectiveEndDate = goal.Status == GoalStatus.Completed
-            ? goal.EndDate
-            : (referenceDate < goal.EndDate ? referenceDate : goal.EndDate);
-
+        var effectiveEndDate = GetEffectiveEndDate(goal, referenceDate);
         var daysPassed = (effectiveEndDate - goal.StartDate).Days;
         
         // 1 record per week on average, with some randomization

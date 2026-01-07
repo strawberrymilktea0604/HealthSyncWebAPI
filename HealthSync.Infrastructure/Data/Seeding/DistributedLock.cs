@@ -1,5 +1,7 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Data;
 
 namespace HealthSync.Infrastructure.Data.Seeding;
 
@@ -48,15 +50,25 @@ public sealed class DistributedLock : IAsyncDisposable
             // -2: Lock request was canceled
             // -3: Lock request was a deadlock victim
             // -999: Parameter validation or other call error
-            
-            // Use SqlQueryRaw to get the actual return value from sp_getapplock
-            var lockResult = await context.Database
-                .SqlQueryRaw<int>(
-                    @"DECLARE @result int;
-                      EXEC @result = sp_getapplock @Resource = {0}, @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = {1};
-                      SELECT @result AS Value",
-                    new object[] { lockName, timeoutMs })
-                .FirstOrDefaultAsync(cancellationToken);
+
+            // Create output parameter to capture the return code from sp_getapplock
+            var returnCodeParam = new SqlParameter("@result", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.Output
+            };
+
+            var resourceParam = new SqlParameter("@resource", lockName);
+            var timeoutParam = new SqlParameter("@timeout", timeoutMs);
+
+            // Use ExecuteSqlRawAsync with output parameter instead of SqlQueryRaw
+            // to avoid "non-composable SQL" error
+            await context.Database.ExecuteSqlRawAsync(
+                "EXEC @result = sp_getapplock @Resource = @resource, @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = @timeout",
+                new object[] { returnCodeParam, resourceParam, timeoutParam },
+                cancellationToken);
+
+            // Get the return value
+            int lockResult = (int)returnCodeParam.Value;
 
             if (lockResult >= 0)
             {
