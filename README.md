@@ -22,15 +22,15 @@ Trong thời đại số hóa hiện nay, việc chăm sóc sức khỏe cá nh�
 **HealthSync** ra đời nhằm giải quyết triệt để hai vấn đề này dưới dạng một nền tảng **"All-in-one"**. Hệ thống không chỉ cung cấp công cụ số hóa tập trung nhật ký tập luyện (Workout Log) và dinh dưỡng (Nutrition Log) mà còn tích hợp các yếu tố **Mạng xã hội** (Diễn đàn thảo luận) và **Gamification** (Thử thách cộng đồng, Bảng xếp hạng điểm tích lũy) nhằm tạo ra sợi dây gắn kết, thúc đẩy mọi người cùng nhau rèn luyện mỗi ngày.
 
 ### Ảnh chụp kết quả & Demo Hệ thống
-Dưới đây là một số giao diện quản lý API qua Swagger và kết quả hoạt động được nhóm em ghi lại trong quá trình chạy thử nghiệm hệ thống:
+Dưới đây là một số giao diện quản lý API qua Postman và kết quả hoạt động được nhóm em ghi lại trong quá trình chạy thử nghiệm hệ thống:
 
-| Giao diện Swagger UI của Web API | Nhật ký kiểm thử & Log dữ liệu |
+| Ghi nhật ký ăn uống (Nutrition Entry) | Ghi nhận tiến độ mục tiêu (Goal Progress) |
 |:---:|:---:|
-| ![Swagger UI](docs/images/extracted_img_p31_1.png) <br> *Hệ thống endpoints chuẩn RESTful phục vụ Client* | ![Log Kiểm Thử](docs/images/extracted_img_p32_1.png) <br> *Log kiểm thử chức năng ghi nhật ký và trả kết quả* |
+| ![Nutrition Entry](docs/images/postman_add_food_entry.png) <br> *API thêm thông tin món ăn (ức gà nướng) cho bữa sáng* | ![Goal Progress](docs/images/postman_record_progress.png) <br> *API ghi nhận tiến độ giảm cân của người dùng* |
 
-| Dashboard Thống kê của Admin | Kết quả seed dữ liệu mẫu lên MinIO |
+| Thiết lập mục tiêu mới (Create Goal) | Ghi nhật ký tập luyện (Workout Log) |
 |:---:|:---:|
-| ![Admin Dashboard](docs/images/extracted_img_p32_2.png) <br> *Màn hình theo dõi các chỉ số tương tác của Admin* | ![MinIO Storage Seeding](docs/images/extracted_img_p35_1.png) <br> *Lưu trữ hình ảnh bài đăng, bài tập trên Object Storage* |
+| ![Create Goal](docs/images/postman_create_goal.png) <br> *API thiết lập mục tiêu cân nặng mong muốn* | ![Workout Log](docs/images/postman_create_workout_log.png) <br> *API tạo nhật ký buổi tập luyện* |
 
 ---
 
@@ -41,7 +41,7 @@ Dưới đây là một số giao diện quản lý API qua Swagger và kết qu
 ### 2.1. Kiến trúc hạ tầng triển khai (System Architecture)
 Hệ thống được đóng gói hoàn chỉnh bằng **Docker Containers** và điều phối qua **Docker Compose**. Dưới đây là sơ đồ luồng dữ liệu khi Client gửi yêu cầu lên Server:
 
-![Sơ đồ kiến trúc hệ thống HealthSync](docs/images/extracted_img_p14_1.png)
+![Sơ đồ kiến trúc hệ thống HealthSync](docs/images/system_architecture.png)
 
 * **NGINX:** Đóng vai trò làm Reverse Proxy và Load Balancer ở Port 80, tiếp nhận lưu lượng truy cập từ ngoài Internet (thông qua Cloudflare Tunnel/Ngrok) và phân phối đều tới các container API chạy phía sau.
 * **HealthSync API Container (chạy dotnet watch run/Release):** Nơi xử lý trực tiếp các logic nghiệp vụ của hệ thống.
@@ -52,9 +52,9 @@ Hệ thống được đóng gói hoàn chỉnh bằng **Docker Containers** và
 ---
 
 ### 2.2. Kiến trúc phần mềm (Clean Architecture)
-Mã nguồn Web API được nhóm tổ chức chặt chẽ theo mô hình **Clean Architecture (4 lớp)**, tuân thủ nguyên tắc Dependency Rule (các lớp bên ngoài chỉ được phụ thuộc vào các lớp bên trong):
+Mã nguồn Web API được nhóm tổ chức chặt chẽ theo mô hình **Clean Architecture (4 lớp)**, tuân thủ nghiêm ngặt nguyên tắc Dependency Rule (các lớp bên ngoài chỉ được phụ thuộc vào các lớp bên trong):
 
-![Sơ đồ kiến trúc phần mềm HealthSync](docs/images/extracted_img_p15_1.png)
+![Sơ đồ kiến trúc phần mềm HealthSync](docs/images/software_architecture.png)
 
 1. **Domain Layer (Lớp lõi - Core):** Chứa các thực thể (Entities) cốt lõi như `ApplicationUser`, `WorkoutLog`, `Post`, `Challenge`, `NutritionLog`... Lớp này không phụ thuộc vào bất kỳ thư viện hay framework bên ngoài nào, bảo toàn các quy tắc nghiệp vụ nguyên bản.
 2. **Application Layer (Lớp nghiệp vụ):** Chứa các Services/Use Cases (như `WorkoutLogService`, `GoalService`, `AuthService`...) triển khai logic nghiệp vụ. Lớp này cũng định nghĩa các Interfaces (như Repositories, File Storage, JWT) để giao tiếp với hạ tầng.
@@ -68,19 +68,19 @@ Mã nguồn Web API được nhóm tổ chức chặt chẽ theo mô hình **Cle
 #### Sơ đồ thực thể liên kết (ERD) của Cơ sở dữ liệu:
 Cơ sở dữ liệu được thiết kế chuẩn hóa, tách biệt thông tin định danh (`APPLICATION_USER`) và sinh trắc học (`USER_PROFILE`). Bảng xếp hạng (`LEADERBOARD`) được thiết kế riêng với mối quan hệ 1-1 nhằm tối ưu hóa hiệu suất đọc danh sách xếp hạng.
 
-![Sơ đồ ERD hệ thống HealthSync](docs/images/extracted_img_p25_1.png)
+![Sơ đồ ERD hệ thống HealthSync](docs/images/erd_database.png)
 
 #### Sơ đồ Lớp (Class Diagram) tổng quan:
 Các lớp được module hóa rõ ràng theo các nhóm chức năng chính (User, Workout, Nutrition, Forum, Gamification).
 
-![Sơ đồ lớp toàn hệ thống HealthSync](docs/images/extracted_img_p17_1.png)
+![Sơ đồ lớp toàn hệ thống HealthSync](docs/images/class_diagram.png)
 
 <details>
 <summary>Xem thêm các sơ đồ Use Cases chi tiết của Customer và Admin</summary>
 
 | Sơ đồ Use Case - Customer | Sơ đồ Use Case - Admin |
 |:---:|:---:|
-| ![Use Case Customer](docs/images/extracted_img_p16_1.jpeg) | ![Use Case Admin](docs/images/extracted_img_p16_2.jpeg) |
+| ![Use Case Customer](docs/images/usecase_customer.jpeg) | ![Use Case Admin](docs/images/usecase_admin.jpeg) |
 
 </details>
 
@@ -89,11 +89,11 @@ Các lớp được module hóa rõ ràng theo các nhóm chức năng chính (U
 
 | Quy trình ghi nhật ký luyện tập | Quy trình Cập nhật bảng xếp hạng ngầm |
 |:---:|:---:|
-| ![Activity Workout](docs/images/extracted_img_p18_1.png) | ![Activity Leaderboard](docs/images/extracted_img_p19_1.png) |
+| ![Activity Workout](docs/images/activity_workout.png) | ![Activity Leaderboard](docs/images/activity_leaderboard.png) |
 
 | Quy trình nộp & duyệt Thử thách | Quy trình Tương tác diễn đàn |
 |:---:|:---:|
-| ![Activity Challenge](docs/images/extracted_img_p20_1.png) | ![Activity Forum](docs/images/extracted_img_p20_2.png) |
+| ![Activity Challenge](docs/images/activity_challenge.png) | ![Activity Forum](docs/images/activity_forum.png) |
 
 </details>
 
@@ -102,11 +102,11 @@ Các lớp được module hóa rõ ràng theo các nhóm chức năng chính (U
 
 | Đăng ký người dùng | Đăng bài diễn đàn | Ghi nhật ký luyện tập |
 |:---:|:---:|:---:|
-| ![Seq Auth](docs/images/extracted_img_p21_1.png) | ![Seq Forum](docs/images/extracted_img_p21_2.png) | ![Seq Workout](docs/images/extracted_img_p22_1.png) |
+| ![Seq Auth](docs/images/sequence_auth.png) | ![Seq Forum](docs/images/sequence_forum.png) | ![Seq Workout](docs/images/sequence_workout.png) |
 
 | Nộp bài Thử thách | Tính điểm & Cập nhật Bảng xếp hạng |
 |:---:|:---:|
-| ![Seq Challenge](docs/images/extracted_img_p23_1.png) | ![Seq Leaderboard](docs/images/extracted_img_p24_1.png) |
+| ![Seq Challenge](docs/images/sequence_challenge.png) | ![Seq Leaderboard](docs/images/sequence_leaderboard.png) |
 
 </details>
 
@@ -124,7 +124,7 @@ Các lớp được module hóa rõ ràng theo các nhóm chức năng chính (U
 
 | Sơ đồ quy trình cấp lại Access Token | Sơ đồ bảo mật Đăng nhập và Cấp JWT | Phân quyền dựa trên vai trò (RBAC) |
 |:---:|:---:|:---:|
-| ![Token Rotation](docs/images/extracted_img_p26_1.png) | ![Login Flow](docs/images/extracted_img_p27_1.png) | ![RBAC Flow](docs/images/extracted_img_p27_2.png) |
+| ![Token Rotation](docs/images/security_token_rotation.png) | ![Login Flow](docs/images/security_login_jwt.png) | ![RBAC Flow](docs/images/security_rbac.png) |
 
 ---
 
@@ -159,10 +159,19 @@ Số lượng test cases được chia nhỏ theo các phân hệ chức năng c
 | **Nutrition Logs** | 11 | Ghi nhật ký ăn uống, tự động tính tổng Calo, Protein, Carbs, Fat. |
 | **Workout Logs** | 11 | Ghi nhật ký đẩy tạ, chạy bộ, lưu số sets, reps, weight. |
 | **Forum Discussion** | 11 | Đăng bài viết, bình luận, ghim bài, khóa bài vi phạm. |
-| **Leaderboard** | 10 | Worker quét log tính điểm, cập nhật xếp hạng, lấy Top 100 nhanh. |
+| **Leaderboard** | 10 | Worker quét log tính điểm, cập nhật xếp hạng, lấy Top 10 nhanh. |
 | **TỔNG CỘNG** | **130 Cases** | **100% Passed trên môi trường kiểm thử** |
 
 Các kết quả phản hồi HTTP Status Code, dữ liệu trả về đều được nhóm chụp lại và đính kèm đầy đủ trong thư mục [Testcase Server Nâng cao - Nhóm 4](docs/Testcase%20Server%20Nâng%20cao%20-%20Nhóm%204/).
+
+---
+
+### 3.3. Nhật ký và Kết quả Kiểm thử qua Postman
+Dưới đây là một số hình ảnh phản hồi từ API khi nhóm em tiến hành kiểm thử các chức năng qua Postman:
+
+| API Lấy Top 10 Bảng xếp hạng | API Admin tra cứu danh sách Users | API Tạo bài viết thảo luận mới |
+|:---:|:---:|:---:|
+| ![Leaderboard Top](docs/images/postman_leaderboard_top.png) <br> *Truy vấn nhanh danh sách Top 10 thành viên tích cực* | ![Admin Users](docs/images/postman_admin_get_users.png) <br> *Admin tra cứu và phân loại tài khoản người dùng* | ![Forum Post](docs/images/postman_create_forum_post.png) <br> *Tạo thảo luận mới thành công trả về mã 201 Created* |
 
 ---
 
@@ -201,10 +210,10 @@ Bạn có thể kiểm tra sức khỏe của API tại đường dẫn: `http:/
 
 ---
 
-### 4.3. Quy trình CI/CD tự động hóa với Jenkins
+### 4.3. Quy trình CI/CD tự động hóa với Jenkins & SonarQube
 Nhóm em áp dụng triệt để tư duy DevOps vào quy trình làm việc của nhóm:
 
-![Sơ đồ CI/CD Pipeline](docs/images/extracted_img_p28_1.png)
+![Sơ đồ CI/CD Pipeline](docs/images/devops_cicd_pipeline.png)
 
 1. Mỗi khi thành viên trong nhóm code xong và thực hiện `git push` lên nhánh chính trên **GitHub**.
 2. **GitHub Webhook** sẽ gửi tín hiệu kích hoạt (trigger) đến server **Jenkins** chạy trong mạng nội bộ của nhóm em.
@@ -212,8 +221,19 @@ Nhóm em áp dụng triệt để tư duy DevOps vào quy trình làm việc c�
 4. **Jenkins Pipeline** (định nghĩa trong [Jenkinsfile](Jenkinsfile)) tự động thực thi các bước:
    - **Checkout:** Kéo mã nguồn mới nhất về.
    - **Build & Test:** Chạy restore và thực hiện chạy các Unit Tests đo code coverage.
+     
+     ![Jenkins Unit Tests Run](docs/images/jenkins_test_results.png)
+     *Kết quả chạy tự động 1159 bài test thành công và báo cáo độ bao phủ*
+     
    - **Static Analysis:** Đẩy mã nguồn lên **SonarQube** container để quét chất lượng code, kiểm tra lỗ hổng bảo mật và code smells.
+     
+     ![SonarQube Quality Gate Report](docs/images/sonarqube_quality_gate.png)
+     *Dashboard SonarQube báo cáo dự án PASSED tất cả các tiêu chí Quality Gate*
+     
    - **Deploy:** Tự động build Docker Image mới, dừng container API cũ và khởi chạy container API mới bằng mã nguồn vừa cập nhật.
+
+     ![Jenkins Pipeline Stages](docs/images/jenkins_pipeline_stages.png)
+     *Giao diện Jenkins Pipeline trực quan hóa các bước tự động và luồng build*
 
 ---
 
