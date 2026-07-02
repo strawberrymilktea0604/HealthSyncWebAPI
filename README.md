@@ -287,7 +287,7 @@ HealthSyncWebAPI/
 
 ### 6.2. Danh sách thành viên thực hiện & Phân công nhiệm vụ (Nhóm 4)
 
-Đồ án được hoàn thiện dựa trên kịch bản phân công chạy Sprint được quy định chặt chẽ trong file Excel **Checklist Server Nâng cao - Nhóm 4 .xlsx** của khoa CNTT, Trường Đại học Xây dựng Hà Nội (HUCE):
+Đồ án được hoàn thiện dựa trên kịch bản phân công chạy Sprint được quy định chặt chẽ trong file Excel **Checklist Server Nâng cao - Nhóm 4 .xlsx**:
 
 | STT | Họ và tên | Mã sinh viên / Lớp | Vai trò | Phân công nhiệm vụ thực tế theo Checklist |
 |:---:|:---|:---:|:---:|:---|
